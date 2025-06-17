@@ -5,5 +5,5 @@
 EoH: Evolution of Heuristics 
 </h1>
 <h3 align="center">
-Eoh for path planning edited by by-hwa
+Eoh for path planning
 </h3>
