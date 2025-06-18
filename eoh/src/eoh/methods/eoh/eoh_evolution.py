@@ -137,6 +137,26 @@ Then, based on your analysis, simplify the components to enhance the generalizat
 Finally, provide the revised code, keeping the function name, inputs, and outputs unchanged. \n"+indiv1['code']+"\n"\
 +self.prompt_inout_inf+"\n"+"Do not give additional explanations."
         return prompt_content
+    
+    def get_prompt_time(self, indiv1):
+        #TODO
+        return
+    
+    def get_prompt_distance(self, indiv1):
+        #TODO
+        return
+    
+    def get_prompt_smoothness(self, indiv1):
+        #TODO
+        return
+    
+    def get_prompt_clearance(self, indiv1):
+        #TODO
+        return
+    
+    def get_prompt_memory(self, indiv1):
+        #TODO
+        return
 
 
     def _get_alg(self,prompt_content):
@@ -300,5 +320,88 @@ Finally, provide the revised code, keeping the function name, inputs, and output
             print("\n >>> check designed code: \n", code_all)
             print(">>> Press 'Enter' to continue")
             # input()
+
+        return [code_all, algorithm]
+    
+
+    # 'time', 'distance', 'smoothness', 'clearance'
+
+    def m_time(self, parents):
+        prompt_content = self.get_prompt_time(parents)
+
+        if self.debug_mode:
+            print("\n >>> check prompt for creating algorithm using [ time ] : \n", prompt_content )
+            print(">>> Press 'Enter' to continue")
+
+        [code_all, algorithm] = self._get_alg(prompt_content)
+
+        if self.debug_mode:
+            print("\n >>> check designed algorithm: \n", algorithm)
+            print("\n >>> check designed code: \n", code_all)
+            print(">>> Press 'Enter' to continue")
+
+        return [code_all, algorithm]
+    
+    def m_distance(self, parents):
+        prompt_content = self.get_prompt_distance(parents)
+
+        if self.debug_mode:
+            print("\n >>> check prompt for creating algorithm using [ time ] : \n", prompt_content )
+            print(">>> Press 'Enter' to continue")
+
+        [code_all, algorithm] = self._get_alg(prompt_content)
+
+        if self.debug_mode:
+            print("\n >>> check designed algorithm: \n", algorithm)
+            print("\n >>> check designed code: \n", code_all)
+            print(">>> Press 'Enter' to continue")
+
+        return [code_all, algorithm]
+    
+    def m_smoothness(self, parents):
+        prompt_content = self.get_prompt_smoothness(parents)
+
+        if self.debug_mode:
+            print("\n >>> check prompt for creating algorithm using [ time ] : \n", prompt_content )
+            print(">>> Press 'Enter' to continue")
+
+        [code_all, algorithm] = self._get_alg(prompt_content)
+
+        if self.debug_mode:
+            print("\n >>> check designed algorithm: \n", algorithm)
+            print("\n >>> check designed code: \n", code_all)
+            print(">>> Press 'Enter' to continue")
+
+        return [code_all, algorithm]
+    
+    def m_clearance(self, parents):
+        prompt_content = self.get_prompt_clearance(parents)
+
+        if self.debug_mode:
+            print("\n >>> check prompt for creating algorithm using [ time ] : \n", prompt_content )
+            print(">>> Press 'Enter' to continue")
+
+        [code_all, algorithm] = self._get_alg(prompt_content)
+
+        if self.debug_mode:
+            print("\n >>> check designed algorithm: \n", algorithm)
+            print("\n >>> check designed code: \n", code_all)
+            print(">>> Press 'Enter' to continue")
+
+        return [code_all, algorithm]
+    
+    def m_memory(self, parents):
+        prompt_content = self.get_prompt_memory(parents)
+
+        if self.debug_mode:
+            print("\n >>> check prompt for creating algorithm using [ time ] : \n", prompt_content )
+            print(">>> Press 'Enter' to continue")
+
+        [code_all, algorithm] = self._get_alg(prompt_content)
+
+        if self.debug_mode:
+            print("\n >>> check designed algorithm: \n", algorithm)
+            print("\n >>> check designed code: \n", code_all)
+            print(">>> Press 'Enter' to continue")
 
         return [code_all, algorithm]

@@ -13,11 +13,6 @@ class EOH:
         self.prob = problem
         self.select = select
         self.manage = manage
-
-        if paras.custom_pop_size:
-            self.custom_pop_size = paras.custom_pop_size
-        else: 
-            self.custom_pop_size = None
         
         # LLM settings
         self.use_local_llm = paras.llm_use_local
@@ -63,6 +58,8 @@ class EOH:
 
         self.use_numba = paras.eva_numba_decorator
 
+        self.get_initial = paras.get_initial
+
         print("- EoH parameters loaded -")
 
         # Set a random seed
@@ -107,6 +104,10 @@ class EOH:
             with open(filename, 'w') as f:
                 json.dump(population, f, indent=5)
             n_start = 0
+        elif self.get_initial:
+            #TODO
+            print()
+
         else:
             if self.load_pop:  # load population from files
                 print("load initial population from " + self.load_pop_path)
@@ -135,6 +136,7 @@ class EOH:
                 with open(filename, 'w') as f:
                     json.dump(population, f, indent=5)
                 n_start = 0
+        
 
         # main loop
         n_op = len(self.operators)
@@ -161,7 +163,6 @@ class EOH:
                 # populatin management
 
                 print(f"\n len pop size----------------{len(population)}")
-                print(f"\n custom pop state----------------{self.custom_pop_size}")
 
                 size_act = min(len(population), self.pop_size)
                 population = self.manage.population_management(population, size_act)

@@ -15,7 +15,7 @@ class Paras():
         #####################
         ###  EC settings  ###
         #####################
-        self.ec_pop_size = 5  # number of algorithms in each population, default = 10
+        self.ec_pop_size = 10  # number of algorithms in each population, default = 10
         self.ec_n_pop = 5 # number of populations, default = 10
         self.ec_operators = None # evolution operators: ['e1','e2','m1','m2'], default =  ['e1','e2','m1','m2']
         self.ec_m = 2  # number of parents for 'e1' and 'e2' operators, default = 2
@@ -48,6 +48,10 @@ class Paras():
         self.eva_timeout = 30
         self.eva_numba_decorator = False
 
+        ##################
+        ##### PathPlanning settings #####
+        #################
+        self.get_initial = True
 
     def set_parallel(self):
         import multiprocessing
@@ -80,7 +84,7 @@ class Paras():
             elif self.method == 'sa':
                 self.ec_operators  = ['m1']
             elif self.method == 'path_evolv':
-                self.ec_operators = ['time', 'distance', 'smoothness', 'clearance']
+                self.ec_operators = ['e1', 'e2', 'time', 'distance', 'smoothness', 'clearance', 'memory']
 
         if self.ec_operator_weights == None:
             self.ec_operator_weights = [1 for _ in range(len(self.ec_operators))]
