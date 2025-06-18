@@ -60,10 +60,7 @@ class Paras():
         
         if self.management == None:
             if self.method in ['ael','eoh']:
-                if self.sampling == 'stratified_random_sampling':
-                    self.management = 'stratified_random_sampling'
-                else:
-                    self.management = 'pop_greedy'
+                self.management = 'pop_greedy'
             elif self.method == 'ls':
                 self.management = 'ls_greedy'
             elif self.method == 'sa':
@@ -82,6 +79,8 @@ class Paras():
                 self.ec_operators  = ['m1']
             elif self.method == 'sa':
                 self.ec_operators  = ['m1']
+            elif self.method == 'path_evolv':
+                self.ec_operators = ['time', 'distance', 'smoothness', 'clearance']
 
         if self.ec_operator_weights == None:
             self.ec_operator_weights = [1 for _ in range(len(self.ec_operators))]
