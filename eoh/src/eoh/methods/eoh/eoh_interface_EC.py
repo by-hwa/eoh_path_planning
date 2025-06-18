@@ -100,6 +100,11 @@ class InterfaceEC():
 
         return population
     
+    def get_initial_population(self):
+        population = list()
+        #TODO
+        return population
+    
 
     def _get_alg(self,pop,operator):
         offspring = {
@@ -125,10 +130,37 @@ class InterfaceEC():
             [offspring['code'],offspring['algorithm']] = self.evol.m2(parents[0]) 
         elif operator == "m3":
             parents = self.select.parent_selection(pop,1)
-            [offspring['code'],offspring['algorithm']] = self.evol.m3(parents[0]) 
+            [offspring['code'],offspring['algorithm']] = self.evol.m3(parents[0])
+        # TODO # verify
+        elif operator == "time":
+            parents = self.select.parent_selection(pop,1)
+            [offspring['code'],offspring['algorithm']] = self.evol.m_time(parents[0]) 
+        elif operator == "distance":
+            parents = self.select.parent_selection(pop,1)
+            [offspring['code'],offspring['algorithm']] = self.evol.m_distance(parents[0]) 
+        elif operator == "smoothness":
+            parents = self.select.parent_selection(pop,1)
+            [offspring['code'],offspring['algorithm']] = self.evol.m_smoothness(parents[0]) 
+        elif operator == "clearance":
+            parents = self.select.parent_selection(pop,1)
+            [offspring['code'],offspring['algorithm']] = self.evol.m_clearance(parents[0]) 
+        elif operator == "memory":
+            parents = self.select.parent_selection(pop,1)
+            [offspring['code'],offspring['algorithm']] = self.evol.m_memory(parents[0]) 
         else:
             print(f"Evolution operator [{operator}] has not been implemented ! \n") 
 
+        return parents, offspring
+    
+    def _get_first_alg(self, pop, operator):
+        parents=None
+        offspring = {
+            'algorithm': None,
+            'code': None,
+            'objective': None,
+            'other_inf': None
+        }
+        #TODO
         return parents, offspring
 
     def get_offspring(self, pop, operator):
