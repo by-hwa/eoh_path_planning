@@ -52,6 +52,8 @@ class Paras():
         ##### PathPlanning settings #####
         #################
         self.get_initial = True
+        
+
 
     def set_parallel(self):
         import multiprocessing
@@ -83,8 +85,10 @@ class Paras():
                 self.ec_operators  = ['m1']
             elif self.method == 'sa':
                 self.ec_operators  = ['m1']
-            elif self.method == 'path_evolv':
+            elif self.method == 'path_eoh':
                 self.ec_operators = ['e1', 'e2', 'time', 'distance', 'smoothness', 'clearance', 'memory']
+                if self.get_initial:
+                    self.ref_algorithm = ['astar', 'rrt', 'sprm', 'rrt_star', 'rrt_connect']
 
         if self.ec_operator_weights == None:
             self.ec_operator_weights = [1 for _ in range(len(self.ec_operators))]

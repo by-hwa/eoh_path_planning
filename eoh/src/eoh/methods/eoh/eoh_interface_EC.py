@@ -99,12 +99,6 @@ class InterfaceEC():
         print("Initiliazation finished! Get "+str(len(seeds))+" seed algorithms")
 
         return population
-    
-    def get_initial_population(self):
-        population = list()
-        #TODO
-        return population
-    
 
     def _get_alg(self,pop,operator):
         offspring = {
@@ -151,17 +145,7 @@ class InterfaceEC():
             print(f"Evolution operator [{operator}] has not been implemented ! \n") 
 
         return parents, offspring
-    
-    def _get_first_alg(self, pop, operator):
-        parents=None
-        offspring = {
-            'algorithm': None,
-            'code': None,
-            'objective': None,
-            'other_inf': None
-        }
-        #TODO
-        return parents, offspring
+
 
     def get_offspring(self, pop, operator):
 
@@ -216,7 +200,7 @@ class InterfaceEC():
                 print('-----------------------------------')
                 print(fitness)
                 print("***********************************")
-                offspring['objective'] = np.round(fitness, 5)
+                offspring['objective'] = np.round(fitness, 5) if fitness else None
                 future.cancel()        
                 # fitness = self.interface_eval.evaluate(code)
                 

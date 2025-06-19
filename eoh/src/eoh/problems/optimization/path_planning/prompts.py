@@ -1,15 +1,52 @@
 class GetPrompts():
     def __init__(self):
-        self.prompt_task = "I need help designing a novel score function that scoring a set of bins to assign an item. \
-In each step, the item will be assigned to the bin with the maximum score. If the rest capacity of a bin equals the maximum capacity, it will not be used. The final goal is to minimize the number of used bins."
-        self.prompt_func_name = "score"
-        self.prompt_func_inputs = ['item', 'bins']
-        self.prompt_func_outputs = ['scores']
-        self.prompt_inout_inf = "'item' and 'bins' are the size of current item and the rest capacities of feasible bins, which are larger than the item size. \
-The output named 'scores' is the scores for the bins for assignment. "
-        self.prompt_other_inf = "Note that 'item' is of type int, while 'bins' and 'scores' are both Numpy arrays. The novel function should be sufficiently complex in order to achieve better performance. It is important to ensure self-consistency."
-#Include the following imports at the beginning of the code: 'import numpy as np', and 'from numba import jit'. Place '@jit(nopython=True)' just above the 'priority' function definition."
+        
+        self.role = "You are given a reference implementations for path planning algorithms on a discrete grid environment."
+        
 
+        # self.prompt_task = "Your task is to improve upon this baseline algorithm and implement an enhanced path planning class named `PathPlanning`."
+        self.prompt_task = "Your task is to design and implement an **improved path planning algorithm**, written as a Python class named `PathPlanning`, that is inspired by but not limited to the provided examples."
+
+        self.objective = '''
+### Objective:
+- Improve path planning performance in terms of:
+  - Planning efficiency (e.g., fewer iterations)
+  - Path quality (e.g., smoother, shorter)
+  - Robustness (e.g., fewer failures to connect start and goal)
+  - Success rate (e.g., more successful connections)
+- You may use techniques like:
+    - Goal-biased or adaptive sampling
+    - Heuristic-guided expansion (e.g., A* cost)
+    - Adaptive step size (`max_dist`) based on environment
+    - Rewiring or optimization steps (e.g., RRT*)
+    - Smoothed or shortcut path extraction
+    - Early stopping criteria or dynamic iteration limits
+    ... and more.
+'''
+        self.constraints = '''
+### Constraints:
+- Your class must be named `PathPlanning`.
+- It must inherit from `SampleBasedAlgorithm`.
+- It should work with existing components: `Forest`, `Point`, `Vertex`, etc.
+- Include core methods like `_extend`, `_connect`, `_extract_path`, `_find_path_internal`.
+### Reusable helper functions (optional to modify or extend):
+- `_get_random_sample()`
+- `_get_nearest_vertex(...)`
+- `_get_new_vertex(...)`
+- `_get_grid()`
+
+### You may freely define new helper functions if necessary
+- If your approach benefits from additional utility methods (e.g., cost estimation, region sampling, custom distance functions), feel free to create and use them.
+### The `_find_path_internal` function is the main function executed for path planning.
+'''
+
+        self.prompt_func_name = ""
+        self.prompt_func_inputs = ""
+        self.prompt_func_outputs = ""
+
+
+        self.prompt_inout_inf = "You may assume access to the new implementation via the baseline class and its methods, such as `_get_random_sample`, `_get_nearest_vertex`, etc."
+        self.prompt_other_inf = "A Python class implementing an improved path planner named `PathPlanning`."
     def get_task(self):
         return self.prompt_task
     
@@ -27,4 +64,10 @@ The output named 'scores' is the scores for the bins for assignment. "
 
     def get_other_inf(self):
         return self.prompt_other_inf
-
+    
+    def get_role(self):
+        return self.role
+    def get_objective(self):
+        return self.objective
+    def get_constraints(self):
+        return self.constraints

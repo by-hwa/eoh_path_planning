@@ -14,6 +14,10 @@ class Evolution():
         self.prompt_func_outputs = prompts.get_func_outputs()
         self.prompt_inout_inf    = prompts.get_inout_inf()
         self.prompt_other_inf    = prompts.get_other_inf()
+        self.prompt_role         = prompts.get_role()
+        self.prompt_objective    = prompts.get_objective()
+        self.prompt_constraints   = prompts.get_constraints()
+
         try:
             self.prompt_reference_tree = prompts.get_tree()
             self.prompt_get_code_template = prompts.get_code_template()
@@ -41,17 +45,6 @@ class Evolution():
         self.interface_llm = InterfaceLLM(self.api_endpoint, self.api_key, self.model_LLM,llm_use_local,llm_local_url, self.debug_mode)
 
     def get_prompt_i1(self):
-
-        if self.prompt_reference_tree:
-            reference_sentence = "This Decision below Tree is that you can use as a reference when generating code :"+self.prompt_reference_tree
-        else:
-            reference_sentence = ""
-
-        if self.prompt_get_code_template:
-            prompt_code_template = "reference templete below :"+self.prompt_get_code_template
-        else:
-            prompt_code_template = ""
-        
         prompt_content = self.prompt_task+"\n"\
 "First, describe your new algorithm and main steps in one sentence. \
 The description must be inside a brace. Next, implement it in Python as a function named \
@@ -137,6 +130,19 @@ Then, based on your analysis, simplify the components to enhance the generalizat
 Finally, provide the revised code, keeping the function name, inputs, and outputs unchanged. \n"+indiv1['code']+"\n"\
 +self.prompt_inout_inf+"\n"+"Do not give additional explanations."
         return prompt_content
+    def get_prompt_path_e1(self, indivs):
+        prompt_indiv = ""
+        for i in range(len(indivs)):
+            prompt_indiv=prompt_indiv+"No."+str(i+1) +" algorithm and the corresponding code are: \n" + indivs[i]['algorithm']+"\n" +indivs[i]['code']+"\n"
+        # TODO
+        return prompt_indiv
+
+    def get_prompt_path_e2(self, indivs):
+        prompt_indiv = ""
+        for i in range(len(indivs)):
+            prompt_indiv=prompt_indiv+"No."+str(i+1) +" algorithm and the corresponding code are: \n" + indivs[i]['algorithm']+"\n" +indivs[i]['code']+"\n"
+        # TODO
+        return
     
     def get_prompt_time(self, indiv1):
         #TODO
@@ -230,7 +236,8 @@ Finally, provide the revised code, keeping the function name, inputs, and output
     
     def e1(self,parents):
       
-        prompt_content = self.get_prompt_e1(parents)
+        # prompt_content = self.get_prompt_e1(parents)
+        prompt_content = self.get_prompt_path_e1(parents)
 
         if self.debug_mode:
             print("\n >>> check prompt for creating algorithm using [ e1 ] : \n", prompt_content )
@@ -248,8 +255,9 @@ Finally, provide the revised code, keeping the function name, inputs, and output
         return [code_all, algorithm]
     
     def e2(self,parents):
-      
-        prompt_content = self.get_prompt_e2(parents)
+        
+        # prompt_content = self.get_prompt_e2(parents)
+        prompt_content = self.get_prompt_path_e2(parents)
 
         if self.debug_mode:
             print("\n >>> check prompt for creating algorithm using [ e2 ] : \n", prompt_content )

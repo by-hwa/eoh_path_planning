@@ -4,6 +4,7 @@ import random
 import time
 
 from .eoh_interface_EC import InterfaceEC
+from .classic_planning_method import GetPlanningCode
 # main class for eoh
 class EOH:
 
@@ -105,8 +106,15 @@ class EOH:
                 json.dump(population, f, indent=5)
             n_start = 0
         elif self.get_initial:
-            #TODO
-            print()
+            get_planning_code = GetPlanningCode()
+            for algorithm in self.ref_algorithm:
+                population.append(get_planning_code.get_code(algorithm))
+            ################ 불러온 코드의 objective 값을 알아야함 평가하기!
+            filename = self.output_path + "/results/pops/population_generation_0.json"
+            with open(filename, 'w') as f:
+                json.dump(population, f, indent=5)
+            print("initial population has been Loaded!")
+            n_start = 0
 
         else:
             if self.load_pop:  # load population from files
