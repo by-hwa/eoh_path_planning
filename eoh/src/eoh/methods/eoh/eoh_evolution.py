@@ -25,15 +25,15 @@ class Evolution():
             self.prompt_reference_tree = None
             self.prompt_get_code_template = None
 
-        if len(self.prompt_func_inputs) > 1:
-            self.joined_inputs = ", ".join("'" + s + "'" for s in self.prompt_func_inputs)
-        else:
-            self.joined_inputs = "'" + self.prompt_func_inputs[0] + "'"
+        # if len(self.prompt_func_inputs) > 1:
+        #     self.joined_inputs = ", ".join("'" + s + "'" for s in self.prompt_func_inputs)
+        # else:
+        #     self.joined_inputs = "'" + self.prompt_func_inputs[0] + "'"
 
-        if len(self.prompt_func_outputs) > 1:
-            self.joined_outputs = ", ".join("'" + s + "'" for s in self.prompt_func_outputs)
-        else:
-            self.joined_outputs = "'" + self.prompt_func_outputs[0] + "'"
+        # if len(self.prompt_func_outputs) > 1:
+        #     self.joined_outputs = ", ".join("'" + s + "'" for s in self.prompt_func_outputs)
+        # else:
+        #     self.joined_outputs = "'" + self.prompt_func_outputs[0] + "'"
 
         # set LLMs
         self.api_endpoint = api_endpoint
@@ -41,8 +41,8 @@ class Evolution():
         self.model_LLM = model_LLM
         self.debug_mode = debug_mode # close prompt checking
 
-
-        self.interface_llm = InterfaceLLM(self.api_endpoint, self.api_key, self.model_LLM,llm_use_local,llm_local_url, self.debug_mode)
+        # for test arbitarary annotation #TODO
+        # self.interface_llm = InterfaceLLM(self.api_endpoint, self.api_key, self.model_LLM,llm_use_local,llm_local_url, self.debug_mode)
 
     def get_prompt_i1(self):
         prompt_content = self.prompt_task+"\n"\
@@ -57,7 +57,6 @@ The description must be inside a brace. Next, implement it in Python as a functi
 +"Do not give additional explanations."
     # +"Do not provide additional description for any response including code functions."
         return prompt_content
-
         
     def get_prompt_e1(self,indivs):
         prompt_indiv = ""
@@ -130,39 +129,87 @@ Then, based on your analysis, simplify the components to enhance the generalizat
 Finally, provide the revised code, keeping the function name, inputs, and outputs unchanged. \n"+indiv1['code']+"\n"\
 +self.prompt_inout_inf+"\n"+"Do not give additional explanations."
         return prompt_content
+
     def get_prompt_path_e1(self, indivs):
         prompt_indiv = ""
         for i in range(len(indivs)):
             prompt_indiv=prompt_indiv+"No."+str(i+1) +" algorithm and the corresponding code are: \n" + indivs[i]['algorithm']+"\n" +indivs[i]['code']+"\n"
-        # TODO
-        return prompt_indiv
+
+        prompt_content = self.prompt_role+"\n"+self.prompt_task+"\n"\
+"I have "+str(len(indivs))+" existing algorithms with their codes as follows: \n"\
++prompt_indiv+"\n"\
+"Please help me create a new algorithm that has a totally different form from the given ones. \n"\
++ self.prompt_constraints + "\n" + self.prompt_constraints + "\n" + self.prompt_inout_inf + "\n" + "Do not give additional explanations."
+        return prompt_content
 
     def get_prompt_path_e2(self, indivs):
         prompt_indiv = ""
         for i in range(len(indivs)):
             prompt_indiv=prompt_indiv+"No."+str(i+1) +" algorithm and the corresponding code are: \n" + indivs[i]['algorithm']+"\n" +indivs[i]['code']+"\n"
-        # TODO
-        return
+
+        prompt_content = self.prompt_role+"\n"+self.prompt_task+"\n"\
+"I have "+str(len(indivs))+" existing algorithms with their codes as follows: \n"\
++prompt_indiv+"\n"\
+"Please help me create a new algorithm that has a totally different form from the given ones but can be motivated from them. \n"\
+"Identify the common backbone idea in the provided algorithms." \
++ self.prompt_constraints + "\n" + self.prompt_constraints + "\n" + self.prompt_inout_inf + "\n" + "Do not give additional explanations."
+        return prompt_content
+
     
     def get_prompt_time(self, indiv1):
-        #TODO
-        return
+        prompt_content = self.prompt_role+"\n"+self.prompt_task+"\n"\
+"I have one algorithm with its code as follows. \
+Algorithm description: "+indiv1['algorithm']+"\n\
+Code:\n\
+"+indiv1['code']+"\n\
+Please help us create a new algorithm with improved time by modifying the provided algorithm. \n"\
+"Identify the backbone idea in the provided algorithms." \
++ self.prompt_constraints + "\n" + self.prompt_constraints + "\n" + self.prompt_inout_inf + "\n" + "Do not give additional explanations."
+        return prompt_content
     
     def get_prompt_distance(self, indiv1):
-        #TODO
-        return
+        prompt_content = self.prompt_role+"\n"+self.prompt_task+"\n"\
+"I have one algorithm with its code as follows. \
+Algorithm description: "+indiv1['algorithm']+"\n\
+Code:\n\
+"+indiv1['code']+"\n\
+Please help us create a new algorithm with improved distance by modifying the provided algorithm. \n"\
+"Identify the backbone idea in the provided algorithms." \
++ self.prompt_constraints + "\n" + self.prompt_constraints + "\n" + self.prompt_inout_inf + "\n" + "Do not give additional explanations."
+        return prompt_content
     
     def get_prompt_smoothness(self, indiv1):
-        #TODO
-        return
+        prompt_content = self.prompt_role+"\n"+self.prompt_task+"\n"\
+"I have one algorithm with its code as follows. \
+Algorithm description: "+indiv1['algorithm']+"\n\
+Code:\n\
+"+indiv1['code']+"\n\
+Please help us create a new algorithm with improved smoothness by modifying the provided algorithm. \n"\
+"Identify the backbone idea in the provided algorithms." \
++ self.prompt_constraints + "\n" + self.prompt_constraints + "\n" + self.prompt_inout_inf + "\n" + "Do not give additional explanations."
+        return prompt_content
     
     def get_prompt_clearance(self, indiv1):
-        #TODO
-        return
+        prompt_content = self.prompt_role+"\n"+self.prompt_task+"\n"\
+"I have one algorithm with its code as follows. \
+Algorithm description: "+indiv1['algorithm']+"\n\
+Code:\n\
+"+indiv1['code']+"\n\
+Please help us create a new algorithm with improved clearance by modifying the provided algorithm. \n"\
+"Identify the backbone idea in the provided algorithms." \
++ self.prompt_constraints + "\n" + self.prompt_constraints + "\n" + self.prompt_inout_inf + "\n" + "Do not give additional explanations."
+        return prompt_content
     
     def get_prompt_memory(self, indiv1):
-        #TODO
-        return
+        prompt_content = self.prompt_role+"\n"+self.prompt_task+"\n"\
+"I have one algorithm with its code as follows. \
+Algorithm description: "+indiv1['algorithm']+"\n\
+Code:\n\
+"+indiv1['code']+"\n\
+Please help us create a new algorithm with improved computing memory by modifying the provided algorithm. \n"\
+"Identify the backbone idea in the provided algorithms." \
++ self.prompt_constraints + "\n" + self.prompt_constraints + "\n" + self.prompt_inout_inf + "\n" + "Do not give additional explanations."
+        return prompt_content
 
 
     def _get_alg(self,prompt_content):

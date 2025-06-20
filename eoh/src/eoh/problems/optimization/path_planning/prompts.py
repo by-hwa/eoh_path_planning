@@ -25,6 +25,9 @@ class GetPrompts():
 '''
         self.constraints = '''
 ### Constraints:
+- Please write a brief description of the algorithm you generated.
+- The description must be inside a brace.
+- Implement it in Python.
 - Your class must be named `PathPlanning`.
 - It must inherit from `SampleBasedAlgorithm`.
 - It should work with existing components: `Forest`, `Point`, `Vertex`, etc.

@@ -109,7 +109,7 @@ class EOH:
             get_planning_code = GetPlanningCode()
             for algorithm in self.ref_algorithm:
                 population.append(get_planning_code.get_code(algorithm))
-            ################ 불러온 코드의 objective 값을 알아야함 평가하기!
+            ################ 불러온 코드의 objective 값을 알아야함 평가하기! # TODO
             filename = self.output_path + "/results/pops/population_generation_0.json"
             with open(filename, 'w') as f:
                 json.dump(population, f, indent=5)
