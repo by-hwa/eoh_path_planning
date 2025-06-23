@@ -7,9 +7,10 @@ from .evaluator_accelerate import add_numba_decorator
 import re
 import concurrent.futures
 import traceback
+import json
 
 class InterfaceEC():
-    def __init__(self, pop_size, m, api_endpoint, api_key, llm_model,llm_use_local,llm_local_url, debug_mode, interface_prob, select,n_p,timeout,use_numba,**kwargs):
+    def __init__(self, pop_size, m, api_endpoint, api_key, llm_model,llm_use_local,llm_local_url, debug_mode, interface_prob, select,n_p,timeout,use_numba, output_path, **kwargs):
 
         # LLM settings
         self.pop_size = pop_size
@@ -18,6 +19,7 @@ class InterfaceEC():
         self.evol = Evolution(api_endpoint, api_key, llm_model,llm_use_local,llm_local_url, debug_mode,prompts, **kwargs)
         self.m = m
         self.debug = debug_mode
+        self.output_path = output_path
 
         if not self.debug:
             warnings.filterwarnings("ignore")
@@ -190,19 +192,30 @@ class InterfaceEC():
                     
                 if n_retry > 1:
                     break
+
+            print("here is the offspring code: @@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@")
+            print(code)
                 
                 
             #self.code2file(offspring['code'])
             with concurrent.futures.ThreadPoolExecutor() as executor:
                 future = executor.submit(self.interface_eval.evaluate, code)
                 # check for 
-                fitness = future.result(timeout=self.timeout)
+                fitness, results = future.result(timeout=self.timeout)
                 print('-----------------------------------')
                 print(fitness)
+                print(results)
                 print("***********************************")
                 offspring['objective'] = np.round(fitness, 5) if fitness else None
+                offspring['results'] = results
                 future.cancel()        
                 # fitness = self.interface_eval.evaluate(code)
+
+            filename = self.output_path + "/results/pops/entire_population_generation.json"
+            with open(file=filename, mode='a') as f:
+                json.dump(offspring, f, indent=5)
+                f.write('\n')
+            
                 
 
         except Exception as e:

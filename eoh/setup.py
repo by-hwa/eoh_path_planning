@@ -7,7 +7,8 @@ setup(
     description="Evolutionary Computation + Large Language Model for automatic algorithm design",
     packages=find_packages(where='src'),
     package_dir={'': 'src'},
-    python_requires=">=3.10",
+    # python_requires=">=3.10",
+    python_requires=">=3.8",
     install_requires=[
         "numpy",
         "numba",

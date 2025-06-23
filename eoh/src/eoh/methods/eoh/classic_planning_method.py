@@ -718,3 +718,45 @@ class SampleBasedAlgorithm(Algorithm):
         else:
             raise ValueError(f"Unknown algorithm name: {algorithm_name}")
             return None
+        
+    def get_algorithm_description(self, algorithm_name: str) -> str:
+        if algorithm_name == "astar":
+            return "This is the A* algorithm, a classic pathfinding algorithm that uses heuristics to find the shortest path from the agent to the goal."
+        elif algorithm_name == "rrt_connect":
+            return "This is the RRT-Connect algorithm, a sample-based pathfinding algorithm that connects two trees to find a path."
+        elif algorithm_name == "rrt_star":
+            return "This is the RRT* algorithm, an optimized version of RRT that finds the shortest path by rewiring the tree as it grows."
+        elif algorithm_name == "rrt":
+            return "This is the RRT algorithm, a sample-based pathfinding algorithm that explores the space by randomly sampling points and connecting them to the nearest vertex."
+        elif algorithm_name == "sprm":
+            return "This is the SPRM algorithm, a sample-based pathfinding algorithm that uses a cyclic graph to find a path from the agent to the goal."
+        else:
+            raise ValueError(f"Unknown algorithm name: {algorithm_name}")
+            return None
+        
+    def get_objective(self, algorithm_name: str) -> str:
+        if algorithm_name == "astar":
+            return 0
+        elif algorithm_name == "rrt_connect":
+            return 0
+        elif algorithm_name == "rrt_star":
+            return 0
+        elif algorithm_name == "rrt":
+            return 0
+        elif algorithm_name == "sprm":
+            return 0
+        else:
+            raise ValueError(f"Unknown algorithm name: {algorithm_name}")
+            return None
+        
+    def get_inherit_prompt(self):
+        return f'''
+The class you generate must inherit from `SampleBasedAlgorithm`, which itself inherits from `Algorithm`.
+
+You must conform to this interface structure and override the required abstract methods, including:
+- `set_display_info(self) -> List[MapDisplay]`
+- `_find_path_internal(self) -> None`
+
+{self.algorithms}
+{self.sample_based_algorithm}
+'''

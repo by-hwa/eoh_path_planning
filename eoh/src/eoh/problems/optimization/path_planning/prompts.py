@@ -1,5 +1,8 @@
+from eoh.methods.eoh.classic_planning_method import GetPlanningCode
+
 class GetPrompts():
     def __init__(self):
+        self.planning_code = GetPlanningCode()
         
         self.role = "You are given a reference implementations for path planning algorithms on a discrete grid environment."
         
@@ -26,12 +29,13 @@ class GetPrompts():
         self.constraints = '''
 ### Constraints:
 - Please write a brief description of the algorithm you generated.
-- The description must be inside a brace.
+- The description must be inside a brace and placed at the very top of the code.
 - Implement it in Python.
 - Your class must be named `PathPlanning`.
 - It must inherit from `SampleBasedAlgorithm`.
 - It should work with existing components: `Forest`, `Point`, `Vertex`, etc.
 - Include core methods like `_extend`, `_connect`, `_extract_path`, `_find_path_internal`.
+- Add code to treat a route search as not found if it takes more than 30 seconds to find the route.(in function `_find_path_internal`)
 ### Reusable helper functions (optional to modify or extend):
 - `_get_random_sample()`
 - `_get_nearest_vertex(...)`
@@ -74,3 +78,6 @@ class GetPrompts():
         return self.objective
     def get_constraints(self):
         return self.constraints
+
+    def get_prior_knowledge(self):
+        return

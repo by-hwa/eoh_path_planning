@@ -65,7 +65,7 @@ class Paras():
     def set_ec(self):    
         
         if self.management == None:
-            if self.method in ['ael','eoh']:
+            if self.method in ['ael','eoh', 'path_eoh']:
                 self.management = 'pop_greedy'
             elif self.method == 'ls':
                 self.management = 'ls_greedy'

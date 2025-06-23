@@ -61,6 +61,8 @@ class EOH:
 
         self.get_initial = paras.get_initial
 
+        self.ref_algorithm = paras.ref_algorithm if self.get_initial else None
+
         print("- EoH parameters loaded -")
 
         # Set a random seed
@@ -92,7 +94,7 @@ class EOH:
         # interface for ec operators
         interface_ec = InterfaceEC(self.pop_size, self.m, self.api_endpoint, self.api_key, self.llm_model, self.use_local_llm, self.llm_local_url,
                                    self.debug_mode, interface_prob, select=self.select,n_p=self.exp_n_proc,
-                                   timeout = self.timeout, use_numba=self.use_numba
+                                   timeout = self.timeout, use_numba=self.use_numba, output_path=self.output_path
                                    )
 
         # initialization
@@ -108,8 +110,13 @@ class EOH:
         elif self.get_initial:
             get_planning_code = GetPlanningCode()
             for algorithm in self.ref_algorithm:
-                population.append(get_planning_code.get_code(algorithm))
-            ################ 불러온 코드의 objective 값을 알아야함 평가하기! # TODO
+                offspring = {
+                'algorithm': get_planning_code.get_algorithm_description(algorithm),
+                'code': get_planning_code.get_code(algorithm),
+                'objective': 0,
+                'other_inf': None
+                }
+                population.append(offspring)
             filename = self.output_path + "/results/pops/population_generation_0.json"
             with open(filename, 'w') as f:
                 json.dump(population, f, indent=5)
@@ -148,6 +155,7 @@ class EOH:
 
         # main loop
         n_op = len(self.operators)
+        filename = self.output_path + "/results/pops/entire_population_generation.json"
 
         for pop in range(n_start, self.n_pop):  
             #print(f" [{na + 1} / {self.pop_size}] ", end="|")         
@@ -169,12 +177,12 @@ class EOH:
                 #             na) + "_" + op + ".json", "w") as file:
                 #         json.dump(data, file, indent=5)
                 # populatin management
-
                 print(f"\n len pop size----------------{len(population)}")
-
                 size_act = min(len(population), self.pop_size)
                 population = self.manage.population_management(population, size_act)
                 print()
+
+                # time.sleep(100000)
 
 
             # Save population to a file

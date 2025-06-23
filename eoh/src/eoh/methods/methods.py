@@ -1,6 +1,6 @@
 
-from .selection import prob_rank,equal,roulette_wheel,tournament, stratified_random_smapling
-from .management import pop_greedy,ls_greedy,ls_sa, stratified_random_sampling, e_greedy
+from .selection import prob_rank,equal,roulette_wheel,tournament
+from .management import pop_greedy,ls_greedy,ls_sa
 
 class Methods():
     def __init__(self,paras,problem) -> None:
@@ -34,7 +34,7 @@ class Methods():
         if self.paras.method == "ael":
             from .ael.ael import AEL
             return AEL(self.paras,self.problem,self.select,self.manage)
-        elif self.paras.method == "eoh":   
+        elif self.paras.method == "eoh" or self.paras.method == "path_eoh":
             from .eoh.eoh import EOH
             return EOH(self.paras,self.problem,self.select,self.manage)
         elif self.paras.method in ['ls','sa']:   
