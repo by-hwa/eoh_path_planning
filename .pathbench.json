@@ -1,0 +1,198 @@
+{
+    "objects": [
+        {
+            "data": {
+                "view_index": 0,
+                "views": [
+                    {
+                        "colours": {
+                            "explored max": {
+                                "colour": [
+                                    0,
+                                    0,
+                                    1,
+                                    1.0
+                                ],
+                                "visible": true
+                            },
+                            "explored min": {
+                                "colour": [
+                                    0.27,
+                                    0.33,
+                                    0.35,
+                                    0.2
+                                ],
+                                "visible": true
+                            },
+                            "visited": {
+                                "colour": [
+                                    0.19,
+                                    0.19,
+                                    0.2,
+                                    0.8
+                                ],
+                                "visible": true
+                            }
+                        }
+                    },
+                    {
+                        "colours": {
+                            "explored max": {
+                                "colour": [
+                                    0,
+                                    0,
+                                    1,
+                                    1.0
+                                ],
+                                "visible": true
+                            },
+                            "explored min": {
+                                "colour": [
+                                    0.27,
+                                    0.33,
+                                    0.35,
+                                    0.2
+                                ],
+                                "visible": true
+                            },
+                            "visited": {
+                                "colour": [
+                                    0.19,
+                                    0.19,
+                                    0.2,
+                                    0.8
+                                ],
+                                "visible": true
+                            }
+                        }
+                    },
+                    {
+                        "colours": {
+                            "explored max": {
+                                "colour": [
+                                    0,
+                                    0,
+                                    1,
+                                    1.0
+                                ],
+                                "visible": true
+                            },
+                            "explored min": {
+                                "colour": [
+                                    0.27,
+                                    0.33,
+                                    0.35,
+                                    0.2
+                                ],
+                                "visible": true
+                            },
+                            "visited": {
+                                "colour": [
+                                    0.19,
+                                    0.19,
+                                    0.2,
+                                    0.8
+                                ],
+                                "visible": true
+                            }
+                        }
+                    },
+                    {
+                        "colours": {
+                            "explored max": {
+                                "colour": [
+                                    0,
+                                    0,
+                                    1,
+                                    1.0
+                                ],
+                                "visible": true
+                            },
+                            "explored min": {
+                                "colour": [
+                                    0.27,
+                                    0.33,
+                                    0.35,
+                                    0.2
+                                ],
+                                "visible": true
+                            },
+                            "visited": {
+                                "colour": [
+                                    0.19,
+                                    0.19,
+                                    0.2,
+                                    0.8
+                                ],
+                                "visible": true
+                            }
+                        }
+                    },
+                    {
+                        "colours": {
+                            "explored max": {
+                                "colour": [
+                                    0,
+                                    0,
+                                    1,
+                                    1.0
+                                ],
+                                "visible": true
+                            },
+                            "explored min": {
+                                "colour": [
+                                    0.27,
+                                    0.33,
+                                    0.35,
+                                    0.2
+                                ],
+                                "visible": true
+                            },
+                            "visited": {
+                                "colour": [
+                                    0.19,
+                                    0.19,
+                                    0.2,
+                                    0.8
+                                ],
+                                "visible": true
+                            }
+                        }
+                    },
+                    {
+                        "colours": {
+                            "explored max": {
+                                "colour": [
+                                    0,
+                                    0,
+                                    1,
+                                    1.0
+                                ],
+                                "visible": true
+                            },
+                            "explored min": {
+                                "colour": [
+                                    0.27,
+                                    0.33,
+                                    0.35,
+                                    0.2
+                                ],
+                                "visible": true
+                            },
+                            "visited": {
+                                "colour": [
+                                    0.19,
+                                    0.19,
+                                    0.2,
+                                    0.8
+                                ],
+                                "visible": true
+                            }
+                        }
+                    }
+                ]
+            },
+            "type": "PersistentStateViews"
+        }
+    ]
+}

@@ -24,6 +24,15 @@
                                 ],
                                 "visible": true
                             },
+                            "clearance": {
+                                "colour": [
+                                    0.0,
+                                    0.5,
+                                    0.0,
+                                    0.7
+                                ],
+                                "visible": true
+                            },
                             "edge": {
                                 "colour": [
                                     0.0,
@@ -57,6 +66,15 @@
                                     0.33,
                                     0.35,
                                     0.2
+                                ],
+                                "visible": true
+                            },
+                            "explored vertices": {
+                                "colour": [
+                                    0.0,
+                                    0.7,
+                                    0.9,
+                                    0.8
                                 ],
                                 "visible": true
                             },
@@ -114,11 +132,21 @@
                                 ],
                                 "visible": true
                             },
+                            "path colour": {
+                                "colour": [
+                                    0.9,
+                                    0.2,
+                                    0.2,
+                                    0.9
+                                ],
+                                "visible": true
+                            },
                             "path_points": {
                                 "colour": [
                                     0,
                                     1,
-                                    0
+                                    0,
+                                    1.0
                                 ],
                                 "visible": true
                             },
@@ -136,6 +164,24 @@
                                     0.7,
                                     0.1,
                                     0.1,
+                                    0.8
+                                ],
+                                "visible": true
+                            },
+                            "rrt edges": {
+                                "colour": [
+                                    0.0,
+                                    0.5,
+                                    0.5,
+                                    0.7
+                                ],
+                                "visible": true
+                            },
+                            "rrt vertices": {
+                                "colour": [
+                                    0.0,
+                                    0.7,
+                                    0.0,
                                     0.8
                                 ],
                                 "visible": true
@@ -326,6 +372,15 @@
                                     0.6,
                                     0.1,
                                     0.5
+                                ],
+                                "visible": true
+                            },
+                            "vertex colour": {
+                                "colour": [
+                                    0.2,
+                                    0.6,
+                                    0.9,
+                                    0.7
                                 ],
                                 "visible": true
                             },
@@ -378,6 +433,15 @@
                                 ],
                                 "visible": true
                             },
+                            "clearance": {
+                                "colour": [
+                                    0.0,
+                                    0.5,
+                                    0.0,
+                                    0.7
+                                ],
+                                "visible": true
+                            },
                             "edge": {
                                 "colour": [
                                     0.0,
@@ -411,6 +475,15 @@
                                     0.33,
                                     0.35,
                                     0.2
+                                ],
+                                "visible": true
+                            },
+                            "explored vertices": {
+                                "colour": [
+                                    0.0,
+                                    0.7,
+                                    0.9,
+                                    0.8
                                 ],
                                 "visible": true
                             },
@@ -468,11 +541,21 @@
                                 ],
                                 "visible": true
                             },
+                            "path colour": {
+                                "colour": [
+                                    0.9,
+                                    0.2,
+                                    0.2,
+                                    0.9
+                                ],
+                                "visible": true
+                            },
                             "path_points": {
                                 "colour": [
                                     0,
                                     1,
-                                    0
+                                    0,
+                                    1.0
                                 ],
                                 "visible": true
                             },
@@ -490,6 +573,24 @@
                                     0.7,
                                     0.1,
                                     0.1,
+                                    0.8
+                                ],
+                                "visible": true
+                            },
+                            "rrt edges": {
+                                "colour": [
+                                    0.0,
+                                    0.5,
+                                    0.5,
+                                    0.7
+                                ],
+                                "visible": true
+                            },
+                            "rrt vertices": {
+                                "colour": [
+                                    0.0,
+                                    0.7,
+                                    0.0,
                                     0.8
                                 ],
                                 "visible": true
@@ -680,6 +781,15 @@
                                     0.6,
                                     0.1,
                                     0.5
+                                ],
+                                "visible": true
+                            },
+                            "vertex colour": {
+                                "colour": [
+                                    0.2,
+                                    0.6,
+                                    0.9,
+                                    0.7
                                 ],
                                 "visible": true
                             },
@@ -732,6 +842,15 @@
                                 ],
                                 "visible": true
                             },
+                            "clearance": {
+                                "colour": [
+                                    0.0,
+                                    0.5,
+                                    0.0,
+                                    0.7
+                                ],
+                                "visible": true
+                            },
                             "edge": {
                                 "colour": [
                                     0.0,
@@ -765,6 +884,15 @@
                                     0.33,
                                     0.35,
                                     0.2
+                                ],
+                                "visible": true
+                            },
+                            "explored vertices": {
+                                "colour": [
+                                    0.0,
+                                    0.7,
+                                    0.9,
+                                    0.8
                                 ],
                                 "visible": true
                             },
@@ -822,11 +950,21 @@
                                 ],
                                 "visible": true
                             },
+                            "path colour": {
+                                "colour": [
+                                    0.9,
+                                    0.2,
+                                    0.2,
+                                    0.9
+                                ],
+                                "visible": true
+                            },
                             "path_points": {
                                 "colour": [
                                     0,
                                     1,
-                                    0
+                                    0,
+                                    1.0
                                 ],
                                 "visible": true
                             },
@@ -844,6 +982,24 @@
                                     0.7,
                                     0.1,
                                     0.1,
+                                    0.8
+                                ],
+                                "visible": true
+                            },
+                            "rrt edges": {
+                                "colour": [
+                                    0.0,
+                                    0.5,
+                                    0.5,
+                                    0.7
+                                ],
+                                "visible": true
+                            },
+                            "rrt vertices": {
+                                "colour": [
+                                    0.0,
+                                    0.7,
+                                    0.0,
                                     0.8
                                 ],
                                 "visible": true
@@ -1034,6 +1190,15 @@
                                     0.6,
                                     0.1,
                                     0.5
+                                ],
+                                "visible": true
+                            },
+                            "vertex colour": {
+                                "colour": [
+                                    0.2,
+                                    0.6,
+                                    0.9,
+                                    0.7
                                 ],
                                 "visible": true
                             },
@@ -1086,6 +1251,15 @@
                                 ],
                                 "visible": true
                             },
+                            "clearance": {
+                                "colour": [
+                                    0.0,
+                                    0.5,
+                                    0.0,
+                                    0.7
+                                ],
+                                "visible": true
+                            },
                             "edge": {
                                 "colour": [
                                     0.0,
@@ -1119,6 +1293,15 @@
                                     0.33,
                                     0.35,
                                     0.2
+                                ],
+                                "visible": true
+                            },
+                            "explored vertices": {
+                                "colour": [
+                                    0.0,
+                                    0.7,
+                                    0.9,
+                                    0.8
                                 ],
                                 "visible": true
                             },
@@ -1176,11 +1359,21 @@
                                 ],
                                 "visible": true
                             },
+                            "path colour": {
+                                "colour": [
+                                    0.9,
+                                    0.2,
+                                    0.2,
+                                    0.9
+                                ],
+                                "visible": true
+                            },
                             "path_points": {
                                 "colour": [
                                     0,
                                     1,
-                                    0
+                                    0,
+                                    1.0
                                 ],
                                 "visible": true
                             },
@@ -1198,6 +1391,24 @@
                                     0.7,
                                     0.1,
                                     0.1,
+                                    0.8
+                                ],
+                                "visible": true
+                            },
+                            "rrt edges": {
+                                "colour": [
+                                    0.0,
+                                    0.5,
+                                    0.5,
+                                    0.7
+                                ],
+                                "visible": true
+                            },
+                            "rrt vertices": {
+                                "colour": [
+                                    0.0,
+                                    0.7,
+                                    0.0,
                                     0.8
                                 ],
                                 "visible": true
@@ -1388,6 +1599,15 @@
                                     0.6,
                                     0.1,
                                     0.5
+                                ],
+                                "visible": true
+                            },
+                            "vertex colour": {
+                                "colour": [
+                                    0.2,
+                                    0.6,
+                                    0.9,
+                                    0.7
                                 ],
                                 "visible": true
                             },
@@ -1440,6 +1660,15 @@
                                 ],
                                 "visible": true
                             },
+                            "clearance": {
+                                "colour": [
+                                    0.0,
+                                    0.5,
+                                    0.0,
+                                    0.7
+                                ],
+                                "visible": true
+                            },
                             "edge": {
                                 "colour": [
                                     0.0,
@@ -1473,6 +1702,15 @@
                                     0.33,
                                     0.35,
                                     0.2
+                                ],
+                                "visible": true
+                            },
+                            "explored vertices": {
+                                "colour": [
+                                    0.0,
+                                    0.7,
+                                    0.9,
+                                    0.8
                                 ],
                                 "visible": true
                             },
@@ -1530,11 +1768,21 @@
                                 ],
                                 "visible": true
                             },
+                            "path colour": {
+                                "colour": [
+                                    0.9,
+                                    0.2,
+                                    0.2,
+                                    0.9
+                                ],
+                                "visible": true
+                            },
                             "path_points": {
                                 "colour": [
                                     0,
                                     1,
-                                    0
+                                    0,
+                                    1.0
                                 ],
                                 "visible": true
                             },
@@ -1552,6 +1800,24 @@
                                     0.7,
                                     0.1,
                                     0.1,
+                                    0.8
+                                ],
+                                "visible": true
+                            },
+                            "rrt edges": {
+                                "colour": [
+                                    0.0,
+                                    0.5,
+                                    0.5,
+                                    0.7
+                                ],
+                                "visible": true
+                            },
+                            "rrt vertices": {
+                                "colour": [
+                                    0.0,
+                                    0.7,
+                                    0.0,
                                     0.8
                                 ],
                                 "visible": true
@@ -1742,6 +2008,15 @@
                                     0.6,
                                     0.1,
                                     0.5
+                                ],
+                                "visible": true
+                            },
+                            "vertex colour": {
+                                "colour": [
+                                    0.2,
+                                    0.6,
+                                    0.9,
+                                    0.7
                                 ],
                                 "visible": true
                             },
@@ -1794,6 +2069,15 @@
                                 ],
                                 "visible": true
                             },
+                            "clearance": {
+                                "colour": [
+                                    0.0,
+                                    0.5,
+                                    0.0,
+                                    0.7
+                                ],
+                                "visible": true
+                            },
                             "edge": {
                                 "colour": [
                                     0.0,
@@ -1827,6 +2111,15 @@
                                     0.33,
                                     0.35,
                                     0.2
+                                ],
+                                "visible": true
+                            },
+                            "explored vertices": {
+                                "colour": [
+                                    0.0,
+                                    0.7,
+                                    0.9,
+                                    0.8
                                 ],
                                 "visible": true
                             },
@@ -1884,11 +2177,21 @@
                                 ],
                                 "visible": true
                             },
+                            "path colour": {
+                                "colour": [
+                                    0.9,
+                                    0.2,
+                                    0.2,
+                                    0.9
+                                ],
+                                "visible": true
+                            },
                             "path_points": {
                                 "colour": [
                                     0,
                                     1,
-                                    0
+                                    0,
+                                    1.0
                                 ],
                                 "visible": true
                             },
@@ -1906,6 +2209,24 @@
                                     0.7,
                                     0.1,
                                     0.1,
+                                    0.8
+                                ],
+                                "visible": true
+                            },
+                            "rrt edges": {
+                                "colour": [
+                                    0.0,
+                                    0.5,
+                                    0.5,
+                                    0.7
+                                ],
+                                "visible": true
+                            },
+                            "rrt vertices": {
+                                "colour": [
+                                    0.0,
+                                    0.7,
+                                    0.0,
                                     0.8
                                 ],
                                 "visible": true
@@ -2096,6 +2417,15 @@
                                     0.6,
                                     0.1,
                                     0.5
+                                ],
+                                "visible": true
+                            },
+                            "vertex colour": {
+                                "colour": [
+                                    0.2,
+                                    0.6,
+                                    0.9,
+                                    0.7
                                 ],
                                 "visible": true
                             },
