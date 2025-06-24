@@ -195,8 +195,12 @@ class InterfaceEC():
 
             print("here is the offspring code: @@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@")
             print(code)
-                
-                
+
+            filename = self.output_path + "/results/pops/entire_population_generation.json"
+            with open(file=filename, mode='a') as f:
+                json.dump(offspring, f, indent=5)
+                f.write('\n')
+                            
             #self.code2file(offspring['code'])
             with concurrent.futures.ThreadPoolExecutor() as executor:
                 future = executor.submit(self.interface_eval.evaluate, code)
@@ -211,10 +215,6 @@ class InterfaceEC():
                 future.cancel()        
                 # fitness = self.interface_eval.evaluate(code)
 
-            filename = self.output_path + "/results/pops/entire_population_generation.json"
-            with open(file=filename, mode='a') as f:
-                json.dump(offspring, f, indent=5)
-                f.write('\n')
             
                 
 

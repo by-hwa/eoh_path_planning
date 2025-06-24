@@ -214,7 +214,8 @@ Please help us create a new algorithm with improved computing memory by modifyin
         algorithm = algorithm_match.group(1).strip() if algorithm_match else ""
 
         code_match = re.search(r"\}\s*(.*)", response, re.DOTALL)
-        code_match = re.search(r"\}\s*[\s\S]*?(?=(import|class|from))((?:import|class|from)[\s\S]*)", response)
+        # code_match = re.search(r"\}\s*[\s\S]*?(?=(import|class|from))((?:import|class|from)[\s\S]*)", response)
+        code_match = re.search(r"\}\s*[\s\S]*?(?=(class PathPlanning))((?:class PathPlanning)[\s\S]*)", response)
 
         code = code_match.group(2).strip() if code_match else ""
 

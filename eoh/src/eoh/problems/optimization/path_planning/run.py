@@ -27,6 +27,39 @@ class PATHPLANNING():
         self.prompts = GetPrompts()
         self.maps = self.load_maps()
         self.a_star_results = self.__get_a_star_results(self.maps)
+        self.import_string = '''
+from typing import List
+
+import torch
+import numpy as np
+import random
+import time
+
+from memory_profiler import profile
+from typing import TYPE_CHECKING, List, Tuple, Type, Any, Dict, Union, Optional
+
+from algorithms.classic.sample_based.core.sample_based_algorithm import SampleBasedAlgorithm
+from algorithms.basic_testing import BasicTesting
+from simulator.services.services import Services
+from structures import Point
+from algorithms.classic.sample_based.core.vertex import Vertex
+from algorithms.classic.sample_based.core.graph import gen_forest, Forest
+from algorithms.classic.sample_based.core.graph import gen_cyclic_graph, CyclicGraph
+from structures import Point, Colour, BLUE, DynamicColour
+from algorithms.algorithm import Algorithm
+from algorithms.basic_testing import BasicTesting
+from algorithms.configuration.entities.goal import Goal
+from algorithms.configuration.maps.map import Map
+from algorithms.configuration.maps.ros_map import RosMap
+from simulator.services.services import Services
+from simulator.views.map.display.gradient_list_map_display import GradientListMapDisplay
+from simulator.views.map.display.map_display import MapDisplay
+from simulator.views.map.display.solid_iterable_map_display import SolidIterableMapDisplay
+from structures import Point, Colour, BLUE, DynamicColour
+from structures.factory import gen_set, gen_heap
+from structures.heap import Heap
+
+'''
         
     def load_maps(self) -> List[Map]:
         maps = list()
@@ -207,7 +240,7 @@ class PATHPLANNING():
                 planning_module = types.ModuleType("planning_module")
                 
                 # Execute the code string in the new module's namespace
-                exec(code_string, planning_module.__dict__)
+                exec(self.import_string+code_string, planning_module.__dict__)
 
                 # Add the module to sys.modules so it can be imported
                 sys.modules[planning_module.__name__] = planning_module

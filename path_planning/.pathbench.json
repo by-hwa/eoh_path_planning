@@ -6,6 +6,42 @@
                 "views": [
                     {
                         "colours": {
+                            "Final path": {
+                                "colour": [
+                                    0.9,
+                                    0.1,
+                                    0.1,
+                                    0.9
+                                ],
+                                "visible": true
+                            },
+                            "Tree edges": {
+                                "colour": [
+                                    0.1,
+                                    0.7,
+                                    0.1,
+                                    0.8
+                                ],
+                                "visible": true
+                            },
+                            "edge": {
+                                "colour": [
+                                    0.0,
+                                    0.4,
+                                    0.8,
+                                    0.3
+                                ],
+                                "visible": true
+                            },
+                            "edges": {
+                                "colour": [
+                                    0.2,
+                                    0.7,
+                                    0.2,
+                                    0.7
+                                ],
+                                "visible": true
+                            },
                             "explored max": {
                                 "colour": [
                                     0,
@@ -24,12 +60,299 @@
                                 ],
                                 "visible": true
                             },
+                            "final path": {
+                                "colour": [
+                                    1,
+                                    0,
+                                    0,
+                                    0.9
+                                ],
+                                "visible": true
+                            },
+                            "forest nodes": {
+                                "colour": [
+                                    0.1,
+                                    0.6,
+                                    0.2,
+                                    0.7
+                                ],
+                                "visible": true
+                            },
+                            "goal vertex": {
+                                "colour": [
+                                    0.8,
+                                    0.2,
+                                    0.2,
+                                    0.9
+                                ],
+                                "visible": true
+                            },
+                            "graph edge": {
+                                "colour": [
+                                    1,
+                                    0,
+                                    0,
+                                    1.0
+                                ],
+                                "visible": true
+                            },
+                            "graph node": {
+                                "colour": [
+                                    1,
+                                    0,
+                                    0,
+                                    1.0
+                                ],
+                                "visible": true
+                            },
+                            "path": {
+                                "colour": [
+                                    0.8,
+                                    0.1,
+                                    0.1,
+                                    0.8
+                                ],
+                                "visible": true
+                            },
+                            "path_points": {
+                                "colour": [
+                                    0,
+                                    1,
+                                    0
+                                ],
+                                "visible": true
+                            },
+                            "pathplanning explored": {
+                                "colour": [
+                                    0.1,
+                                    0.7,
+                                    0.3,
+                                    0.6
+                                ],
+                                "visible": true
+                            },
+                            "pathplanning path": {
+                                "colour": [
+                                    0.7,
+                                    0.1,
+                                    0.1,
+                                    0.8
+                                ],
+                                "visible": true
+                            },
+                            "rrt* edge": {
+                                "colour": [
+                                    0.2,
+                                    0.2,
+                                    0.7,
+                                    0.7
+                                ],
+                                "visible": true
+                            },
+                            "rrt* vertex": {
+                                "colour": [
+                                    0.2,
+                                    0.6,
+                                    0.2,
+                                    0.8
+                                ],
+                                "visible": true
+                            },
+                            "rrt_edges": {
+                                "colour": [
+                                    0.1,
+                                    0.8,
+                                    0.1,
+                                    0.4
+                                ],
+                                "visible": true
+                            },
+                            "rrt_star_edge": {
+                                "colour": [
+                                    0.1,
+                                    0.5,
+                                    0.7,
+                                    0.6
+                                ],
+                                "visible": true
+                            },
+                            "rrt_star_goal": {
+                                "colour": [
+                                    0.8,
+                                    0.1,
+                                    0.1,
+                                    0.9
+                                ],
+                                "visible": true
+                            },
+                            "rrt_star_vertex": {
+                                "colour": [
+                                    0,
+                                    0,
+                                    1,
+                                    1.0
+                                ],
+                                "visible": true
+                            },
+                            "rrt_star_vertices": {
+                                "colour": [
+                                    0.1,
+                                    0.6,
+                                    0.1,
+                                    0.8
+                                ],
+                                "visible": true
+                            },
+                            "rrt_tree_edge": {
+                                "colour": [
+                                    0.0,
+                                    0.7,
+                                    0.7,
+                                    0.6
+                                ],
+                                "visible": true
+                            },
+                            "rrt_vertices": {
+                                "colour": [
+                                    0.1,
+                                    0.55,
+                                    0.1,
+                                    0.8
+                                ],
+                                "visible": true
+                            },
+                            "rrt_visited": {
+                                "colour": [
+                                    0.5,
+                                    0.5,
+                                    1.0,
+                                    0.3
+                                ],
+                                "visible": true
+                            },
+                            "sampled_vertices": {
+                                "colour": [
+                                    0.2,
+                                    0.2,
+                                    0.7,
+                                    0.7
+                                ],
+                                "visible": true
+                            },
+                            "samples": {
+                                "colour": [
+                                    0.2,
+                                    0.2,
+                                    0.8,
+                                    0.4
+                                ],
+                                "visible": true
+                            },
+                            "smooth_path": {
+                                "colour": [
+                                    0.1,
+                                    0.8,
+                                    0.1,
+                                    0.9
+                                ],
+                                "visible": true
+                            },
+                            "tree edges": {
+                                "colour": [
+                                    0.15,
+                                    0.6,
+                                    0.15,
+                                    0.8
+                                ],
+                                "visible": true
+                            },
+                            "tree max": {
+                                "colour": [
+                                    0,
+                                    0,
+                                    1,
+                                    1.0
+                                ],
+                                "visible": true
+                            },
+                            "tree min": {
+                                "colour": [
+                                    0.0,
+                                    0.5,
+                                    0.5,
+                                    0.2
+                                ],
+                                "visible": true
+                            },
+                            "tree nodes": {
+                                "colour": [
+                                    0.1,
+                                    0.5,
+                                    0.1,
+                                    0.7
+                                ],
+                                "visible": true
+                            },
+                            "tree_edge": {
+                                "colour": [
+                                    0.1,
+                                    0.3,
+                                    0.1,
+                                    0.5
+                                ],
+                                "visible": true
+                            },
+                            "tree_edges": {
+                                "colour": [
+                                    0.7,
+                                    0.2,
+                                    0.2,
+                                    0.5
+                                ],
+                                "visible": true
+                            },
+                            "tree_node": {
+                                "colour": [
+                                    0.1,
+                                    0.6,
+                                    0.1,
+                                    0.8
+                                ],
+                                "visible": true
+                            },
+                            "vertex": {
+                                "colour": [
+                                    0.1,
+                                    0.6,
+                                    0.1,
+                                    0.5
+                                ],
+                                "visible": true
+                            },
+                            "vertices": {
+                                "colour": [
+                                    0,
+                                    0,
+                                    1,
+                                    1.0
+                                ],
+                                "visible": true
+                            },
                             "visited": {
                                 "colour": [
                                     0.19,
                                     0.19,
                                     0.2,
                                     0.8
+                                ],
+                                "visible": true
+                            },
+                            "visited nodes": {
+                                "colour": [
+                                    0.2,
+                                    0.6,
+                                    0.8,
+                                    0.5
                                 ],
                                 "visible": true
                             }
@@ -37,6 +360,42 @@
                     },
                     {
                         "colours": {
+                            "Final path": {
+                                "colour": [
+                                    0.9,
+                                    0.1,
+                                    0.1,
+                                    0.9
+                                ],
+                                "visible": true
+                            },
+                            "Tree edges": {
+                                "colour": [
+                                    0.1,
+                                    0.7,
+                                    0.1,
+                                    0.8
+                                ],
+                                "visible": true
+                            },
+                            "edge": {
+                                "colour": [
+                                    0.0,
+                                    0.4,
+                                    0.8,
+                                    0.3
+                                ],
+                                "visible": true
+                            },
+                            "edges": {
+                                "colour": [
+                                    0.2,
+                                    0.7,
+                                    0.2,
+                                    0.7
+                                ],
+                                "visible": true
+                            },
                             "explored max": {
                                 "colour": [
                                     0,
@@ -55,12 +414,299 @@
                                 ],
                                 "visible": true
                             },
+                            "final path": {
+                                "colour": [
+                                    1,
+                                    0,
+                                    0,
+                                    0.9
+                                ],
+                                "visible": true
+                            },
+                            "forest nodes": {
+                                "colour": [
+                                    0.1,
+                                    0.6,
+                                    0.2,
+                                    0.7
+                                ],
+                                "visible": true
+                            },
+                            "goal vertex": {
+                                "colour": [
+                                    0.8,
+                                    0.2,
+                                    0.2,
+                                    0.9
+                                ],
+                                "visible": true
+                            },
+                            "graph edge": {
+                                "colour": [
+                                    1,
+                                    0,
+                                    0,
+                                    1.0
+                                ],
+                                "visible": true
+                            },
+                            "graph node": {
+                                "colour": [
+                                    1,
+                                    0,
+                                    0,
+                                    1.0
+                                ],
+                                "visible": true
+                            },
+                            "path": {
+                                "colour": [
+                                    0.8,
+                                    0.1,
+                                    0.1,
+                                    0.8
+                                ],
+                                "visible": true
+                            },
+                            "path_points": {
+                                "colour": [
+                                    0,
+                                    1,
+                                    0
+                                ],
+                                "visible": true
+                            },
+                            "pathplanning explored": {
+                                "colour": [
+                                    0.1,
+                                    0.7,
+                                    0.3,
+                                    0.6
+                                ],
+                                "visible": true
+                            },
+                            "pathplanning path": {
+                                "colour": [
+                                    0.7,
+                                    0.1,
+                                    0.1,
+                                    0.8
+                                ],
+                                "visible": true
+                            },
+                            "rrt* edge": {
+                                "colour": [
+                                    0.2,
+                                    0.2,
+                                    0.7,
+                                    0.7
+                                ],
+                                "visible": true
+                            },
+                            "rrt* vertex": {
+                                "colour": [
+                                    0.2,
+                                    0.6,
+                                    0.2,
+                                    0.8
+                                ],
+                                "visible": true
+                            },
+                            "rrt_edges": {
+                                "colour": [
+                                    0.1,
+                                    0.8,
+                                    0.1,
+                                    0.4
+                                ],
+                                "visible": true
+                            },
+                            "rrt_star_edge": {
+                                "colour": [
+                                    0.1,
+                                    0.5,
+                                    0.7,
+                                    0.6
+                                ],
+                                "visible": true
+                            },
+                            "rrt_star_goal": {
+                                "colour": [
+                                    0.8,
+                                    0.1,
+                                    0.1,
+                                    0.9
+                                ],
+                                "visible": true
+                            },
+                            "rrt_star_vertex": {
+                                "colour": [
+                                    0,
+                                    0,
+                                    1,
+                                    1.0
+                                ],
+                                "visible": true
+                            },
+                            "rrt_star_vertices": {
+                                "colour": [
+                                    0.1,
+                                    0.6,
+                                    0.1,
+                                    0.8
+                                ],
+                                "visible": true
+                            },
+                            "rrt_tree_edge": {
+                                "colour": [
+                                    0.0,
+                                    0.7,
+                                    0.7,
+                                    0.6
+                                ],
+                                "visible": true
+                            },
+                            "rrt_vertices": {
+                                "colour": [
+                                    0.1,
+                                    0.55,
+                                    0.1,
+                                    0.8
+                                ],
+                                "visible": true
+                            },
+                            "rrt_visited": {
+                                "colour": [
+                                    0.5,
+                                    0.5,
+                                    1.0,
+                                    0.3
+                                ],
+                                "visible": true
+                            },
+                            "sampled_vertices": {
+                                "colour": [
+                                    0.2,
+                                    0.2,
+                                    0.7,
+                                    0.7
+                                ],
+                                "visible": true
+                            },
+                            "samples": {
+                                "colour": [
+                                    0.2,
+                                    0.2,
+                                    0.8,
+                                    0.4
+                                ],
+                                "visible": true
+                            },
+                            "smooth_path": {
+                                "colour": [
+                                    0.1,
+                                    0.8,
+                                    0.1,
+                                    0.9
+                                ],
+                                "visible": true
+                            },
+                            "tree edges": {
+                                "colour": [
+                                    0.15,
+                                    0.6,
+                                    0.15,
+                                    0.8
+                                ],
+                                "visible": true
+                            },
+                            "tree max": {
+                                "colour": [
+                                    0,
+                                    0,
+                                    1,
+                                    1.0
+                                ],
+                                "visible": true
+                            },
+                            "tree min": {
+                                "colour": [
+                                    0.0,
+                                    0.5,
+                                    0.5,
+                                    0.2
+                                ],
+                                "visible": true
+                            },
+                            "tree nodes": {
+                                "colour": [
+                                    0.1,
+                                    0.5,
+                                    0.1,
+                                    0.7
+                                ],
+                                "visible": true
+                            },
+                            "tree_edge": {
+                                "colour": [
+                                    0.1,
+                                    0.3,
+                                    0.1,
+                                    0.5
+                                ],
+                                "visible": true
+                            },
+                            "tree_edges": {
+                                "colour": [
+                                    0.7,
+                                    0.2,
+                                    0.2,
+                                    0.5
+                                ],
+                                "visible": true
+                            },
+                            "tree_node": {
+                                "colour": [
+                                    0.1,
+                                    0.6,
+                                    0.1,
+                                    0.8
+                                ],
+                                "visible": true
+                            },
+                            "vertex": {
+                                "colour": [
+                                    0.1,
+                                    0.6,
+                                    0.1,
+                                    0.5
+                                ],
+                                "visible": true
+                            },
+                            "vertices": {
+                                "colour": [
+                                    0,
+                                    0,
+                                    1,
+                                    1.0
+                                ],
+                                "visible": true
+                            },
                             "visited": {
                                 "colour": [
                                     0.19,
                                     0.19,
                                     0.2,
                                     0.8
+                                ],
+                                "visible": true
+                            },
+                            "visited nodes": {
+                                "colour": [
+                                    0.2,
+                                    0.6,
+                                    0.8,
+                                    0.5
                                 ],
                                 "visible": true
                             }
@@ -68,6 +714,42 @@
                     },
                     {
                         "colours": {
+                            "Final path": {
+                                "colour": [
+                                    0.9,
+                                    0.1,
+                                    0.1,
+                                    0.9
+                                ],
+                                "visible": true
+                            },
+                            "Tree edges": {
+                                "colour": [
+                                    0.1,
+                                    0.7,
+                                    0.1,
+                                    0.8
+                                ],
+                                "visible": true
+                            },
+                            "edge": {
+                                "colour": [
+                                    0.0,
+                                    0.4,
+                                    0.8,
+                                    0.3
+                                ],
+                                "visible": true
+                            },
+                            "edges": {
+                                "colour": [
+                                    0.2,
+                                    0.7,
+                                    0.2,
+                                    0.7
+                                ],
+                                "visible": true
+                            },
                             "explored max": {
                                 "colour": [
                                     0,
@@ -86,12 +768,299 @@
                                 ],
                                 "visible": true
                             },
+                            "final path": {
+                                "colour": [
+                                    1,
+                                    0,
+                                    0,
+                                    0.9
+                                ],
+                                "visible": true
+                            },
+                            "forest nodes": {
+                                "colour": [
+                                    0.1,
+                                    0.6,
+                                    0.2,
+                                    0.7
+                                ],
+                                "visible": true
+                            },
+                            "goal vertex": {
+                                "colour": [
+                                    0.8,
+                                    0.2,
+                                    0.2,
+                                    0.9
+                                ],
+                                "visible": true
+                            },
+                            "graph edge": {
+                                "colour": [
+                                    1,
+                                    0,
+                                    0,
+                                    1.0
+                                ],
+                                "visible": true
+                            },
+                            "graph node": {
+                                "colour": [
+                                    1,
+                                    0,
+                                    0,
+                                    1.0
+                                ],
+                                "visible": true
+                            },
+                            "path": {
+                                "colour": [
+                                    0.8,
+                                    0.1,
+                                    0.1,
+                                    0.8
+                                ],
+                                "visible": true
+                            },
+                            "path_points": {
+                                "colour": [
+                                    0,
+                                    1,
+                                    0
+                                ],
+                                "visible": true
+                            },
+                            "pathplanning explored": {
+                                "colour": [
+                                    0.1,
+                                    0.7,
+                                    0.3,
+                                    0.6
+                                ],
+                                "visible": true
+                            },
+                            "pathplanning path": {
+                                "colour": [
+                                    0.7,
+                                    0.1,
+                                    0.1,
+                                    0.8
+                                ],
+                                "visible": true
+                            },
+                            "rrt* edge": {
+                                "colour": [
+                                    0.2,
+                                    0.2,
+                                    0.7,
+                                    0.7
+                                ],
+                                "visible": true
+                            },
+                            "rrt* vertex": {
+                                "colour": [
+                                    0.2,
+                                    0.6,
+                                    0.2,
+                                    0.8
+                                ],
+                                "visible": true
+                            },
+                            "rrt_edges": {
+                                "colour": [
+                                    0.1,
+                                    0.8,
+                                    0.1,
+                                    0.4
+                                ],
+                                "visible": true
+                            },
+                            "rrt_star_edge": {
+                                "colour": [
+                                    0.1,
+                                    0.5,
+                                    0.7,
+                                    0.6
+                                ],
+                                "visible": true
+                            },
+                            "rrt_star_goal": {
+                                "colour": [
+                                    0.8,
+                                    0.1,
+                                    0.1,
+                                    0.9
+                                ],
+                                "visible": true
+                            },
+                            "rrt_star_vertex": {
+                                "colour": [
+                                    0,
+                                    0,
+                                    1,
+                                    1.0
+                                ],
+                                "visible": true
+                            },
+                            "rrt_star_vertices": {
+                                "colour": [
+                                    0.1,
+                                    0.6,
+                                    0.1,
+                                    0.8
+                                ],
+                                "visible": true
+                            },
+                            "rrt_tree_edge": {
+                                "colour": [
+                                    0.0,
+                                    0.7,
+                                    0.7,
+                                    0.6
+                                ],
+                                "visible": true
+                            },
+                            "rrt_vertices": {
+                                "colour": [
+                                    0.1,
+                                    0.55,
+                                    0.1,
+                                    0.8
+                                ],
+                                "visible": true
+                            },
+                            "rrt_visited": {
+                                "colour": [
+                                    0.5,
+                                    0.5,
+                                    1.0,
+                                    0.3
+                                ],
+                                "visible": true
+                            },
+                            "sampled_vertices": {
+                                "colour": [
+                                    0.2,
+                                    0.2,
+                                    0.7,
+                                    0.7
+                                ],
+                                "visible": true
+                            },
+                            "samples": {
+                                "colour": [
+                                    0.2,
+                                    0.2,
+                                    0.8,
+                                    0.4
+                                ],
+                                "visible": true
+                            },
+                            "smooth_path": {
+                                "colour": [
+                                    0.1,
+                                    0.8,
+                                    0.1,
+                                    0.9
+                                ],
+                                "visible": true
+                            },
+                            "tree edges": {
+                                "colour": [
+                                    0.15,
+                                    0.6,
+                                    0.15,
+                                    0.8
+                                ],
+                                "visible": true
+                            },
+                            "tree max": {
+                                "colour": [
+                                    0,
+                                    0,
+                                    1,
+                                    1.0
+                                ],
+                                "visible": true
+                            },
+                            "tree min": {
+                                "colour": [
+                                    0.0,
+                                    0.5,
+                                    0.5,
+                                    0.2
+                                ],
+                                "visible": true
+                            },
+                            "tree nodes": {
+                                "colour": [
+                                    0.1,
+                                    0.5,
+                                    0.1,
+                                    0.7
+                                ],
+                                "visible": true
+                            },
+                            "tree_edge": {
+                                "colour": [
+                                    0.1,
+                                    0.3,
+                                    0.1,
+                                    0.5
+                                ],
+                                "visible": true
+                            },
+                            "tree_edges": {
+                                "colour": [
+                                    0.7,
+                                    0.2,
+                                    0.2,
+                                    0.5
+                                ],
+                                "visible": true
+                            },
+                            "tree_node": {
+                                "colour": [
+                                    0.1,
+                                    0.6,
+                                    0.1,
+                                    0.8
+                                ],
+                                "visible": true
+                            },
+                            "vertex": {
+                                "colour": [
+                                    0.1,
+                                    0.6,
+                                    0.1,
+                                    0.5
+                                ],
+                                "visible": true
+                            },
+                            "vertices": {
+                                "colour": [
+                                    0,
+                                    0,
+                                    1,
+                                    1.0
+                                ],
+                                "visible": true
+                            },
                             "visited": {
                                 "colour": [
                                     0.19,
                                     0.19,
                                     0.2,
                                     0.8
+                                ],
+                                "visible": true
+                            },
+                            "visited nodes": {
+                                "colour": [
+                                    0.2,
+                                    0.6,
+                                    0.8,
+                                    0.5
                                 ],
                                 "visible": true
                             }
@@ -99,6 +1068,42 @@
                     },
                     {
                         "colours": {
+                            "Final path": {
+                                "colour": [
+                                    0.9,
+                                    0.1,
+                                    0.1,
+                                    0.9
+                                ],
+                                "visible": true
+                            },
+                            "Tree edges": {
+                                "colour": [
+                                    0.1,
+                                    0.7,
+                                    0.1,
+                                    0.8
+                                ],
+                                "visible": true
+                            },
+                            "edge": {
+                                "colour": [
+                                    0.0,
+                                    0.4,
+                                    0.8,
+                                    0.3
+                                ],
+                                "visible": true
+                            },
+                            "edges": {
+                                "colour": [
+                                    0.2,
+                                    0.7,
+                                    0.2,
+                                    0.7
+                                ],
+                                "visible": true
+                            },
                             "explored max": {
                                 "colour": [
                                     0,
@@ -117,12 +1122,299 @@
                                 ],
                                 "visible": true
                             },
+                            "final path": {
+                                "colour": [
+                                    1,
+                                    0,
+                                    0,
+                                    0.9
+                                ],
+                                "visible": true
+                            },
+                            "forest nodes": {
+                                "colour": [
+                                    0.1,
+                                    0.6,
+                                    0.2,
+                                    0.7
+                                ],
+                                "visible": true
+                            },
+                            "goal vertex": {
+                                "colour": [
+                                    0.8,
+                                    0.2,
+                                    0.2,
+                                    0.9
+                                ],
+                                "visible": true
+                            },
+                            "graph edge": {
+                                "colour": [
+                                    1,
+                                    0,
+                                    0,
+                                    1.0
+                                ],
+                                "visible": true
+                            },
+                            "graph node": {
+                                "colour": [
+                                    1,
+                                    0,
+                                    0,
+                                    1.0
+                                ],
+                                "visible": true
+                            },
+                            "path": {
+                                "colour": [
+                                    0.8,
+                                    0.1,
+                                    0.1,
+                                    0.8
+                                ],
+                                "visible": true
+                            },
+                            "path_points": {
+                                "colour": [
+                                    0,
+                                    1,
+                                    0
+                                ],
+                                "visible": true
+                            },
+                            "pathplanning explored": {
+                                "colour": [
+                                    0.1,
+                                    0.7,
+                                    0.3,
+                                    0.6
+                                ],
+                                "visible": true
+                            },
+                            "pathplanning path": {
+                                "colour": [
+                                    0.7,
+                                    0.1,
+                                    0.1,
+                                    0.8
+                                ],
+                                "visible": true
+                            },
+                            "rrt* edge": {
+                                "colour": [
+                                    0.2,
+                                    0.2,
+                                    0.7,
+                                    0.7
+                                ],
+                                "visible": true
+                            },
+                            "rrt* vertex": {
+                                "colour": [
+                                    0.2,
+                                    0.6,
+                                    0.2,
+                                    0.8
+                                ],
+                                "visible": true
+                            },
+                            "rrt_edges": {
+                                "colour": [
+                                    0.1,
+                                    0.8,
+                                    0.1,
+                                    0.4
+                                ],
+                                "visible": true
+                            },
+                            "rrt_star_edge": {
+                                "colour": [
+                                    0.1,
+                                    0.5,
+                                    0.7,
+                                    0.6
+                                ],
+                                "visible": true
+                            },
+                            "rrt_star_goal": {
+                                "colour": [
+                                    0.8,
+                                    0.1,
+                                    0.1,
+                                    0.9
+                                ],
+                                "visible": true
+                            },
+                            "rrt_star_vertex": {
+                                "colour": [
+                                    0,
+                                    0,
+                                    1,
+                                    1.0
+                                ],
+                                "visible": true
+                            },
+                            "rrt_star_vertices": {
+                                "colour": [
+                                    0.1,
+                                    0.6,
+                                    0.1,
+                                    0.8
+                                ],
+                                "visible": true
+                            },
+                            "rrt_tree_edge": {
+                                "colour": [
+                                    0.0,
+                                    0.7,
+                                    0.7,
+                                    0.6
+                                ],
+                                "visible": true
+                            },
+                            "rrt_vertices": {
+                                "colour": [
+                                    0.1,
+                                    0.55,
+                                    0.1,
+                                    0.8
+                                ],
+                                "visible": true
+                            },
+                            "rrt_visited": {
+                                "colour": [
+                                    0.5,
+                                    0.5,
+                                    1.0,
+                                    0.3
+                                ],
+                                "visible": true
+                            },
+                            "sampled_vertices": {
+                                "colour": [
+                                    0.2,
+                                    0.2,
+                                    0.7,
+                                    0.7
+                                ],
+                                "visible": true
+                            },
+                            "samples": {
+                                "colour": [
+                                    0.2,
+                                    0.2,
+                                    0.8,
+                                    0.4
+                                ],
+                                "visible": true
+                            },
+                            "smooth_path": {
+                                "colour": [
+                                    0.1,
+                                    0.8,
+                                    0.1,
+                                    0.9
+                                ],
+                                "visible": true
+                            },
+                            "tree edges": {
+                                "colour": [
+                                    0.15,
+                                    0.6,
+                                    0.15,
+                                    0.8
+                                ],
+                                "visible": true
+                            },
+                            "tree max": {
+                                "colour": [
+                                    0,
+                                    0,
+                                    1,
+                                    1.0
+                                ],
+                                "visible": true
+                            },
+                            "tree min": {
+                                "colour": [
+                                    0.0,
+                                    0.5,
+                                    0.5,
+                                    0.2
+                                ],
+                                "visible": true
+                            },
+                            "tree nodes": {
+                                "colour": [
+                                    0.1,
+                                    0.5,
+                                    0.1,
+                                    0.7
+                                ],
+                                "visible": true
+                            },
+                            "tree_edge": {
+                                "colour": [
+                                    0.1,
+                                    0.3,
+                                    0.1,
+                                    0.5
+                                ],
+                                "visible": true
+                            },
+                            "tree_edges": {
+                                "colour": [
+                                    0.7,
+                                    0.2,
+                                    0.2,
+                                    0.5
+                                ],
+                                "visible": true
+                            },
+                            "tree_node": {
+                                "colour": [
+                                    0.1,
+                                    0.6,
+                                    0.1,
+                                    0.8
+                                ],
+                                "visible": true
+                            },
+                            "vertex": {
+                                "colour": [
+                                    0.1,
+                                    0.6,
+                                    0.1,
+                                    0.5
+                                ],
+                                "visible": true
+                            },
+                            "vertices": {
+                                "colour": [
+                                    0,
+                                    0,
+                                    1,
+                                    1.0
+                                ],
+                                "visible": true
+                            },
                             "visited": {
                                 "colour": [
                                     0.19,
                                     0.19,
                                     0.2,
                                     0.8
+                                ],
+                                "visible": true
+                            },
+                            "visited nodes": {
+                                "colour": [
+                                    0.2,
+                                    0.6,
+                                    0.8,
+                                    0.5
                                 ],
                                 "visible": true
                             }
@@ -130,6 +1422,42 @@
                     },
                     {
                         "colours": {
+                            "Final path": {
+                                "colour": [
+                                    0.9,
+                                    0.1,
+                                    0.1,
+                                    0.9
+                                ],
+                                "visible": true
+                            },
+                            "Tree edges": {
+                                "colour": [
+                                    0.1,
+                                    0.7,
+                                    0.1,
+                                    0.8
+                                ],
+                                "visible": true
+                            },
+                            "edge": {
+                                "colour": [
+                                    0.0,
+                                    0.4,
+                                    0.8,
+                                    0.3
+                                ],
+                                "visible": true
+                            },
+                            "edges": {
+                                "colour": [
+                                    0.2,
+                                    0.7,
+                                    0.2,
+                                    0.7
+                                ],
+                                "visible": true
+                            },
                             "explored max": {
                                 "colour": [
                                     0,
@@ -148,12 +1476,299 @@
                                 ],
                                 "visible": true
                             },
+                            "final path": {
+                                "colour": [
+                                    1,
+                                    0,
+                                    0,
+                                    0.9
+                                ],
+                                "visible": true
+                            },
+                            "forest nodes": {
+                                "colour": [
+                                    0.1,
+                                    0.6,
+                                    0.2,
+                                    0.7
+                                ],
+                                "visible": true
+                            },
+                            "goal vertex": {
+                                "colour": [
+                                    0.8,
+                                    0.2,
+                                    0.2,
+                                    0.9
+                                ],
+                                "visible": true
+                            },
+                            "graph edge": {
+                                "colour": [
+                                    1,
+                                    0,
+                                    0,
+                                    1.0
+                                ],
+                                "visible": true
+                            },
+                            "graph node": {
+                                "colour": [
+                                    1,
+                                    0,
+                                    0,
+                                    1.0
+                                ],
+                                "visible": true
+                            },
+                            "path": {
+                                "colour": [
+                                    0.8,
+                                    0.1,
+                                    0.1,
+                                    0.8
+                                ],
+                                "visible": true
+                            },
+                            "path_points": {
+                                "colour": [
+                                    0,
+                                    1,
+                                    0
+                                ],
+                                "visible": true
+                            },
+                            "pathplanning explored": {
+                                "colour": [
+                                    0.1,
+                                    0.7,
+                                    0.3,
+                                    0.6
+                                ],
+                                "visible": true
+                            },
+                            "pathplanning path": {
+                                "colour": [
+                                    0.7,
+                                    0.1,
+                                    0.1,
+                                    0.8
+                                ],
+                                "visible": true
+                            },
+                            "rrt* edge": {
+                                "colour": [
+                                    0.2,
+                                    0.2,
+                                    0.7,
+                                    0.7
+                                ],
+                                "visible": true
+                            },
+                            "rrt* vertex": {
+                                "colour": [
+                                    0.2,
+                                    0.6,
+                                    0.2,
+                                    0.8
+                                ],
+                                "visible": true
+                            },
+                            "rrt_edges": {
+                                "colour": [
+                                    0.1,
+                                    0.8,
+                                    0.1,
+                                    0.4
+                                ],
+                                "visible": true
+                            },
+                            "rrt_star_edge": {
+                                "colour": [
+                                    0.1,
+                                    0.5,
+                                    0.7,
+                                    0.6
+                                ],
+                                "visible": true
+                            },
+                            "rrt_star_goal": {
+                                "colour": [
+                                    0.8,
+                                    0.1,
+                                    0.1,
+                                    0.9
+                                ],
+                                "visible": true
+                            },
+                            "rrt_star_vertex": {
+                                "colour": [
+                                    0,
+                                    0,
+                                    1,
+                                    1.0
+                                ],
+                                "visible": true
+                            },
+                            "rrt_star_vertices": {
+                                "colour": [
+                                    0.1,
+                                    0.6,
+                                    0.1,
+                                    0.8
+                                ],
+                                "visible": true
+                            },
+                            "rrt_tree_edge": {
+                                "colour": [
+                                    0.0,
+                                    0.7,
+                                    0.7,
+                                    0.6
+                                ],
+                                "visible": true
+                            },
+                            "rrt_vertices": {
+                                "colour": [
+                                    0.1,
+                                    0.55,
+                                    0.1,
+                                    0.8
+                                ],
+                                "visible": true
+                            },
+                            "rrt_visited": {
+                                "colour": [
+                                    0.5,
+                                    0.5,
+                                    1.0,
+                                    0.3
+                                ],
+                                "visible": true
+                            },
+                            "sampled_vertices": {
+                                "colour": [
+                                    0.2,
+                                    0.2,
+                                    0.7,
+                                    0.7
+                                ],
+                                "visible": true
+                            },
+                            "samples": {
+                                "colour": [
+                                    0.2,
+                                    0.2,
+                                    0.8,
+                                    0.4
+                                ],
+                                "visible": true
+                            },
+                            "smooth_path": {
+                                "colour": [
+                                    0.1,
+                                    0.8,
+                                    0.1,
+                                    0.9
+                                ],
+                                "visible": true
+                            },
+                            "tree edges": {
+                                "colour": [
+                                    0.15,
+                                    0.6,
+                                    0.15,
+                                    0.8
+                                ],
+                                "visible": true
+                            },
+                            "tree max": {
+                                "colour": [
+                                    0,
+                                    0,
+                                    1,
+                                    1.0
+                                ],
+                                "visible": true
+                            },
+                            "tree min": {
+                                "colour": [
+                                    0.0,
+                                    0.5,
+                                    0.5,
+                                    0.2
+                                ],
+                                "visible": true
+                            },
+                            "tree nodes": {
+                                "colour": [
+                                    0.1,
+                                    0.5,
+                                    0.1,
+                                    0.7
+                                ],
+                                "visible": true
+                            },
+                            "tree_edge": {
+                                "colour": [
+                                    0.1,
+                                    0.3,
+                                    0.1,
+                                    0.5
+                                ],
+                                "visible": true
+                            },
+                            "tree_edges": {
+                                "colour": [
+                                    0.7,
+                                    0.2,
+                                    0.2,
+                                    0.5
+                                ],
+                                "visible": true
+                            },
+                            "tree_node": {
+                                "colour": [
+                                    0.1,
+                                    0.6,
+                                    0.1,
+                                    0.8
+                                ],
+                                "visible": true
+                            },
+                            "vertex": {
+                                "colour": [
+                                    0.1,
+                                    0.6,
+                                    0.1,
+                                    0.5
+                                ],
+                                "visible": true
+                            },
+                            "vertices": {
+                                "colour": [
+                                    0,
+                                    0,
+                                    1,
+                                    1.0
+                                ],
+                                "visible": true
+                            },
                             "visited": {
                                 "colour": [
                                     0.19,
                                     0.19,
                                     0.2,
                                     0.8
+                                ],
+                                "visible": true
+                            },
+                            "visited nodes": {
+                                "colour": [
+                                    0.2,
+                                    0.6,
+                                    0.8,
+                                    0.5
                                 ],
                                 "visible": true
                             }
@@ -161,6 +1776,42 @@
                     },
                     {
                         "colours": {
+                            "Final path": {
+                                "colour": [
+                                    0.9,
+                                    0.1,
+                                    0.1,
+                                    0.9
+                                ],
+                                "visible": true
+                            },
+                            "Tree edges": {
+                                "colour": [
+                                    0.1,
+                                    0.7,
+                                    0.1,
+                                    0.8
+                                ],
+                                "visible": true
+                            },
+                            "edge": {
+                                "colour": [
+                                    0.0,
+                                    0.4,
+                                    0.8,
+                                    0.3
+                                ],
+                                "visible": true
+                            },
+                            "edges": {
+                                "colour": [
+                                    0.2,
+                                    0.7,
+                                    0.2,
+                                    0.7
+                                ],
+                                "visible": true
+                            },
                             "explored max": {
                                 "colour": [
                                     0,
@@ -179,12 +1830,299 @@
                                 ],
                                 "visible": true
                             },
+                            "final path": {
+                                "colour": [
+                                    1,
+                                    0,
+                                    0,
+                                    0.9
+                                ],
+                                "visible": true
+                            },
+                            "forest nodes": {
+                                "colour": [
+                                    0.1,
+                                    0.6,
+                                    0.2,
+                                    0.7
+                                ],
+                                "visible": true
+                            },
+                            "goal vertex": {
+                                "colour": [
+                                    0.8,
+                                    0.2,
+                                    0.2,
+                                    0.9
+                                ],
+                                "visible": true
+                            },
+                            "graph edge": {
+                                "colour": [
+                                    1,
+                                    0,
+                                    0,
+                                    1.0
+                                ],
+                                "visible": true
+                            },
+                            "graph node": {
+                                "colour": [
+                                    1,
+                                    0,
+                                    0,
+                                    1.0
+                                ],
+                                "visible": true
+                            },
+                            "path": {
+                                "colour": [
+                                    0.8,
+                                    0.1,
+                                    0.1,
+                                    0.8
+                                ],
+                                "visible": true
+                            },
+                            "path_points": {
+                                "colour": [
+                                    0,
+                                    1,
+                                    0
+                                ],
+                                "visible": true
+                            },
+                            "pathplanning explored": {
+                                "colour": [
+                                    0.1,
+                                    0.7,
+                                    0.3,
+                                    0.6
+                                ],
+                                "visible": true
+                            },
+                            "pathplanning path": {
+                                "colour": [
+                                    0.7,
+                                    0.1,
+                                    0.1,
+                                    0.8
+                                ],
+                                "visible": true
+                            },
+                            "rrt* edge": {
+                                "colour": [
+                                    0.2,
+                                    0.2,
+                                    0.7,
+                                    0.7
+                                ],
+                                "visible": true
+                            },
+                            "rrt* vertex": {
+                                "colour": [
+                                    0.2,
+                                    0.6,
+                                    0.2,
+                                    0.8
+                                ],
+                                "visible": true
+                            },
+                            "rrt_edges": {
+                                "colour": [
+                                    0.1,
+                                    0.8,
+                                    0.1,
+                                    0.4
+                                ],
+                                "visible": true
+                            },
+                            "rrt_star_edge": {
+                                "colour": [
+                                    0.1,
+                                    0.5,
+                                    0.7,
+                                    0.6
+                                ],
+                                "visible": true
+                            },
+                            "rrt_star_goal": {
+                                "colour": [
+                                    0.8,
+                                    0.1,
+                                    0.1,
+                                    0.9
+                                ],
+                                "visible": true
+                            },
+                            "rrt_star_vertex": {
+                                "colour": [
+                                    0,
+                                    0,
+                                    1,
+                                    1.0
+                                ],
+                                "visible": true
+                            },
+                            "rrt_star_vertices": {
+                                "colour": [
+                                    0.1,
+                                    0.6,
+                                    0.1,
+                                    0.8
+                                ],
+                                "visible": true
+                            },
+                            "rrt_tree_edge": {
+                                "colour": [
+                                    0.0,
+                                    0.7,
+                                    0.7,
+                                    0.6
+                                ],
+                                "visible": true
+                            },
+                            "rrt_vertices": {
+                                "colour": [
+                                    0.1,
+                                    0.55,
+                                    0.1,
+                                    0.8
+                                ],
+                                "visible": true
+                            },
+                            "rrt_visited": {
+                                "colour": [
+                                    0.5,
+                                    0.5,
+                                    1.0,
+                                    0.3
+                                ],
+                                "visible": true
+                            },
+                            "sampled_vertices": {
+                                "colour": [
+                                    0.2,
+                                    0.2,
+                                    0.7,
+                                    0.7
+                                ],
+                                "visible": true
+                            },
+                            "samples": {
+                                "colour": [
+                                    0.2,
+                                    0.2,
+                                    0.8,
+                                    0.4
+                                ],
+                                "visible": true
+                            },
+                            "smooth_path": {
+                                "colour": [
+                                    0.1,
+                                    0.8,
+                                    0.1,
+                                    0.9
+                                ],
+                                "visible": true
+                            },
+                            "tree edges": {
+                                "colour": [
+                                    0.15,
+                                    0.6,
+                                    0.15,
+                                    0.8
+                                ],
+                                "visible": true
+                            },
+                            "tree max": {
+                                "colour": [
+                                    0,
+                                    0,
+                                    1,
+                                    1.0
+                                ],
+                                "visible": true
+                            },
+                            "tree min": {
+                                "colour": [
+                                    0.0,
+                                    0.5,
+                                    0.5,
+                                    0.2
+                                ],
+                                "visible": true
+                            },
+                            "tree nodes": {
+                                "colour": [
+                                    0.1,
+                                    0.5,
+                                    0.1,
+                                    0.7
+                                ],
+                                "visible": true
+                            },
+                            "tree_edge": {
+                                "colour": [
+                                    0.1,
+                                    0.3,
+                                    0.1,
+                                    0.5
+                                ],
+                                "visible": true
+                            },
+                            "tree_edges": {
+                                "colour": [
+                                    0.7,
+                                    0.2,
+                                    0.2,
+                                    0.5
+                                ],
+                                "visible": true
+                            },
+                            "tree_node": {
+                                "colour": [
+                                    0.1,
+                                    0.6,
+                                    0.1,
+                                    0.8
+                                ],
+                                "visible": true
+                            },
+                            "vertex": {
+                                "colour": [
+                                    0.1,
+                                    0.6,
+                                    0.1,
+                                    0.5
+                                ],
+                                "visible": true
+                            },
+                            "vertices": {
+                                "colour": [
+                                    0,
+                                    0,
+                                    1,
+                                    1.0
+                                ],
+                                "visible": true
+                            },
                             "visited": {
                                 "colour": [
                                     0.19,
                                     0.19,
                                     0.2,
                                     0.8
+                                ],
+                                "visible": true
+                            },
+                            "visited nodes": {
+                                "colour": [
+                                    0.2,
+                                    0.6,
+                                    0.8,
+                                    0.5
                                 ],
                                 "visible": true
                             }
