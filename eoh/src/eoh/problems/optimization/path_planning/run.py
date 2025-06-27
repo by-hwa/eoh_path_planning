@@ -4,6 +4,7 @@ from .prompts import GetPrompts
 import types
 import warnings
 import sys
+import traceback
 # sys.path.append('C:\Workspace\EoH_Path_planning')
 sys.path.append('C:\Workspace\PathBench\src')
 
@@ -225,7 +226,7 @@ from structures.heap import Heap
                     1.5 * res_proc["average_time_improvement"] + \
                     res_proc["average_smoothness_improvement"] + \
                     3 * res_proc["average_clearance_improvement"] + \
-                    2 *res_proc["average_memory_improvement"]
+                    2 * res_proc["average_memory_improvement"]
 
         return -fitness, res_proc
 
@@ -251,6 +252,7 @@ from structures.heap import Heap
         
         except Exception as e:
             print("Error:", str(e))
+            print("Traceback:", traceback.format_exc())
             return None
 
 

@@ -147,6 +147,8 @@ class InterfaceEC():
             print(f"Evolution operator [{operator}] has not been implemented ! \n") 
 
         return parents, offspring
+    
+    
 
 
     def get_offspring(self, pop, operator):
@@ -240,7 +242,7 @@ class InterfaceEC():
             results = Parallel(n_jobs=self.n_p,timeout=self.timeout+15)(delayed(self.get_offspring)(pop, operator) for _ in range(self.pop_size))
         except Exception as e:
             if self.debug:
-                print(f"Error: {traceback.format_exc()}")
+                print(f"Error in get_algorithm: {traceback.format_exc()}")
             print("Parallel time out .")
             
         time.sleep(2)

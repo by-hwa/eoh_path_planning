@@ -246,6 +246,9 @@ Please help us create a new algorithm with improved computing memory by modifyin
 
 
         return [code_all, algorithm]
+    
+    def _get_code(self, prompt_content):
+        pass # TODO
 
 
     def i1(self):

@@ -89,7 +89,8 @@ class Paras():
                 self.ec_operators = ['e1', 'e2', 'time', 'distance', 'smoothness', 'clearance', 'memory']
                 self.ec_operators = ['time', 'distance', 'smoothness', 'clearance', 'memory']
                 if self.get_initial:
-                    self.ref_algorithm = ['astar', 'rrt', 'sprm', 'rrt_star', 'rrt_connect']
+                    # self.ref_algorithm = ['astar', 'rrt', 'sprm', 'rrt_star', 'rrt_connect']
+                    self.ref_algorithm = ['rrt', 'sprm', 'rrt_star', 'rrt_connect']
 
         if self.ec_operator_weights == None:
             self.ec_operator_weights = [1 for _ in range(len(self.ec_operators))]
