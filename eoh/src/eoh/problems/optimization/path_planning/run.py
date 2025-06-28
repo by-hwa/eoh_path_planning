@@ -76,9 +76,9 @@ from structures.heap import Heap
             result = self.__run_simulation(grid, AStar, AStarTesting, ([], {}))
             results.append(result)
 
-        synthesis_results = self.__get_results(results)
+        # synthesis_results = self.__get_results(results)
 
-        return synthesis_results
+        return results
     
     def __get_improvement_result(self, res_proc, a_star_res_proc):
         def __get_improvement(val, against, low_is_better=True):
