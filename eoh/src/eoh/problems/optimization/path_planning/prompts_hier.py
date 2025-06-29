@@ -61,6 +61,81 @@ class GetPrompts():
 
         self.prompt_inout_inf = ""
         self.prompt_other_inf = "A Python class implementing an improved path planner named `PathPlanning`."
+
+        self.helper_funtion = '''
+from algorithms.classic.sample_based.core.vertex import Vertex
+from algorithms.classic.sample_based.core.graph import gen_forest, Forest
+
+    start_vertex = Vertex(self._get_grid().agent.position)
+    start_vertex.cost = 0
+    goal_vertex = Vertex(self._get_grid().goal.position)
+
+    self._graph = gen_forest(self._services, start_vertex, goal_vertex, [])
+
+    def _extend(self, root_vertex: Vertex, q: Point) -> str:
+            self._q_near: Vertex = self._get_nearest_vertex(root_vertex, q)
+            self._q_new: Vertex = self._get_new_vertex(self._q_near, q, self._max_dist)
+            if self._get_grid().is_valid_line_sequence(self._get_grid().get_line_sequence(self._q_near.position, self._q_new.position)):
+                self._graph.add_edge(self._q_near, self._q_new)
+                if self._q_new.position == q:
+                    return 'reached'
+                else:
+                    return 'advanced'
+            return 'trapped'
+
+    def _connect(self, root_vertex: Vertex, q: Vertex) -> str:
+        S = 'advanced'
+        while S == 'advanced':
+            S = self._extend(root_vertex, q.position)
+        self._mid_vertex = q
+        return S
+
+    def _extract_path(self):
+
+        # trace back
+        path_mid_to_b: List[Vertex] = [self._q_new]
+
+        while len(path_mid_to_b[-1].parents) != 0:
+            for parent in path_mid_to_b[-1].parents:
+                path_mid_to_b.append(parent)
+                break
+
+        path_a_to_mid: List[Vertex] = [self._extension_target]
+
+        while len(path_a_to_mid[-1].parents) != 0:
+            for parent in path_a_to_mid[-1].parents:
+                path_a_to_mid.append(parent)
+                break
+
+        path_a_to_mid.reverse()
+        path = path_a_to_mid + path_mid_to_b
+
+        if self._graph.root_vertices[0] is self._graph.root_vertex_goal:
+            path.reverse()
+
+        for p in path:
+            self.move_agent(p.position)
+            self.key_frame(ignore_key_frame_skip=True)
+
+    def _get_random_sample(self) -> Point:
+        while True:
+            rand_pos = np.random.randint(0, self._get_grid().size, self._get_grid().size.n_dim)
+            sample: Point = Point(*rand_pos)
+            if self._get_grid().is_agent_valid_pos(sample):
+                return sample
+
+    def _get_nearest_vertex(self, graph_root_vertex: Vertex, q_sample: Point) -> Vertex:
+        return self._graph.get_nearest_vertex([graph_root_vertex], q_sample)
+
+    def _get_new_vertex(self, q_near: Vertex, q_sample: Point, max_dist) -> Vertex:
+        dir = q_sample.to_tensor() - q_near.position.to_tensor()
+        if torch.norm(dir) <= max_dist:
+            return Vertex(q_sample)
+
+        dir_normalized = dir / torch.norm(dir)
+        q_new = Point.from_tensor(q_near.position.to_tensor() + max_dist * dir_normalized)
+        return Vertex(q_new)
+'''
     def get_task(self):
         return self.prompt_task
     
@@ -88,3 +163,8 @@ class GetPrompts():
 
     def get_prior_knowledge(self):
         return
+    
+# prompt
+'''
+
+'''
