@@ -1,6 +1,7 @@
 import re
 import time
 from ...llm.interface_LLM import InterfaceLLM
+import ast
 class Evolution():
 
     def __init__(self, api_endpoint, api_key, model_LLM,llm_use_local,llm_local_url, debug_mode,prompts, **kwargs):
@@ -225,24 +226,40 @@ Please help us create a new algorithm with improved computing memory by modifyin
 + self.inherit_prompt + "\n" \
 + self.prompt_objective + "\n" + self.prompt_constraints + "\n" + "Do not give additional explanations."
         return prompt_content
+    
+    def extract_class_code(self, code: str, class_name: str) -> str:
+        module = ast.parse(code)
+        for node in module.body:
+            if isinstance(node, ast.ClassDef) and node.name == class_name:
+                start_line = node.lineno - 1  # ast uses 1-based indexing
+                end_line = node.end_lineno    # requires Python 3.8+
+                lines = code.splitlines()
+                return '\n'.join(lines[start_line:end_line])
+        return ""
 
 
     def _get_alg(self,prompt_content):
 
         response = self.interface_llm.get_response(prompt_content)
 
+        class_name = "PathPlanning"
+
         algorithm_match = re.search(r"\{(.*?)\}", response, re.DOTALL)
         algorithm = algorithm_match.group(1).strip() if algorithm_match else ""
 
-        code_match = re.search(r"\}\s*(.*)", response, re.DOTALL)
-        # code_match = re.search(r"\}\s*[\s\S]*?(?=(import|class|from))((?:import|class|from)[\s\S]*)", response)
-        code_match = re.search(r"\}\s*[\s\S]*?(?=(class PathPlanning))((?:class PathPlanning)[\s\S]*)", response)
+        code_match = re.search(r"```(?:python)?(.*?)```", response, re.DOTALL)
+        if code_match:
+            code = code_match.group(1).strip()
+        
+        code = self.extract_class_code(code, class_name)
 
-        code = code_match.group(2).strip() if code_match else ""
+        code = re.sub(r'([\'"]{3})\s*\{.*?\}\s*\1', '', code, flags=re.DOTALL)
 
-        if code.endswith("```"):
-            code = code[:-3].rstrip()
 
+        # print(">>> !!!!!!!!!!!!!!!!!!!check response : \n", response)
+        # print(">>> !!!!!!!!!!!!!!!!!!!check designed algorithm: \n", algorithm)
+        # print(">>> !!!!!!!!!!!!!!!!!!!check designed code: \n", code)
+        
         n_retry = 1
         while (len(algorithm) == 0 or len(code) == 0):
             if self.debug_mode:
@@ -250,12 +267,19 @@ Please help us create a new algorithm with improved computing memory by modifyin
 
             response = self.interface_llm.get_response(prompt_content)
 
+            class_name = "PathPlanning"
+
             algorithm_match = re.search(r"\{(.*?)\}", response, re.DOTALL)
             algorithm = algorithm_match.group(1).strip() if algorithm_match else ""
 
-            code_match = re.search(r"\}\s*(.*)", prompt_content, re.DOTALL)
-            code = code_match.group(1).strip() if code_match else ""
-                    
+            code_match = re.search(r"```(?:python)?(.*?)```", response, re.DOTALL)
+            if code_match:
+                code = code_match.group(1).strip()
+            
+            code = self.extract_class_code(code, class_name)
+
+            code = re.sub(r'([\'"]{3})\s*\{.*?\}\s*\1', '', code, flags=re.DOTALL)
+
             if n_retry > 3:
                 break
             n_retry +=1

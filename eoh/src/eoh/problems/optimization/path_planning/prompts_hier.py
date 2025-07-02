@@ -26,14 +26,15 @@ class GetPrompts():
     - Rewiring or optimization steps (e.g., RRT*)
     - Smoothed or shortcut path extraction
     - Early stopping criteria or dynamic iteration limits
-    ... and more you think.
+    - ... and more you think.
 '''
         self.constraints = '''
 ### Constraints:
+- A PYTHON CLASS IMPLEMENTING AN IMPROVED PATH PLANNING ALGORITHM NAMED `PathPlanning`.
 - Please write a brief description of the algorithm you generated.
-- The description must be inside a brace and placed at the very top of the code.
+- The description must be inside a brace and placed at the very top of the code, not in top of class.
 - Implement it in Python.
-- You do not need to declare the imports, as they are already provided in the codebase.
+- You DO NOT NEED to declare the any imports.
 - Your function must be named `_find_path_internal`.
 - You must reuse existing helper functions where applicable. If necessary, you may define or modify and use new helper functions to support the implementation.
 - It should work with existing components: `Forest`, `Point`, `Vertex`, etc.

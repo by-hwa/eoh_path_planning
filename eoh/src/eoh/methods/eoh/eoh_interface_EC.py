@@ -29,6 +29,19 @@ class InterfaceEC():
         
         self.timeout = timeout
         self.use_numba = use_numba
+
+    def convert_numpy(self, obj):
+        if isinstance(obj, np.ndarray):
+            return obj.tolist()
+        if isinstance(obj, (np.float32, np.float64)):
+            return float(obj)
+        if isinstance(obj, (np.int32, np.int64)):
+            return int(obj)
+        if isinstance(obj, dict):
+            return {k: self.convert_numpy(v) for k, v in obj.items()}
+        if isinstance(obj, list):
+            return [self.convert_numpy(i) for i in obj]
+        return obj
         
     def code2file(self,code):
         with open("./ael_alg.py", "w") as file:
@@ -212,13 +225,18 @@ class InterfaceEC():
                 print(fitness)
                 print(results)
                 print("***********************************")
+
                 offspring['objective'] = np.round(fitness, 5) if fitness else None
                 offspring['results'] = results
+
+                filename = self.output_path + "/results/pops/evaluated_entire_population_generation.json"
+                with open(file=filename, mode='a') as f:
+                    json.dump(self.convert_numpy(offspring), f, indent=5)
+                    f.write('\n')
+
                 future.cancel()        
                 # fitness = self.interface_eval.evaluate(code)
 
-            
-                
 
         except Exception as e:
             print(f"Error in get_offspring : {traceback.format_exc()}")
@@ -231,6 +249,8 @@ class InterfaceEC():
             print(offspring)
             p = None
 
+        print(offspring)
+
         # Round the objective values
         return p, offspring
 
@@ -239,14 +259,13 @@ class InterfaceEC():
     def get_algorithm(self, pop, operator):
         results = []
         try:
-            results = Parallel(n_jobs=self.n_p,timeout=self.timeout+15)(delayed(self.get_offspring)(pop, operator) for _ in range(self.pop_size))
+            results = Parallel(n_jobs=self.n_p,timeout=self.timeout+15)(delayed(self.get_offspring)(pop, operator) for _ in range(self.pop_size// self.n_p))
         except Exception as e:
             if self.debug:
                 print(f"Error in get_algorithm: {traceback.format_exc()}")
             print("Parallel time out .")
             
         time.sleep(2)
-
 
         out_p = []
         out_off = []

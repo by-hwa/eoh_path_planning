@@ -30,6 +30,7 @@ class GetPrompts():
 '''
         self.constraints = '''
 ### Constraints:
+- A PYTHON CLASS IMPLEMENTING AN IMPROVED PATH PLANNING ALGORITHM NAMED `PathPlanning`.
 - Please write a brief description of the algorithm you generated.
 - The description must be inside a brace and placed at the very top of the code.
 - Implement it in Python.
