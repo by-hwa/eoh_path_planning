@@ -702,19 +702,37 @@ class SampleBasedAlgorithm(Algorithm):
 
     def set_display_info(self) -> List[MapDisplay]:
         return super().set_display_info() + self.__map_displays
+
+    def move_agent(self, to: Point) -> None:
+        """
+        Method used to move the agent on the map
+        :param to: the destination
+        """
+        #method is in map.py. follow param means Instead of teleport, moves in a straight line
+        self._get_grid().move_agent(to, follow=True)
+'''
+
+        self.combined_sample_based_algorithm = '''
+`SampleBasedAlgorithm` class:
+
+Methods:
+- _init_displays(self) -> None: Initializes the map displays for the algorithm
+- key_frame(self, *args, **kwargs) -> None: Marks a key frame for animations
+- _get_grid(self) -> Map: Gets the Map object
+- move_agent(self, to: Point) -> None: Moves the agent to the specified point
 '''
 
     def get_code(self, algorithm_name: str) -> str:
         if algorithm_name == "astar":
-            return self.algorithms + '\n' + self.a_star
+            return self.a_star
         elif algorithm_name == "rrt_connect":
-            return self.algorithms + '\n' + self.sample_based_algorithm + '\n' + self.rrt_connect
+            return self.rrt_connect
         elif algorithm_name == "rrt_star":
-            return self.algorithms + '\n' + self.sample_based_algorithm + '\n' + self.rrt_star
+            return  self.rrt_star
         elif algorithm_name == "rrt":
-            return self.algorithms + '\n' + self.sample_based_algorithm + '\n' + self.rrt
+            return self.rrt
         elif algorithm_name == "sprm":
-            return self.algorithms + '\n' + self.sample_based_algorithm + '\n' + self.sprm
+            return self.sprm
         else:
             raise ValueError(f"Unknown algorithm name: {algorithm_name}")
             return None
@@ -751,12 +769,8 @@ class SampleBasedAlgorithm(Algorithm):
         
     def get_inherit_prompt(self):
         return f'''
-The class you generate must inherit from `SampleBasedAlgorithm`, which itself inherits from `Algorithm`.
+The class you generate must inherit from `SampleBasedAlgorithm`.
+you can refer to the `SampleBasedAlgorithm` class for guidance.
 
-You must conform to this interface structure and override the required abstract methods, including:
-- `set_display_info(self) -> List[MapDisplay]`
-- `_find_path_internal(self) -> None`
-
-{self.algorithms}
-{self.sample_based_algorithm}
+{self.combined_sample_based_algorithm}
 '''

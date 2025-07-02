@@ -26,7 +26,7 @@ class GetPrompts():
     - Rewiring or optimization steps (e.g., RRT*)
     - Smoothed or shortcut path extraction
     - Early stopping criteria or dynamic iteration limits
-    ... and more you think.
+    ... and more.
 '''
         self.constraints = '''
 ### Constraints:
@@ -35,7 +35,7 @@ class GetPrompts():
 - Implement it in Python.
 - You do not need to declare the imports, as they are already provided in the codebase.
 - Your function must be named `_find_path_internal`.
-- You must reuse existing helper functions where applicable. If necessary, you may define or modify and use new helper functions to support the implementation.
+- You must reuse existing helper functions where applicable. If necessary, you may define and use new helper functions to support the implementation.
 - It should work with existing components: `Forest`, `Point`, `Vertex`, etc.
 - The `__init__` method must not be modified. However, you are allowed to add new member variables within it (no structural changes or logic modifications).
 - When referencing multiple algorithms, don't forget to declare variables in __init__.
@@ -66,10 +66,10 @@ class GetPrompts():
 from structures import Point
 from algorithms.configuration.maps.map import Map
 from algorithms.classic.sample_based.core.vertex import Vertex
-from algorithms.classic.sample_based.core.graph import gen_forest, Forest, CyclicGraph
+from algorithms.classic.sample_based.core.graph import gen_forest, Forest
 
 
-### Reference Classes and Utilities
+### Additional Reference Information
 
 `Map` class:
 
@@ -105,6 +105,8 @@ methods:
 :param direction: The true direction
 :return: The movement direction as a Point
 
+- reset(self) -> None: Resets the map by replaying the trace
+
 - get_line_sequence(self, frm: Point, to: Point) -> List[Point]: Bresenham's line algorithm, Given coordinate of two n dimensional points. The task to find all the intermediate points required for drawing line AB.
 
 - is_valid_line_sequence(self, line_sequence: List[Point]) -> bool
@@ -120,13 +122,18 @@ methods:
 :param pos: The position
 :return: If the point is a valid position for the agent
 
-- get_next_positions(self, pos: Point) -> List[Point]: Returns the next available positions
+- get_next_positions(self, pos: Point) -> List[Point]: Returns the next available positions valid from the agent point of view given x-point connectivity
 :param pos: The position
 :return: A list of positions
 
-- get_next_positions_with_move_index(self, pos: Point) -> List[Tuple[Point, int]]: Returns the next available positions with move index
+- get_next_positions_with_move_index(self, pos: Point) -> List[Tuple[Point, int]]: Returns the next available positions valid from the agent point of view given x-point connectivity
 :param pos: The position
 :return: A list of positions with move index
+
+- apply_move(move: Point, pos: Point) -> Point: Applies the given move and returns the new destination (this is staticmethod function, it can use like this `Map.apply_move(move, pos)` or `self._get_grid().apply_move(move, pos)`)
+:param move: The move to apply
+:param pos: The source
+:return: The destination after applying the move
 
 - get_movement_cost(self, frm: Union[Point, Entity] = None, to: Union[Point, Entity] = None) -> float: Returns the movement cost from one point to another
 :param frm: The source point or entity
@@ -206,6 +213,18 @@ Methods:
 - get_vertices_within_radius(self, root_vertices: List[Vertex], point: Point, radius: float) -> List[Vertex]: Returns a list of vertices within a specified radius from a given point in the specified root vertices.
 - walk_dfs_subset_of_vertices(self, root_vertices_subset: List[Vertex], f: Callable[[Vertex], bool]): Applies f to each vertex in the subset; stops early if f returns False.
 - walk_dfs(self, f: Callable[[Vertex], bool]): Applies f to each root vertex; stops early if f returns False.
+
+
+
+
+declare intial variables:
+self.grid: Map = self._get_grid()
+
+start_vertex: Vertex = Vertex(self.grid.agent.position)
+start_vertex.cost = 0
+goal_vertex: Vertex = Vertex(self.grid.goal.position)
+
+self._graph: Forest = gen_forest(self._services, start_vertex, goal_vertex, [])
 
 
 ### Additional Reference Information (Map API Access)
@@ -294,7 +313,7 @@ def _get_new_vertex(self, q_near: Vertex, q_sample: Point, max_dist) -> Vertex:
     q_new = Point.from_tensor(q_near.position.to_tensor() + max_dist * dir_normalized)
     return Vertex(q_new)
 
-
+    
 '''
     def get_task(self):
         return self.prompt_task
@@ -321,8 +340,8 @@ def _get_new_vertex(self, q_near: Vertex, q_sample: Point, max_dist) -> Vertex:
     def get_constraints(self):
         return self.constraints
 
-    def get_package_info(self):
-        return self.package_info
+    def get_prior_knowledge(self):
+        return
     
 # prompt
 '''

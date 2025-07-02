@@ -1,6 +1,7 @@
 import numpy as np
 import importlib
-from .prompts import GetPrompts
+# from .prompts import GetPrompts
+from .prompts_hier import GetPrompts
 import types
 import warnings
 import sys

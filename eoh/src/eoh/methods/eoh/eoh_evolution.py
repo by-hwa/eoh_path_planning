@@ -15,7 +15,8 @@ class Evolution():
         self.prompt_other_inf    = prompts.get_other_inf()
         self.prompt_role         = prompts.get_role()
         self.prompt_objective    = prompts.get_objective()
-        self.prompt_constraints   = prompts.get_constraints()
+        self.prompt_constraints  = prompts.get_constraints()
+        self.package_info        = prompts.get_package_info()
         self.inherit_prompt = prompts.planning_code.get_inherit_prompt()
         try:
             self.prompt_reference_tree = prompts.get_tree()
@@ -125,10 +126,13 @@ Finally, provide the revised code, keeping the function name, inputs, and output
             prompt_indiv=prompt_indiv+"No."+str(i+1) +" algorithm and the corresponding code are: \n" + indivs[i]['algorithm']+"\n" +indivs[i]['code']+"\n"
 
         prompt_content = self.prompt_role+"\n"+self.prompt_task+"\n"\
+"Below is supplementary reference information describing available classes and utility functions used in the provided code.\n" \
++ "This context is intended to help you understand the purpose and capabilities of the imported components. \n" +\
+self.package_info + "\n" + self.inherit_prompt + "\n" \
 "I have "+str(len(indivs))+" existing algorithms with their codes as follows: \n"\
 +prompt_indiv+"\n"\
 "Please help me create a new algorithm that has a totally different form from the given ones. \n"\
-+ self.prompt_constraints + "\n" + self.prompt_constraints + "\n" + self.prompt_inout_inf + "\n" + "Do not give additional explanations."
++ self.prompt_objective + "\n" + self.prompt_constraints + "\n" + "Do not give additional explanations."
         return prompt_content
 
     def get_prompt_path_e2(self, indivs):
@@ -137,72 +141,89 @@ Finally, provide the revised code, keeping the function name, inputs, and output
             prompt_indiv=prompt_indiv+"No."+str(i+1) +" algorithm and the corresponding code are: \n" + indivs[i]['algorithm']+"\n" +indivs[i]['code']+"\n"
 
         prompt_content = self.prompt_role+"\n"+self.prompt_task+"\n"\
+"Below is supplementary reference information describing available classes and utility functions used in the provided code.\n" \
++ "This context is intended to help you understand the purpose and capabilities of the imported components. \n" +\
+self.package_info + "\n" + self.inherit_prompt + "\n" \
 "I have "+str(len(indivs))+" existing algorithms with their codes as follows: \n"\
 +prompt_indiv+"\n"\
 "Please help me create a new algorithm that has a totally different form from the given ones but can be motivated from them. \n"\
 "Identify the common backbone idea in the provided algorithms." \
-+ self.prompt_constraints + "\n" + self.prompt_constraints + "\n" + self.prompt_inout_inf + "\n" + "Do not give additional explanations."
++ self.prompt_objective + "\n" + self.prompt_constraints + "\n" + "Do not give additional explanations."
         return prompt_content
 
     
     def get_prompt_time(self, indiv1):
         prompt_content = self.prompt_role+"\n"+self.prompt_task+"\n"\
+"Below is supplementary reference information describing available classes and utility functions used in the provided code.\n" \
++ "This context is intended to help you understand the purpose and capabilities of the imported components. \n" +\
 "I have one algorithm with its code as follows. \
-Algorithm description: "+indiv1['algorithm']+"\n\
+Algorithm description: "+indiv1['algorithm']+"\n"\
++self.package_info + "\n" + self.inherit_prompt + "\n \
 Code:\n\
 "+indiv1['code']+"\n\
 Please help us create a new algorithm with improved time by modifying the provided algorithm. \n"\
 "Identify the backbone idea in the provided algorithms." \
-+ self.inherit_prompt + "\n" \
-+ self.prompt_constraints + "\n" + self.prompt_constraints + "\n" + self.prompt_inout_inf + "\n" + "Do not give additional explanations."
++ self.prompt_objective + "\n" + self.prompt_constraints + "\n" + "Do not give additional explanations."
         return prompt_content
     
     def get_prompt_distance(self, indiv1):
         prompt_content = self.prompt_role+"\n"+self.prompt_task+"\n"\
+"Below is supplementary reference information describing available classes and utility functions used in the provided code.\n" \
++ "This context is intended to help you understand the purpose and capabilities of the imported components. \n" +\
 "I have one algorithm with its code as follows. \
-Algorithm description: "+indiv1['algorithm']+"\n\
+Algorithm description: "+indiv1['algorithm']+"\n"\
++self.package_info + "\n" + self.inherit_prompt + "\n \
 Code:\n\
 "+indiv1['code']+"\n\
 Please help us create a new algorithm with improved distance by modifying the provided algorithm. \n"\
 "Identify the backbone idea in the provided algorithms." \
 + self.inherit_prompt + "\n" \
-+ self.prompt_constraints + "\n" + self.prompt_constraints + "\n" + self.prompt_inout_inf + "\n" + "Do not give additional explanations."
++ self.prompt_objective + "\n" + self.prompt_constraints + "\n" + "Do not give additional explanations."
         return prompt_content
     
     def get_prompt_smoothness(self, indiv1):
         prompt_content = self.prompt_role+"\n"+self.prompt_task+"\n"\
+"Below is supplementary reference information describing available classes and utility functions used in the provided code.\n" \
++ "This context is intended to help you understand the purpose and capabilities of the imported components. \n" +\
 "I have one algorithm with its code as follows. \
-Algorithm description: "+indiv1['algorithm']+"\n\
+Algorithm description: "+indiv1['algorithm']+"\n"\
++self.package_info + "\n" + self.inherit_prompt + "\n \
 Code:\n\
 "+indiv1['code']+"\n\
 Please help us create a new algorithm with improved smoothness by modifying the provided algorithm. \n"\
 "Identify the backbone idea in the provided algorithms." \
 + self.inherit_prompt + "\n" \
-+ self.prompt_constraints + "\n" + self.prompt_constraints + "\n" + self.prompt_inout_inf + "\n" + "Do not give additional explanations."
++ self.prompt_objective + "\n" + self.prompt_constraints  + "\n" + "Do not give additional explanations."
         return prompt_content
     
     def get_prompt_clearance(self, indiv1):
         prompt_content = self.prompt_role+"\n"+self.prompt_task+"\n"\
+"Below is supplementary reference information describing available classes and utility functions used in the provided code.\n" \
++ "This context is intended to help you understand the purpose and capabilities of the imported components. \n" +\
 "I have one algorithm with its code as follows. \
-Algorithm description: "+indiv1['algorithm']+"\n\
+Algorithm description: "+indiv1['algorithm']+"\n"\
++self.package_info + "\n" + self.inherit_prompt + "\n \
 Code:\n\
 "+indiv1['code']+"\n\
 Please help us create a new algorithm with improved clearance by modifying the provided algorithm. \n"\
 "Identify the backbone idea in the provided algorithms." \
 + self.inherit_prompt + "\n" \
-+ self.prompt_constraints + "\n" + self.prompt_constraints + "\n" + self.prompt_inout_inf + "\n" + "Do not give additional explanations."
++ self.prompt_objective + "\n" + self.prompt_constraints  + "\n" + "Do not give additional explanations."
         return prompt_content
     
     def get_prompt_memory(self, indiv1):
         prompt_content = self.prompt_role+"\n"+self.prompt_task+"\n"\
+"Below is supplementary reference information describing available classes and utility functions used in the provided code.\n" \
++ "This context is intended to help you understand the purpose and capabilities of the imported components. \n" +\
 "I have one algorithm with its code as follows. \
-Algorithm description: "+indiv1['algorithm']+"\n\
+Algorithm description: "+indiv1['algorithm']+"\n"\
++self.package_info + "\n" + self.inherit_prompt + "\n \
 Code:\n\
 "+indiv1['code']+"\n\
 Please help us create a new algorithm with improved computing memory by modifying the provided algorithm. \n"\
 "Identify the backbone idea in the provided algorithms." \
 + self.inherit_prompt + "\n" \
-+ self.prompt_constraints + "\n" + self.prompt_constraints + "\n" + self.prompt_inout_inf + "\n" + "Do not give additional explanations."
++ self.prompt_objective + "\n" + self.prompt_constraints + "\n" + "Do not give additional explanations."
         return prompt_content
 
 
