@@ -47,7 +47,7 @@ class GetPrompts():
 - Always verify that any newly introduced variables are properly initialized and assigned in a contextually valid location.
 - Do not assume the existence of any variables that are not shown in the provided reference code. If a variable is required, define it explicitly and ensure it is logically scoped.
 - After code generation, you must review the code to ensure it is syntactically correct, logically coherent, and executable within the expected environment.
-- Add code to treat a route search as not found if it takes more than 30 seconds to find the route.(in function `_find_path_internal`)
+- Add code to treat a route search as not found if it takes more than 10 seconds to find the route.(in function `_find_path_internal`)
 
 ### You may freely define new helper functions if necessary
 - If your approach benefits from additional utility methods (e.g., cost estimation, region sampling, custom distance functions), feel free to create and use them.

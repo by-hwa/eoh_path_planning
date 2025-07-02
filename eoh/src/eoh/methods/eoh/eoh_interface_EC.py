@@ -259,7 +259,7 @@ class InterfaceEC():
     def get_algorithm(self, pop, operator):
         results = []
         try:
-            results = Parallel(n_jobs=self.n_p,timeout=self.timeout+15)(delayed(self.get_offspring)(pop, operator) for _ in range(self.pop_size// self.n_p))
+            results = Parallel(n_jobs=self.n_p,prefer='threads', timeout=self.timeout+15)(delayed(self.get_offspring)(pop, operator) for _ in range(self.pop_size// self.n_p))
         except Exception as e:
             if self.debug:
                 print(f"Error in get_algorithm: {traceback.format_exc()}")
