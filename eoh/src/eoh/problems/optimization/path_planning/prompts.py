@@ -51,6 +51,33 @@ class GetPrompts():
 ### The `_find_path_internal` function is the main function executed for path planning.
 '''
 
+        self.hier_constraints = '''
+### Constraints:
+- Please write a brief description of the algorithm you generated.
+- The description must be inside a brace and placed at the very top of the code.
+- Implement it in Python.
+- You do not need to declare the imports, as they are already provided in the codebase.
+- Your class must be named `PathPlanning`.
+- It must inherit from `SampleBasedAlgorithm` which inherits 'Algorithm'.(you can utilize the existing methods from `SampleBasedAlgorithm` and `Algorithm`).
+- You must reuse existing helper functions where applicable. If necessary, you may define and use new helper functions to support the implementation.
+- It should work with existing components: `Forest`, `Point`, `Vertex`, etc.
+- The `__init__` method must not be modified. However, you are allowed to add new member variables within it (no structural changes or logic modifications).
+- When referencing multiple algorithms, don't forget to declare variables in __init__.
+- The core logic of the path planning algorithm must be implemented inside the `_find_path_internal` function. You may call any helper functions from within `_find_path_internal`.
+- Analyze the usage patterns and conventions from the provided codebase (e.g., class structure, function calls, and service access), and ensure your code follows the same patterns.
+- All variables or objects used in the code must be explicitly declared before use. Do not use undeclared variables, even if they appear to be implied from context.
+- If the reference code uses specific variable declarations (e.g., `self._graph`, `self._q_new`, 'self._get_random_sample', etc.), ensure these are preserved and correctly initialized before being used.
+- Always verify that any newly introduced variables are properly initialized and assigned in a contextually valid location.
+- Do not assume the existence of any variables that are not shown in the provided reference code. If a variable is required, define it explicitly and ensure it is logically scoped.
+- After code generation, you must review the code to ensure it is syntactically correct, logically coherent, and executable within the expected environment.
+- Add code to treat a route search as not found if it takes more than 30 seconds to find the route.(in function `_find_path_internal`)
+
+### You may freely define new helper functions if necessary
+- If your approach benefits from additional utility methods (e.g., cost estimation, region sampling, custom distance functions), feel free to create and use them.
+
+### The `_find_path_internal` function is the main function executed for path planning.
+'''
+
         self.prompt_func_name = ""
         self.prompt_func_inputs = ""
         self.prompt_func_outputs = ""
@@ -82,6 +109,7 @@ class GetPrompts():
         return self.objective
     def get_constraints(self):
         return self.constraints
-
+    def get_constraints(self):
+        return self.constraints
     def get_prior_knowledge(self):
         return

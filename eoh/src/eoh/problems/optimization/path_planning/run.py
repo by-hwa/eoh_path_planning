@@ -29,6 +29,7 @@ class PATHPLANNING():
         self.prompts = GetPrompts()
         self.maps = self.load_maps()
         self.a_star_results = self.__get_a_star_results(self.maps)
+        self.a_star_statistics = self.__get_results(self.a_star_results)
         self.import_string = '''
 from typing import List
 
@@ -222,7 +223,7 @@ from structures.heap import Heap
 
         self.__get_improvement_result(res_proc, a_star_res_proc)
 
-        fitness = 10 * res_proc["goal_found_perc_improvement"] + \
+        fitness = 100 * res_proc["goal_found_perc_improvement"] + \
                     0.5 * res_proc["average_distance_improvement"] + \
                     1.5 * res_proc["average_time_improvement"] + \
                     res_proc["average_smoothness_improvement"] + \
@@ -254,7 +255,7 @@ from structures.heap import Heap
         except Exception as e:
             print("Error:", str(e))
             print("Traceback:", traceback.format_exc())
-            return None
+            return None, {}
 
 
 

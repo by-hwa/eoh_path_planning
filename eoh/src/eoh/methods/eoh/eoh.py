@@ -52,16 +52,12 @@ class EOH:
         self.load_pop_id = paras.exp_continue_id
 
         self.output_path = paras.exp_output_path
-
         self.exp_n_proc = paras.exp_n_proc
-        
         self.timeout = paras.eva_timeout
-
         self.use_numba = paras.eva_numba_decorator
-
         self.get_initial = paras.get_initial
-
         self.ref_algorithm = paras.ref_algorithm if self.get_initial else None
+        self.hier_gen = paras.hier_gen
 
         print("- EoH parameters loaded -")
 
@@ -94,8 +90,16 @@ class EOH:
         # interface for ec operators
         interface_ec = InterfaceEC(self.pop_size, self.m, self.api_endpoint, self.api_key, self.llm_model, self.use_local_llm, self.llm_local_url,
                                    self.debug_mode, interface_prob, select=self.select,n_p=self.exp_n_proc,
-                                   timeout = self.timeout, use_numba=self.use_numba, output_path=self.output_path
+                                   timeout = self.timeout, use_numba=self.use_numba, output_path=self.output_path, hier_gen=self.hier_gen,
                                    )
+        
+        
+        filename = self.output_path + "/results/pops/evaluated_entire_population_generation.json"
+        with open(file=filename, mode='a') as f:
+            f.write('Astar')
+            filtered = {k: v for k, v in interface_prob.a_star_statistics.items() if "alldata" not in k}
+            json.dump(InterfaceEC.convert_numpy(filtered), f, indent=5)
+            f.write('\n')
 
         # initialization
         population = []
@@ -188,13 +192,13 @@ class EOH:
             # Save population to a file
             filename = self.output_path + "/results/pops/population_generation_" + str(pop + 1) + ".json"
             with open(filename, 'w') as f:
-                json.dump(population, f, indent=5)
+                json.dump(InterfaceEC.convert_numpy(population), f, indent=5)
 
             # Save the best one to a file
             filename = self.output_path + "/results/pops_best/population_generation_" + str(pop + 1) + ".json"
             print(f"population size in eoh.py : {len(population)}")
             with open(filename, 'w') as f:
-                json.dump(population[0], f, indent=5)
+                json.dump(InterfaceEC.convert_numpy(population[0]), f, indent=5)
 
 
             print(f"--- {pop + 1} of {self.n_pop} populations finished. Time Cost:  {((time.time()-time_start)/60):.1f} m")

@@ -52,6 +52,7 @@ class Paras():
         ##### PathPlanning settings #####
         #################
         self.get_initial = True
+        self.hier_gen = False  # if use hierarchical generation
         
 
 

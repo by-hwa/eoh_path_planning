@@ -32,7 +32,7 @@ class GetPrompts():
 ### Constraints:
 - A PYTHON CLASS IMPLEMENTING AN IMPROVED PATH PLANNING ALGORITHM NAMED `PathPlanning`.
 - Please write a brief description of the algorithm you generated.
-- The description must be inside a brace and placed at the very top of the code, not in top of class.
+- The description must be inside a brace and placed at the very top of the code.
 - Implement it in Python.
 - You DO NOT NEED to declare the any imports.
 - Your function must be named `_find_path_internal`.
@@ -53,6 +53,42 @@ class GetPrompts():
 - If your approach benefits from additional utility methods (e.g., cost estimation, region sampling, custom distance functions), feel free to create and use them.
 
 ### The `_find_path_internal` function is the main function executed for path planning.
+'''
+
+        self.hier_constraints = '''
+### Constraints:
+- A PYTHON CLASS IMPLEMENTING AN IMPROVED PATH PLANNING ALGORITHM NAMED `PathPlanning`.
+- Please write a brief description of the algorithm you generated.
+- The description must be inside a brace and placed at the very top of the code.
+- Implement it in Python.
+- You DO NOT NEED to declare the any imports.
+- Your function must be named `_find_path_internal`.
+- It should work with existing components: `Forest`, `Point`, `Vertex`, etc.
+- The `__init__` method must not be modified. However, you are allowed to add new member variables within it (no structural changes or logic modifications).
+- When referencing multiple algorithms, don't forget to declare variables in __init__.
+- The core logic of the path planning algorithm must be implemented inside the `_find_path_internal` function. You may call any helper functions from within `_find_path_internal`.
+- Analyze the usage patterns and conventions from the provided codebase (e.g., class structure, function calls, and service access), and ensure your code follows the same patterns.
+- All variables or objects used in the code must be explicitly declared before use. Do not use undeclared variables, even if they appear to be implied from context.
+- If the reference code uses specific variable declarations (e.g., `self._graph`, `self._q_new`, 'self._get_random_sample', etc.), ensure these are preserved and correctly initialized before being used.
+- Always verify that any newly introduced variables are properly initialized and assigned in a contextually valid location.
+- Do not assume the existence of any variables that are not shown in the provided reference code. If a variable is required, define it explicitly and ensure it is logically scoped.
+- After code generation, you must review the code to ensure it is syntactically correct, logically coherent, and executable within the expected environment.
+- Add code to treat a route search as not found if it takes more than 10 seconds to find the route.(in function `_find_path_internal`)
+
+### YOU ONLY IMPLIMENT CLASS NAMED `PathPlanning` within method `__init__` and `_find_paht_internal`. YOU DON NOT NEED TO IMPLEMENT HELPFER FUNCTION(BUT YOU CAN CALL them ASSUMING THEY WILL BE IMPLEMENTED LATER.)
+- Within `_find_path_internal`, use clearly named helper functions to delegate subtasks (e.g., sampling, extending, connecting, or path extraction).  
+Do not implement helper functions inline. Just call them assuming they will be implemented later.
+
+### The `_find_path_internal` function is the main function executed for path planning.
+'''
+
+        self.helper_f_constrains = '''
+### Constraints:
+- IMPLEMENT Helper function methods within a Python class.
+- You DO NOT NEED to declare the any imports.
+- You must implement mehods given name.
+- The implementing method operates within a class that is provided as reference code that has already been implemented.
+- Do not implement any functions inline. Just call them assuming they will be implemented later.
 '''
 
         self.prompt_func_name = ""
@@ -321,9 +357,12 @@ def _get_new_vertex(self, q_near: Vertex, q_sample: Point, max_dist) -> Vertex:
         return self.objective
     def get_constraints(self):
         return self.constraints
-
+    def get_hier_constraints(self):
+        return self.hier_constraints
     def get_package_info(self):
         return self.package_info
+    def get_helper_function(self):
+        return self.helper_funtion
     
 # prompt
 '''

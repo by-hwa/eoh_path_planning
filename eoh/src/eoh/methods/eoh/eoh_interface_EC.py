@@ -8,18 +8,19 @@ import re
 import concurrent.futures
 import traceback
 import json
-
+import sys
 class InterfaceEC():
-    def __init__(self, pop_size, m, api_endpoint, api_key, llm_model,llm_use_local,llm_local_url, debug_mode, interface_prob, select,n_p,timeout,use_numba, output_path, **kwargs):
+    def __init__(self, pop_size, m, api_endpoint, api_key, llm_model,llm_use_local,llm_local_url, debug_mode, interface_prob, select,n_p,timeout,use_numba, output_path, hier_gen, **kwargs):
 
         # LLM settings
         self.pop_size = pop_size
         self.interface_eval = interface_prob
         prompts = interface_prob.prompts
-        self.evol = Evolution(api_endpoint, api_key, llm_model,llm_use_local,llm_local_url, debug_mode,prompts, **kwargs)
+        self.evol = Evolution(api_endpoint, api_key, llm_model,llm_use_local,llm_local_url, debug_mode,prompts, hier_gen=hier_gen, **kwargs)
         self.m = m
         self.debug = debug_mode
         self.output_path = output_path
+        self.hier_gen = hier_gen
 
         if not self.debug:
             warnings.filterwarnings("ignore")
@@ -30,7 +31,8 @@ class InterfaceEC():
         self.timeout = timeout
         self.use_numba = use_numba
 
-    def convert_numpy(self, obj):
+    @staticmethod
+    def convert_numpy(obj):
         if isinstance(obj, np.ndarray):
             return obj.tolist()
         if isinstance(obj, (np.float32, np.float64)):
@@ -38,9 +40,9 @@ class InterfaceEC():
         if isinstance(obj, (np.int32, np.int64)):
             return int(obj)
         if isinstance(obj, dict):
-            return {k: self.convert_numpy(v) for k, v in obj.items()}
+            return {k: InterfaceEC.convert_numpy(v) for k, v in obj.items()}
         if isinstance(obj, list):
-            return [self.convert_numpy(i) for i in obj]
+            return [InterfaceEC.convert_numpy(i) for i in obj]
         return obj
         
     def code2file(self,code):
@@ -124,23 +126,12 @@ class InterfaceEC():
         }
         if operator == "i1":
             parents = None
-            [offspring['code'],offspring['algorithm']] =  self.evol.i1()            
         elif operator == "e1":
             parents = self.select.parent_selection(pop,self.m)
             [offspring['code'],offspring['algorithm']] = self.evol.e1(parents)
         elif operator == "e2":
             parents = self.select.parent_selection(pop,self.m)
             [offspring['code'],offspring['algorithm']] = self.evol.e2(parents) 
-        elif operator == "m1":
-            parents = self.select.parent_selection(pop,1)
-            [offspring['code'],offspring['algorithm']] = self.evol.m1(parents[0])   
-        elif operator == "m2":
-            parents = self.select.parent_selection(pop,1)
-            [offspring['code'],offspring['algorithm']] = self.evol.m2(parents[0]) 
-        elif operator == "m3":
-            parents = self.select.parent_selection(pop,1)
-            [offspring['code'],offspring['algorithm']] = self.evol.m3(parents[0])
-        # TODO # verify
         elif operator == "time":
             parents = self.select.parent_selection(pop,1)
             [offspring['code'],offspring['algorithm']] = self.evol.m_time(parents[0]) 
@@ -228,11 +219,13 @@ class InterfaceEC():
 
                 offspring['objective'] = np.round(fitness, 5) if fitness else None
                 offspring['results'] = results
+                offspring['results'] = {k: v for k, v in offspring['results'].items() if "alldata" not in k}
 
                 filename = self.output_path + "/results/pops/evaluated_entire_population_generation.json"
-                with open(file=filename, mode='a') as f:
-                    json.dump(self.convert_numpy(offspring), f, indent=5)
-                    f.write('\n')
+                if offspring['objective']:
+                    with open(file=filename, mode='a') as f:
+                        json.dump(self.convert_numpy(offspring), f, indent=5)
+                        f.write('\n')
 
                 future.cancel()        
                 # fitness = self.interface_eval.evaluate(code)
@@ -249,7 +242,7 @@ class InterfaceEC():
             print(offspring)
             p = None
 
-        print(offspring)
+        print(offspring['objective'])
 
         # Round the objective values
         return p, offspring
