@@ -159,42 +159,16 @@ class InterfaceEC():
 
         try:
             p, offspring = self._get_alg(pop, operator)
-            
-            if self.use_numba:
-                
-                # Regular expression pattern to match function definitions
-                pattern = r"def\s+(\w+)\s*\(.*\):"
-
-                # Search for function definitions in the code
-                match = re.search(pattern, offspring['code'])
-
-                function_name = match.group(1)
-
-                code = add_numba_decorator(program=offspring['code'], function_name=function_name)
-            else:
-                code = offspring['code']
+            code = offspring['code']
 
             n_retry= 1
             while self.check_duplicate(pop, offspring['code']):
-                
                 n_retry += 1
                 if self.debug:
                     print("duplicated code, wait 1 second and retrying ... ")
                     
                 p, offspring = self._get_alg(pop, operator)
-
-                if self.use_numba:
-                    # Regular expression pattern to match function definitions
-                    pattern = r"def\s+(\w+)\s*\(.*\):"
-
-                    # Search for function definitions in the code
-                    match = re.search(pattern, offspring['code'])
-
-                    function_name = match.group(1)
-
-                    code = add_numba_decorator(program=offspring['code'], function_name=function_name)
-                else:
-                    code = offspring['code']
+                code = offspring['code']
                     
                 if n_retry > 1:
                     break
@@ -206,29 +180,40 @@ class InterfaceEC():
             with open(file=filename, mode='a') as f:
                 json.dump(offspring, f, indent=5)
                 f.write('\n')
+
                             
-            #self.code2file(offspring['code'])
             with concurrent.futures.ThreadPoolExecutor() as executor:
-                future = executor.submit(self.interface_eval.evaluate, code)
-                # check for 
-                fitness, results = future.result(timeout=self.timeout)
-                print('-----------------------------------')
-                print(fitness)
-                print(results)
-                print("***********************************")
+                n_try = 1
+                while n_try <= 3:
+                    try:
+                        future = executor.submit(self.interface_eval.evaluate, code)
+                        fitness, results = future.result(timeout=self.timeout)
 
-                offspring['objective'] = np.round(fitness, 5) if fitness else None
-                offspring['results'] = results
-                offspring['results'] = {k: v for k, v in offspring['results'].items() if "alldata" not in k}
+                        print('-----------------------------------')
+                        print(fitness)
+                        print(results)
+                        print("***********************************")
 
-                filename = self.output_path + "/results/pops/evaluated_entire_population_generation.json"
-                if offspring['objective']:
-                    with open(file=filename, mode='a') as f:
-                        json.dump(self.convert_numpy(offspring), f, indent=5)
-                        f.write('\n')
+                        offspring['objective'] = np.round(fitness, 5) if fitness else None
+                        offspring['results'] = results
+                        offspring['results'] = {k: v for k, v in offspring['results'].items() if "alldata" not in k}
 
-                future.cancel()        
-                # fitness = self.interface_eval.evaluate(code)
+                        filename = self.output_path + "/results/pops/evaluated_entire_population_generation.json"
+                        if offspring['objective']:
+                            with open(file=filename, mode='a') as f:
+                                json.dump(self.convert_numpy(offspring), f, indent=5)
+                                f.write('\n')
+                        break
+                        
+                    except Exception as e:
+                        print(f"Error in ThreadPoolExecutor : {traceback.format_exc()}")
+                        print('Trying Trouble shoot')
+                        code = self.evol.trouble_shoot(code, traceback.format_exc())
+                        offspring['code'] = code
+                    
+                    n_try += 1
+                    
+                future.cancel()
 
 
         except Exception as e:

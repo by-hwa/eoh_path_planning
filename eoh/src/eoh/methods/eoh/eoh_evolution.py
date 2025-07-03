@@ -275,3 +275,33 @@ Please help us create a new algorithm with improved computing memory by modifyin
         if self.debug_mode: self.debug_info(sys._getframe().f_code.co_name, prompt_content, algorithm, code_all)
 
         return [code_all, algorithm]
+    
+    def _get_trouble_shoot_prompt(self, code_string, error_string):
+        prompt = '''
+You are given a code snippet and its corresponding error output from execution.  
+Your task is to:
+
+1. Analyze the cause of the error based on the provided error message.
+2. Modify the original code to fix the error.
+3. Return the corrected and executable version of the code.
+
+Do not explain the error unless asked.  
+Your output should only include the complete fixed code block with the issue resolved.
+'''
+        code_string = '# Code:\n```python\n' + code_string + '\n```'
+        error_string = '# Error \n ```text\n' + error_string + '\n```'
+
+        constraint = '''
+# Constraint
+- Maintain original logic and style as much as possible.
+- Use existing helper functions if available.
+- Do not introduce unnecessary external libraries.
+'''
+
+        return prompt + code_string + error_string
+    
+    def trouble_shoot(self, code_string, error_string):
+        prompt = self._get_trouble_shoot_prompt(code_string, error_string)
+        [code, _] = self._get_alg(prompt)
+        return code
+
