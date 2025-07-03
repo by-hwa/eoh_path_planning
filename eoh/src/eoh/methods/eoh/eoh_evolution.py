@@ -149,7 +149,7 @@ Please help us create a new algorithm with improved computing memory by modifyin
                 return '\n'.join(lines[start_line:end_line])
         return ""
 
-    def _get_alg(self,prompt_content):
+    def _get_alg(self,prompt_content, algorithm_pass=False):
 
         response = self.interface_llm.get_response(prompt_content)
 
@@ -157,6 +157,7 @@ Please help us create a new algorithm with improved computing memory by modifyin
 
         algorithm_match = re.search(r"\{(.*?)\}", response, re.DOTALL)
         algorithm = algorithm_match.group(1).strip() if algorithm_match else ""
+        if algorithm_pass: algorithm = 'None algorithm'
 
         code_match = re.search(r"```(?:python)?(.*?)```", response, re.DOTALL)
         if code_match:
@@ -222,7 +223,7 @@ Please help us create a new algorithm with improved computing memory by modifyin
         [code_all, algorithm] = self._get_alg(prompt_content)
 
         if self.hier_gen: 
-            pass
+            pass # TODO
             helper_function = self.get_function(code_all)
 
         if self.debug_mode: self.debug_info(sys._getframe().f_code.co_name, prompt_content, algorithm, code_all)
@@ -302,6 +303,6 @@ Your output should only include the complete fixed code block with the issue res
     
     def trouble_shoot(self, code_string, error_string):
         prompt = self._get_trouble_shoot_prompt(code_string, error_string)
-        [code, _] = self._get_alg(prompt)
+        [code, _] = self._get_alg(prompt, algorithm_pass=True)
         return code
 

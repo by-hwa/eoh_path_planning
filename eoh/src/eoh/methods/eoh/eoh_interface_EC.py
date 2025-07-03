@@ -207,7 +207,7 @@ class InterfaceEC():
                         
                     except Exception as e:
                         print(f"Error in ThreadPoolExecutor : {traceback.format_exc()}")
-                        print('Trying Trouble shoot')
+                        print(f'Trying Trouble shoot {n_try}')
                         code = self.evol.trouble_shoot(code, traceback.format_exc())
                         offspring['code'] = code
                     
