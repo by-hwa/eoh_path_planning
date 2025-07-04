@@ -309,7 +309,7 @@ Your output should only include the complete fixed code block with the issue res
 - Do not introduce unnecessary external libraries.
 '''
 
-        return prompt + code_string + error_string + constraint
+        return prompt + code_string + error_string
     
     def trouble_shoot(self, code_string, error_string):
         prompt = self._get_trouble_shoot_prompt(code_string, error_string)
