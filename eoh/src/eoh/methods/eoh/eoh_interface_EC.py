@@ -174,7 +174,7 @@ class InterfaceEC():
                     break
 
             print("here is the offspring code: @@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@")
-            print(code)
+            # print(code)
 
             filename = self.output_path + "/results/pops/entire_population_generation.json"
             with open(file=filename, mode='a') as f:
@@ -186,6 +186,7 @@ class InterfaceEC():
                 n_try = 1
                 while n_try <= 3:
                     try:
+                        print('i;m here !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!', n_try)
                         future = executor.submit(self.interface_eval.evaluate, code)
                         fitness, results = future.result(timeout=self.timeout)
 
@@ -203,14 +204,18 @@ class InterfaceEC():
                             with open(file=filename, mode='a') as f:
                                 json.dump(self.convert_numpy(offspring), f, indent=5)
                                 f.write('\n')
-                        break
+                            break
+
+                        else:
+                            raise SystemError
                         
                     except Exception as e:
-                        print(f"Error in ThreadPoolExecutor : {traceback.format_exc()}")
+                        print(f"Error in ThreadPoolExecutor : {offspring['results']['Traceback']}")
                         print(f'Trying Trouble shoot {n_try}')
-                        code = self.evol.trouble_shoot(code, traceback.format_exc())
+                        code = self.evol.trouble_shoot(code, offspring['results']['Traceback'])
                         offspring['code'] = code
-                    
+                        print('Trouble shooted CODE')
+                        print(code)
                     n_try += 1
                     
                 future.cancel()

@@ -37,7 +37,7 @@ class Evolution():
         prompt_content = self.prompt_role+"\n"+self.prompt_task+"\n"\
 "Below is supplementary reference information describing available classes and utility functions used in the provided code.\n" \
 + "This context is intended to help you understand the purpose and capabilities of the imported components. \n" +\
-self.package_info + "\n" + self.inherit_prompt + "\n" \
+self.package_info + "\n" + self.inherit_prompt + "\n"\
 "I have "+str(len(indivs))+" existing algorithms with their codes as follows: \n"\
 +prompt_indiv+"\n"\
 "Please help me create a new algorithm that has a totally different form from the given ones. \n"\
@@ -66,7 +66,7 @@ self.package_info + "\n" + self.inherit_prompt + "\n" \
 + "This context is intended to help you understand the purpose and capabilities of the imported components. \n" +\
 "I have one algorithm with its code as follows. \
 Algorithm description: "+indiv1['algorithm']+"\n"\
-+self.package_info + "\n" + self.inherit_prompt + "\n \
++self.package_info + "\n" + self.inherit_prompt + "\n\
 Code:\n\
 "+indiv1['code']+"\n\
 Please help us create a new algorithm with improved time by modifying the provided algorithm. \n"\
@@ -80,7 +80,7 @@ Please help us create a new algorithm with improved time by modifying the provid
 + "This context is intended to help you understand the purpose and capabilities of the imported components. \n" +\
 "I have one algorithm with its code as follows. \
 Algorithm description: "+indiv1['algorithm']+"\n"\
-+self.package_info + "\n" + self.inherit_prompt + "\n \
++self.package_info + "\n" + self.inherit_prompt + "\n\
 Code:\n\
 "+indiv1['code']+"\n\
 Please help us create a new algorithm with improved distance by modifying the provided algorithm. \n"\
@@ -95,7 +95,7 @@ Please help us create a new algorithm with improved distance by modifying the pr
 + "This context is intended to help you understand the purpose and capabilities of the imported components. \n" +\
 "I have one algorithm with its code as follows. \
 Algorithm description: "+indiv1['algorithm']+"\n"\
-+self.package_info + "\n" + self.inherit_prompt + "\n \
++self.package_info + "\n" + self.inherit_prompt + "\n\
 Code:\n\
 "+indiv1['code']+"\n\
 Please help us create a new algorithm with improved smoothness by modifying the provided algorithm. \n"\
@@ -110,7 +110,7 @@ Please help us create a new algorithm with improved smoothness by modifying the 
 + "This context is intended to help you understand the purpose and capabilities of the imported components. \n" +\
 "I have one algorithm with its code as follows. \
 Algorithm description: "+indiv1['algorithm']+"\n"\
-+self.package_info + "\n" + self.inherit_prompt + "\n \
++self.package_info + "\n" + self.inherit_prompt + "\n\
 Code:\n\
 "+indiv1['code']+"\n\
 Please help us create a new algorithm with improved clearance by modifying the provided algorithm. \n"\
@@ -125,7 +125,7 @@ Please help us create a new algorithm with improved clearance by modifying the p
 + "This context is intended to help you understand the purpose and capabilities of the imported components. \n" +\
 "I have one algorithm with its code as follows. \
 Algorithm description: "+indiv1['algorithm']+"\n"\
-+self.package_info + "\n" + self.inherit_prompt + "\n \
++self.package_info + "\n" + self.inherit_prompt + "\n\
 Code:\n\
 "+indiv1['code']+"\n\
 Please help us create a new algorithm with improved computing memory by modifying the provided algorithm. \n"\

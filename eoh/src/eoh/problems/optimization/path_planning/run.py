@@ -255,7 +255,7 @@ from structures.heap import Heap
         except Exception as e:
             print("Error:", str(e))
             print("Traceback:", traceback.format_exc())
-            return None, {}
+            return None, {"Traceback" : traceback.format_exc()}
 
 
 
