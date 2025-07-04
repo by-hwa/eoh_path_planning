@@ -186,7 +186,6 @@ class InterfaceEC():
                 n_try = 1
                 while n_try <= 3:
                     try:
-                        print('i;m here !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!', n_try)
                         future = executor.submit(self.interface_eval.evaluate, code)
                         fitness, results = future.result(timeout=self.timeout)
 
@@ -237,8 +236,6 @@ class InterfaceEC():
         # Round the objective values
         return p, offspring
 
-
-    
     def get_algorithm(self, pop, operator):
         results = []
         try:

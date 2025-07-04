@@ -90,6 +90,12 @@ Do not implement helper functions inline. Just call them assuming they will be i
 - The implementing method operates within a class that is provided as reference code that has already been implemented.
 - Do not implement any functions inline. Just call them assuming they will be implemented later.
 '''
+        self.helper_funtion_task = '''
+Your task is to:
+1. Extract all undefined helper function names and their usage patterns.
+2. For each helper function, generate its full implementation.
+3. Ensure each function aligns with the variables, types, and structure used in the main function.
+'''
 
         self.prompt_func_name = ""
         self.prompt_func_inputs = ""
@@ -363,7 +369,8 @@ def _get_new_vertex(self, q_near: Vertex, q_sample: Point, max_dist) -> Vertex:
         return self.package_info
     def get_helper_function(self):
         return self.helper_funtion
-    
+    def get_helper_function_task(self):
+        return self.helper_funtion_task
 # prompt
 '''
 start_vertex = Vertex(self._get_grid().agent.position)

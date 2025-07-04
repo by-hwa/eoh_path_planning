@@ -3,6 +3,7 @@ import time
 from ...llm.interface_LLM import InterfaceLLM
 import ast
 import sys
+from .function_parser import FunctionParser
 
 class Evolution():
 
@@ -18,6 +19,7 @@ class Evolution():
         self.prompt_constraints  = prompts.get_constraints() if not hier_gen else prompts.get_hier_constraints()
         self.package_info        = prompts.get_package_info()
         self.helper_function     = prompts.get_helper_function()
+        self.helper_function_task= prompts.get_helper_function_task()
         self.inherit_prompt = prompts.planning_code.get_inherit_prompt()
 
         # set LLMs
@@ -134,9 +136,10 @@ Please help us create a new algorithm with improved computing memory by modifyin
 + self.prompt_objective + "\n" + self.prompt_constraints + "\n" + "Do not give additional explanations."
         return prompt_content
     
-    def get_fgen_prompt(self, code_string):
-        prompt = ''
-        # TODO
+    def get_fgen_prompt(self, f_name, f_assign, code_string):
+        prompt = f'You are provided with a main function that references helper functions which have not yet been defined.'
+        +'Below is supplementary reference information describing available classes and utility functions used in the provided code.'+self.package_info + "\n" + self.inherit_prompt + "\n" 
+        + "Main Code :\n" + code_string + '\n' + f'Implement function {f_name} called like {f_assign}' + "Do not give additional explanations."
         return prompt
 
     def _extract_class_code(self, code: str, class_name: str) -> str:
@@ -203,14 +206,20 @@ Please help us create a new algorithm with improved computing memory by modifyin
 
         return [code_all, algorithm]
     
-    def get_function(self, prompt_content):
+    def get_function(self, code_string):
+        fs, f_assigns = {}, {}
+        class_parser = FunctionParser(fs, f_assigns)
+        class_parser.visit(ast.parse(code_string))
+        
+        helper_functions = []
 
+        for f_name, f_assigns in fs:
+            prompt = self.get_fgen_prompt(f_name, f_assigns, code_string)
+            response = self.interface_llm.get_response(prompt)
+            # TODO ```python ` code block 제거하기 e.g. get alg
+            helper_functions.append(response)
 
-        response = self.interface_llm.get_response(prompt_content)
-        code_string = ''
-        #TODO Extract function
-
-        return code_string
+        return helper_functions
     
     def debug_info(self, function_name, prompt_content, algorithm, code_all):
         print(f"\n >>> check prompt for creating algorithm using [ {function_name} ] \n", prompt_content )
@@ -225,6 +234,7 @@ Please help us create a new algorithm with improved computing memory by modifyin
         if self.hier_gen: 
             pass # TODO
             helper_function = self.get_function(code_all)
+            # 생성된 함수 끼워넣기 작업
 
         if self.debug_mode: self.debug_info(sys._getframe().f_code.co_name, prompt_content, algorithm, code_all)
 
@@ -299,7 +309,7 @@ Your output should only include the complete fixed code block with the issue res
 - Do not introduce unnecessary external libraries.
 '''
 
-        return prompt + code_string + error_string
+        return prompt + code_string + error_string + constraint
     
     def trouble_shoot(self, code_string, error_string):
         prompt = self._get_trouble_shoot_prompt(code_string, error_string)
