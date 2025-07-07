@@ -24,65 +24,21 @@
                                 ],
                                 "visible": true
                             },
-                            "visited": {
+                            "graph edge": {
                                 "colour": [
-                                    0.19,
-                                    0.19,
-                                    0.2,
-                                    0.8
-                                ],
-                                "visible": true
-                            }
-                        }
-                    },
-                    {
-                        "colours": {
-                            "explored max": {
-                                "colour": [
-                                    0,
-                                    0,
                                     1,
+                                    0,
+                                    0,
                                     1.0
                                 ],
                                 "visible": true
                             },
-                            "explored min": {
+                            "graph node": {
                                 "colour": [
-                                    0.27,
-                                    0.33,
-                                    0.35,
-                                    0.2
-                                ],
-                                "visible": true
-                            },
-                            "visited": {
-                                "colour": [
-                                    0.19,
-                                    0.19,
-                                    0.2,
-                                    0.8
-                                ],
-                                "visible": true
-                            }
-                        }
-                    },
-                    {
-                        "colours": {
-                            "explored max": {
-                                "colour": [
-                                    0,
-                                    0,
                                     1,
+                                    0,
+                                    0,
                                     1.0
-                                ],
-                                "visible": true
-                            },
-                            "explored min": {
-                                "colour": [
-                                    0.27,
-                                    0.33,
-                                    0.35,
-                                    0.2
                                 ],
                                 "visible": true
                             },
@@ -117,6 +73,24 @@
                                 ],
                                 "visible": true
                             },
+                            "graph edge": {
+                                "colour": [
+                                    1,
+                                    0,
+                                    0,
+                                    1.0
+                                ],
+                                "visible": true
+                            },
+                            "graph node": {
+                                "colour": [
+                                    1,
+                                    0,
+                                    0,
+                                    1.0
+                                ],
+                                "visible": true
+                            },
                             "visited": {
                                 "colour": [
                                     0.19,
@@ -148,6 +122,24 @@
                                 ],
                                 "visible": true
                             },
+                            "graph edge": {
+                                "colour": [
+                                    1,
+                                    0,
+                                    0,
+                                    1.0
+                                ],
+                                "visible": true
+                            },
+                            "graph node": {
+                                "colour": [
+                                    1,
+                                    0,
+                                    0,
+                                    1.0
+                                ],
+                                "visible": true
+                            },
                             "visited": {
                                 "colour": [
                                     0.19,
@@ -176,6 +168,122 @@
                                     0.33,
                                     0.35,
                                     0.2
+                                ],
+                                "visible": true
+                            },
+                            "graph edge": {
+                                "colour": [
+                                    1,
+                                    0,
+                                    0,
+                                    1.0
+                                ],
+                                "visible": true
+                            },
+                            "graph node": {
+                                "colour": [
+                                    1,
+                                    0,
+                                    0,
+                                    1.0
+                                ],
+                                "visible": true
+                            },
+                            "visited": {
+                                "colour": [
+                                    0.19,
+                                    0.19,
+                                    0.2,
+                                    0.8
+                                ],
+                                "visible": true
+                            }
+                        }
+                    },
+                    {
+                        "colours": {
+                            "explored max": {
+                                "colour": [
+                                    0,
+                                    0,
+                                    1,
+                                    1.0
+                                ],
+                                "visible": true
+                            },
+                            "explored min": {
+                                "colour": [
+                                    0.27,
+                                    0.33,
+                                    0.35,
+                                    0.2
+                                ],
+                                "visible": true
+                            },
+                            "graph edge": {
+                                "colour": [
+                                    1,
+                                    0,
+                                    0,
+                                    1.0
+                                ],
+                                "visible": true
+                            },
+                            "graph node": {
+                                "colour": [
+                                    1,
+                                    0,
+                                    0,
+                                    1.0
+                                ],
+                                "visible": true
+                            },
+                            "visited": {
+                                "colour": [
+                                    0.19,
+                                    0.19,
+                                    0.2,
+                                    0.8
+                                ],
+                                "visible": true
+                            }
+                        }
+                    },
+                    {
+                        "colours": {
+                            "explored max": {
+                                "colour": [
+                                    0,
+                                    0,
+                                    1,
+                                    1.0
+                                ],
+                                "visible": true
+                            },
+                            "explored min": {
+                                "colour": [
+                                    0.27,
+                                    0.33,
+                                    0.35,
+                                    0.2
+                                ],
+                                "visible": true
+                            },
+                            "graph edge": {
+                                "colour": [
+                                    1,
+                                    0,
+                                    0,
+                                    1.0
+                                ],
+                                "visible": true
+                            },
+                            "graph node": {
+                                "colour": [
+                                    1,
+                                    0,
+                                    0,
+                                    1.0
                                 ],
                                 "visible": true
                             },

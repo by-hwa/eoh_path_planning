@@ -213,8 +213,13 @@ from structures.heap import Heap
         algo_params = ([], {})
         
         results: List[Dict[str, Any]] = list()
+        fail_count = 0
         for _, grid in enumerate(self.maps):
             results.append(self.__run_simulation(grid, planning_module, testing_type, algo_params))
+            fail_count += not results[-1].get("goal_found", False)
+            if fail_count > len(self.maps)//5: # Early stop of bad algorithm evaluation
+                return None, {}
+            
 
         res_proc = self.__get_results(results)
 
