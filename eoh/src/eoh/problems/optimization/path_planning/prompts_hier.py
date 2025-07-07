@@ -3,7 +3,7 @@ from eoh.methods.eoh.classic_planning_method import GetPlanningCode
 class GetPrompts():
     def __init__(self):
         self.planning_code = GetPlanningCode()
-        
+        self.import_string = ''
         self.role = "You are given a reference implementations for path planning algorithms on a discrete grid environment."
         
         self.prompt_task = "Your task is to design and implement an **improved path planning algorithm**, written as a Python function named `_find_path_internal`, that is inspired by but not limited to the provided examples."
@@ -78,6 +78,7 @@ class GetPrompts():
 ### YOU ONLY IMPLIMENT CLASS NAMED `PathPlanning` within method `__init__` and `_find_paht_internal`. YOU DON NOT NEED TO IMPLEMENT HELPFER FUNCTION(BUT YOU CAN CALL them ASSUMING THEY WILL BE IMPLEMENTED LATER.)
 - Within `_find_path_internal`, use clearly named helper functions to delegate subtasks (e.g., sampling, extending, connecting, or path extraction).  
 Do not implement helper functions inline. Just call them assuming they will be implemented later.
+DO NOT IMPLEMENT ANY PLACEHOLDER FUNCTION
 
 ### The `_find_path_internal` function is the main function executed for path planning.
 '''
@@ -250,6 +251,15 @@ Methods:
 - walk_dfs_subset_of_vertices(self, root_vertices_subset: List[Vertex], f: Callable[[Vertex], bool]): Applies f to each vertex in the subset; stops early if f returns False.
 - walk_dfs(self, f: Callable[[Vertex], bool]): Applies f to each root vertex; stops early if f returns False.
 
+`Bresenhamline` method
+- bresenhamline(start, end, max_iter=-1): Returns a list of points from (start, end] by ray tracing a line b/w the points.
+    Parameters:
+        start: An array of start points (number of points x dimension)
+        end:   An end points (1 x dimension)
+            or An array of end point corresponding to each start point
+                (number of points x dimension)
+        max_iter: Max points to traverse. if -1, maximum number of required
+                  points are traversed
 
 ### Additional Reference Information (Map API Access)
 You may use the following `Map` methods and properties to support path planning:

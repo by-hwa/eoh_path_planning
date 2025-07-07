@@ -162,7 +162,6 @@ class EOH:
         filename = self.output_path + "/results/pops/entire_population_generation.json"
 
         for pop in range(n_start, self.n_pop):  
-            #print(f" [{na + 1} / {self.pop_size}] ", end="|")         
             for i in range(n_op):
                 op = self.operators[i]
                 print(f" OP: {op}, [{i + 1} / {n_op}] ", end="|") 
@@ -172,15 +171,6 @@ class EOH:
                 self.add2pop(population, offsprings)  # Check duplication, and add the new offspring
                 for off in offsprings:
                     print(" Obj: ", off['objective'], end="|")
-                # if is_add:
-                #     data = {}
-                #     for i in range(len(parents)):
-                #         data[f"parent{i + 1}"] = parents[i]
-                #     data["offspring"] = offspring
-                #     with open(self.output_path + "/results/history/pop_" + str(pop + 1) + "_" + str(
-                #             na) + "_" + op + ".json", "w") as file:
-                #         json.dump(data, file, indent=5)
-                # populatin management
                 print(f"\n len pop size----------------{len(population)}")
                 size_act = min(len(population), self.pop_size)
                 population = self.manage.population_management(population, size_act)

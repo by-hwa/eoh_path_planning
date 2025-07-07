@@ -16,6 +16,7 @@ class InterfaceEC():
         self.pop_size = pop_size
         self.interface_eval = interface_prob
         prompts = interface_prob.prompts
+        prompts.import_string = self.interface_eval.get_import_string()
         self.evol = Evolution(api_endpoint, api_key, llm_model,llm_use_local,llm_local_url, debug_mode,prompts, hier_gen=hier_gen, **kwargs)
         self.m = m
         self.debug = debug_mode
@@ -65,17 +66,6 @@ class InterfaceEC():
             if code == ind['code']:
                 return True
         return False
-
-    # def population_management(self,pop):
-    #     # Delete the worst individual
-    #     pop_new = heapq.nsmallest(self.pop_size, pop, key=lambda x: x['objective'])
-    #     return pop_new
-    
-    # def parent_selection(self,pop,m):
-    #     ranks = [i for i in range(len(pop))]
-    #     probs = [1 / (rank + 1 + len(pop)) for rank in ranks]
-    #     parents = random.choices(pop, weights=probs, k=m)
-    #     return parents
 
     def population_generation(self):
         
@@ -183,8 +173,9 @@ class InterfaceEC():
 
                             
             with concurrent.futures.ThreadPoolExecutor() as executor:
-                n_try = 1
+                n_try = 0
                 while n_try <= 3:
+                    n_try += 1
                     try:
                         future = executor.submit(self.interface_eval.evaluate, code)
                         fitness, results = future.result(timeout=self.timeout)
@@ -199,23 +190,23 @@ class InterfaceEC():
                         offspring['results'] = {k: v for k, v in offspring['results'].items() if "alldata" not in k}
 
                         filename = self.output_path + "/results/pops/evaluated_entire_population_generation.json"
-                        if offspring['objective']:
+                        if offspring['objective'] and offspring['objective'] != float("inf"):
                             with open(file=filename, mode='a') as f:
                                 json.dump(self.convert_numpy(offspring), f, indent=5)
                                 f.write('\n')
                             break
+                        elif offspring['objective'] == float("inf"):
+                            break
 
-                        else:
-                            raise SystemError
                         
                     except Exception as e:
                         print(f"Error in ThreadPoolExecutor : {offspring['results']['Traceback']}")
-                        print(f'Trying Trouble shoot {n_try}')
-                        code = self.evol.trouble_shoot(code, offspring['results']['Traceback'])
-                        offspring['code'] = code
-                        print('Trouble shooted CODE')
-                        print(code)
-                    n_try += 1
+                        if n_try <= 3:
+                            print(f'Trying Trouble shoot {n_try}')
+                            code = self.evol.trouble_shoot(code, offspring['results']['Traceback'])
+                            offspring['code'] = code
+                            print('Trouble shooted CODE')
+                            print(code)
                     
                 future.cancel()
 

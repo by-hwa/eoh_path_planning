@@ -53,8 +53,6 @@ class Paras():
         #################
         self.get_initial = True
         self.hier_gen = False  # if use hierarchical generation
-        
-
 
     def set_parallel(self):
         import multiprocessing

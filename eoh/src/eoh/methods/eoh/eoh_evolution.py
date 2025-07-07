@@ -4,6 +4,8 @@ from ...llm.interface_LLM import InterfaceLLM
 import ast
 import sys
 from .function_parser import FunctionParser
+import astunparse
+import textwrap
 
 class Evolution():
 
@@ -21,6 +23,7 @@ class Evolution():
         self.helper_function     = prompts.get_helper_function()
         self.helper_function_task= prompts.get_helper_function_task()
         self.inherit_prompt = prompts.planning_code.get_inherit_prompt()
+        self.import_string = prompts.import_string
 
         # set LLMs
         self.api_endpoint = api_endpoint
@@ -37,6 +40,7 @@ class Evolution():
             prompt_indiv=prompt_indiv+"No."+str(i+1) +" algorithm and the corresponding code are: \n" + indivs[i]['algorithm']+"\n" +indivs[i]['code']+"\n"
 
         prompt_content = self.prompt_role+"\n"+self.prompt_task+"\n"\
++ f'# Below is the list of imports used in the code\n {self.import_string}\n'\
 "Below is supplementary reference information describing available classes and utility functions used in the provided code.\n" \
 + "This context is intended to help you understand the purpose and capabilities of the imported components. \n" +\
 self.package_info + "\n" + self.inherit_prompt + "\n"\
@@ -52,6 +56,7 @@ self.package_info + "\n" + self.inherit_prompt + "\n"\
             prompt_indiv=prompt_indiv+"No."+str(i+1) +" algorithm and the corresponding code are: \n" + indivs[i]['algorithm']+"\n" +indivs[i]['code']+"\n"
 
         prompt_content = self.prompt_role+"\n"+self.prompt_task+"\n"\
++ f'# Below is the list of imports used in the code\n {self.import_string}\n'\
 "Below is supplementary reference information describing available classes and utility functions used in the provided code.\n" \
 + "This context is intended to help you understand the purpose and capabilities of the imported components. \n" +\
 self.package_info + "\n" + self.inherit_prompt + "\n" \
@@ -64,6 +69,7 @@ self.package_info + "\n" + self.inherit_prompt + "\n" \
 
     def get_prompt_time(self, indiv1):
         prompt_content = self.prompt_role+"\n"+self.prompt_task+"\n"\
++ f'# Below is the list of imports used in the code\n {self.import_string}\n'\
 "Below is supplementary reference information describing available classes and utility functions used in the provided code.\n" \
 + "This context is intended to help you understand the purpose and capabilities of the imported components. \n" +\
 "I have one algorithm with its code as follows. \
@@ -78,6 +84,7 @@ Please help us create a new algorithm with improved time by modifying the provid
     
     def get_prompt_distance(self, indiv1):
         prompt_content = self.prompt_role+"\n"+self.prompt_task+"\n"\
++ f'# Below is the list of imports used in the code\n {self.import_string}\n'\
 "Below is supplementary reference information describing available classes and utility functions used in the provided code.\n" \
 + "This context is intended to help you understand the purpose and capabilities of the imported components. \n" +\
 "I have one algorithm with its code as follows. \
@@ -93,6 +100,7 @@ Please help us create a new algorithm with improved distance by modifying the pr
     
     def get_prompt_smoothness(self, indiv1):
         prompt_content = self.prompt_role+"\n"+self.prompt_task+"\n"\
++ f'# Below is the list of imports used in the code\n {self.import_string}\n'\
 "Below is supplementary reference information describing available classes and utility functions used in the provided code.\n" \
 + "This context is intended to help you understand the purpose and capabilities of the imported components. \n" +\
 "I have one algorithm with its code as follows. \
@@ -108,6 +116,7 @@ Please help us create a new algorithm with improved smoothness by modifying the 
     
     def get_prompt_clearance(self, indiv1):
         prompt_content = self.prompt_role+"\n"+self.prompt_task+"\n"\
++ f'# Below is the list of imports used in the code\n {self.import_string}\n'\
 "Below is supplementary reference information describing available classes and utility functions used in the provided code.\n" \
 + "This context is intended to help you understand the purpose and capabilities of the imported components. \n" +\
 "I have one algorithm with its code as follows. \
@@ -123,6 +132,7 @@ Please help us create a new algorithm with improved clearance by modifying the p
     
     def get_prompt_memory(self, indiv1):
         prompt_content = self.prompt_role+"\n"+self.prompt_task+"\n"\
++ f'# Below is the list of imports used in the code\n {self.import_string}\n'\
 "Below is supplementary reference information describing available classes and utility functions used in the provided code.\n" \
 + "This context is intended to help you understand the purpose and capabilities of the imported components. \n" +\
 "I have one algorithm with its code as follows. \
@@ -137,8 +147,9 @@ Please help us create a new algorithm with improved computing memory by modifyin
         return prompt_content
     
     def get_fgen_prompt(self, f_name, f_assign, code_string):
-        prompt = f'You are provided with a main function that references helper functions which have not yet been defined.'
-        +'Below is supplementary reference information describing available classes and utility functions used in the provided code.'+self.package_info + "\n" + self.inherit_prompt + "\n" 
+        prompt = f'You are provided with a main function that references helper functions which have not yet been defined.'\
+        + f'# Below is the list of imports used in the code\n {self.import_string}\n'\
+        +'Below is supplementary reference information describing available classes and utility functions used in the provided code.'+self.package_info + "\n" + self.inherit_prompt + "\n"\
         + f"""
 You are provided with a function call `{f_name}` that is used in the following code but has not been defined yet:
 
@@ -215,6 +226,19 @@ If the function you generate calls any additional undefined helper functions, do
 
         return [code_all, algorithm]
     
+    def strip_outer_code_block(self, text: str) -> str:
+    # 앞쪽 ```python 또는 ``` 제거
+        text = re.sub(r'^\s*```(?:python)?\s*\n?', '', text)
+        # 뒤쪽 ``` 제거
+        text = re.sub(r'\n?\s*```$', '', text)
+        return text
+
+    def _get_func(self, prompt_content):
+        prompt_content = self.strip_outer_code_block(prompt_content)
+        tree = ast.parse(prompt_content)
+        function_defs = [node for node in tree.body if isinstance(node, ast.FunctionDef)]
+        return textwrap.indent(''.join([astunparse.unparse(func) for func in function_defs]), "    ")
+    
     def get_function(self, code_string, defined_funcs, generated_funcs):
 
         while True:
@@ -222,7 +246,7 @@ If the function you generate calls any additional undefined helper functions, do
             class_parser = FunctionParser(fs, f_assigns)
             class_parser.visit(ast.parse(code_string))
             
-            new_undefined_funcs = [(f_name, f_assigns[f_name]) for f_name in fs if f_name not in defined_funcs]
+            new_undefined_funcs = [(f_name, fs[f_name]) for f_name in fs if f_name not in defined_funcs]
 
             if not new_undefined_funcs:
                 break
@@ -230,10 +254,10 @@ If the function you generate calls any additional undefined helper functions, do
             f_name, f_assign = new_undefined_funcs[0]
             prompt = self.get_fgen_prompt(f_name, f_assign, code_string)
             generated_code = self.interface_llm.get_response(prompt)
+            generated_code = self._get_func(generated_code)
 
             defined_funcs.add(f_name)
             generated_funcs.append(generated_code)
-            ## TODO 필요시 함수추출 추가
             code_string += f"\n\n{generated_code}"
  
         return code_string

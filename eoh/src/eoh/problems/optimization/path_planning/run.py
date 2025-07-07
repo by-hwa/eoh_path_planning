@@ -37,28 +37,35 @@ import torch
 import numpy as np
 import random
 import time
+import math
 
 from memory_profiler import profile
 from typing import TYPE_CHECKING, List, Tuple, Type, Any, Dict, Union, Optional
 
-from algorithms.classic.sample_based.core.sample_based_algorithm import SampleBasedAlgorithm
 from algorithms.basic_testing import BasicTesting
-from simulator.services.services import Services
-from structures import Point
+
+from algorithms.algorithm import Algorithm
+from algorithms.classic.sample_based.core.sample_based_algorithm import SampleBasedAlgorithm
 from algorithms.classic.sample_based.core.vertex import Vertex
 from algorithms.classic.sample_based.core.graph import gen_forest, Forest
 from algorithms.classic.sample_based.core.graph import gen_cyclic_graph, CyclicGraph
-from structures import Point, Colour, BLUE, DynamicColour
-from algorithms.algorithm import Algorithm
-from algorithms.basic_testing import BasicTesting
+
+from algorithms.configuration.entities.agent import Agent
+from algorithms.configuration.entities.entity import Entity
 from algorithms.configuration.entities.goal import Goal
+from algorithms.configuration.entities.obstacle import Obstacle
+from algorithms.configuration.entities.trace import Trace
 from algorithms.configuration.maps.map import Map
 from algorithms.configuration.maps.ros_map import RosMap
+from algorithms.configuration.maps.bresenhams_algo import bresenhamline
+
 from simulator.services.services import Services
+
 from simulator.views.map.display.gradient_list_map_display import GradientListMapDisplay
 from simulator.views.map.display.map_display import MapDisplay
 from simulator.views.map.display.solid_iterable_map_display import SolidIterableMapDisplay
-from structures import Point, Colour, BLUE, DynamicColour
+
+from structures import Point, Size, Colour, BLUE, DynamicColour
 from structures.factory import gen_set, gen_heap
 from structures.heap import Heap
 
@@ -214,13 +221,17 @@ from structures.heap import Heap
         
         results: List[Dict[str, Any]] = list()
         fail_count = 0
+        time_limit_count = 0
         for _, grid in enumerate(self.maps):
             results.append(self.__run_simulation(grid, planning_module, testing_type, algo_params))
             fail_count += not results[-1].get("goal_found", False)
-            if fail_count > len(self.maps)//5: # Early stop of bad algorithm evaluation
-                return None, {}
-            
+            time_limit_count += results[-1].get("total_time", 0.0) > 10.0
 
+            if fail_count > len(self.maps)//10: # Early stop of bad algorithm evaluation
+                return float("inf"), {}
+            elif time_limit_count > len(self.maps)//10:
+                return float("inf"), {}
+            
         res_proc = self.__get_results(results)
 
         a_star_res = self.a_star_results
@@ -261,7 +272,10 @@ from structures.heap import Heap
             print("Error:", str(e))
             print("Traceback:", traceback.format_exc())
             return None, {"Traceback" : traceback.format_exc()}
+        
 
+    def get_import_string(self):
+        return self.import_string
 
 
 
