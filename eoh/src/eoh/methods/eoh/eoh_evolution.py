@@ -139,7 +139,16 @@ Please help us create a new algorithm with improved computing memory by modifyin
     def get_fgen_prompt(self, f_name, f_assign, code_string):
         prompt = f'You are provided with a main function that references helper functions which have not yet been defined.'
         +'Below is supplementary reference information describing available classes and utility functions used in the provided code.'+self.package_info + "\n" + self.inherit_prompt + "\n" 
-        + "Main Code :\n" + code_string + '\n' + f'Implement function {f_name} called like {f_assign}' + "Do not give additional explanations."
+        + f"""
+You are provided with a function call `{f_name}` that is used in the following code but has not been defined yet:
+
+---
+{code_string}
+---
+
+Generate only the full definition of `{f_name}`, based on how it is used in the code. 
+If the function you generate calls any additional undefined helper functions, do not generate them now — just return the definition of `{f_name}`.
+""" + '\n' + f'Implement function {f_name} called like {f_assign}' + "Do not give additional explanations."
         return prompt
 
     def _extract_class_code(self, code: str, class_name: str) -> str:
@@ -206,20 +215,28 @@ Please help us create a new algorithm with improved computing memory by modifyin
 
         return [code_all, algorithm]
     
-    def get_function(self, code_string):
-        fs, f_assigns = {}, {}
-        class_parser = FunctionParser(fs, f_assigns)
-        class_parser.visit(ast.parse(code_string))
-        
-        helper_functions = []
+    def get_function(self, code_string, defined_funcs, generated_funcs):
 
-        for f_name, f_assigns in fs:
-            prompt = self.get_fgen_prompt(f_name, f_assigns, code_string)
-            response = self.interface_llm.get_response(prompt)
-            # TODO ```python ` code block 제거하기 e.g. get alg
-            helper_functions.append(response)
+        while True:
+            fs, f_assigns = {}, {}
+            class_parser = FunctionParser(fs, f_assigns)
+            class_parser.visit(ast.parse(code_string))
+            
+            new_undefined_funcs = [(f_name, f_assigns[f_name]) for f_name in fs if f_name not in defined_funcs]
 
-        return helper_functions
+            if not new_undefined_funcs:
+                break
+
+            f_name, f_assign = new_undefined_funcs[0]
+            prompt = self.get_fgen_prompt(f_name, f_assign, code_string)
+            generated_code = self.interface_llm.get_response(prompt)
+
+            defined_funcs.add(f_name)
+            generated_funcs.append(generated_code)
+            ## TODO 필요시 함수추출 추가
+            code_string += f"\n\n{generated_code}"
+ 
+        return code_string
     
     def debug_info(self, function_name, prompt_content, algorithm, code_all):
         print(f"\n >>> check prompt for creating algorithm using [ {function_name} ] \n", prompt_content )
@@ -232,9 +249,8 @@ Please help us create a new algorithm with improved computing memory by modifyin
         [code_all, algorithm] = self._get_alg(prompt_content)
 
         if self.hier_gen: 
-            pass # TODO
-            helper_function = self.get_function(code_all)
-            # 생성된 함수 끼워넣기 작업
+            defined_funcs, generated_funcs = set(), list()
+            code_all = self.get_function(code_all, defined_funcs, generated_funcs)
 
         if self.debug_mode: self.debug_info(sys._getframe().f_code.co_name, prompt_content, algorithm, code_all)
 
@@ -244,6 +260,10 @@ Please help us create a new algorithm with improved computing memory by modifyin
         prompt_content = self.get_prompt_path_e2(parents)
         [code_all, algorithm] = self._get_alg(prompt_content)
 
+        if self.hier_gen: 
+            defined_funcs, generated_funcs = set(), list()
+            code_all = self.get_function(code_all, defined_funcs, generated_funcs)
+
         if self.debug_mode: self.debug_info(sys._getframe().f_code.co_name, prompt_content, algorithm, code_all)
 
         return [code_all, algorithm]
@@ -251,6 +271,10 @@ Please help us create a new algorithm with improved computing memory by modifyin
     def m_time(self, parents):
         prompt_content = self.get_prompt_time(parents)
         [code_all, algorithm] = self._get_alg(prompt_content)
+
+        if self.hier_gen: 
+            defined_funcs, generated_funcs = set(), list()
+            code_all = self.get_function(code_all, defined_funcs, generated_funcs)
 
         if self.debug_mode: self.debug_info(sys._getframe().f_code.co_name, prompt_content, algorithm, code_all)
 
@@ -260,6 +284,10 @@ Please help us create a new algorithm with improved computing memory by modifyin
         prompt_content = self.get_prompt_distance(parents)
         [code_all, algorithm] = self._get_alg(prompt_content)
 
+        if self.hier_gen: 
+            defined_funcs, generated_funcs = set(), list()
+            code_all = self.get_function(code_all, defined_funcs, generated_funcs)
+
         if self.debug_mode: self.debug_info(sys._getframe().f_code.co_name, prompt_content, algorithm, code_all)
 
         return [code_all, algorithm]
@@ -268,12 +296,20 @@ Please help us create a new algorithm with improved computing memory by modifyin
         prompt_content = self.get_prompt_smoothness(parents)
         [code_all, algorithm] = self._get_alg(prompt_content)
 
+        if self.hier_gen: 
+            defined_funcs, generated_funcs = set(), list()
+            code_all = self.get_function(code_all, defined_funcs, generated_funcs)
+
         if self.debug_mode: self.debug_info(sys._getframe().f_code.co_name, prompt_content, algorithm, code_all)
         return [code_all, algorithm]
     
     def m_clearance(self, parents):
         prompt_content = self.get_prompt_clearance(parents)
         [code_all, algorithm] = self._get_alg(prompt_content)
+
+        if self.hier_gen: 
+            defined_funcs, generated_funcs = set(), list()
+            code_all = self.get_function(code_all, defined_funcs, generated_funcs)
 
         if self.debug_mode: self.debug_info(sys._getframe().f_code.co_name, prompt_content, algorithm, code_all)
 
@@ -282,6 +318,10 @@ Please help us create a new algorithm with improved computing memory by modifyin
     def m_memory(self, parents):
         prompt_content = self.get_prompt_memory(parents)
         [code_all, algorithm] = self._get_alg(prompt_content)
+
+        if self.hier_gen: 
+            defined_funcs, generated_funcs = set(), list()
+            code_all = self.get_function(code_all, defined_funcs, generated_funcs)
 
         if self.debug_mode: self.debug_info(sys._getframe().f_code.co_name, prompt_content, algorithm, code_all)
 
@@ -309,7 +349,7 @@ Your output should only include the complete fixed code block with the issue res
 - Do not introduce unnecessary external libraries.
 '''
 
-        return prompt + code_string + error_string
+        return 'Below is supplementary reference information describing available classes and utility functions used in the provided code.'+self.package_info + "\n" + self.inherit_prompt + "\n" + prompt + code_string + error_string
     
     def trouble_shoot(self, code_string, error_string):
         prompt = self._get_trouble_shoot_prompt(code_string, error_string)
