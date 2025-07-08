@@ -9,8 +9,9 @@ import concurrent.futures
 import traceback
 import json
 import sys
+import math
 class InterfaceEC():
-    def __init__(self, pop_size, m, api_endpoint, api_key, llm_model,llm_use_local,llm_local_url, debug_mode, interface_prob, select,n_p,timeout,use_numba, output_path, hier_gen, **kwargs):
+    def __init__(self, pop_size, m, api_endpoint, api_key, llm_model,llm_use_local,llm_local_url, debug_mode, interface_prob, select,n_p,timeout,use_numba, output_path, hier_gen, n_op, **kwargs):
 
         # LLM settings
         self.pop_size = pop_size
@@ -22,6 +23,7 @@ class InterfaceEC():
         self.debug = debug_mode
         self.output_path = output_path
         self.hier_gen = hier_gen
+        self.n_op = n_op
 
         if not self.debug:
             warnings.filterwarnings("ignore")
@@ -230,14 +232,14 @@ class InterfaceEC():
     def get_algorithm(self, pop, operator):
         results = []
         try:
-            results = Parallel(n_jobs=self.n_p,prefer='threads', timeout=self.timeout+15)(delayed(self.get_offspring)(pop, operator) for _ in range(self.pop_size// self.n_p))
+            results = Parallel(n_jobs=self.n_p,prefer='threads', timeout=self.timeout+15)(delayed(self.get_offspring)(pop, operator) for _ in range(self.pop_size))
         except Exception as e:
             if self.debug:
                 print(f"Error in get_algorithm: {traceback.format_exc()}")
             print("Parallel time out .")
             
         time.sleep(2)
-
+        print(len(results))
         out_p = []
         out_off = []
 

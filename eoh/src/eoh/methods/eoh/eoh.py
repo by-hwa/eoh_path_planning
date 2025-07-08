@@ -90,7 +90,7 @@ class EOH:
         # interface for ec operators
         interface_ec = InterfaceEC(self.pop_size, self.m, self.api_endpoint, self.api_key, self.llm_model, self.use_local_llm, self.llm_local_url,
                                    self.debug_mode, interface_prob, select=self.select,n_p=self.exp_n_proc,
-                                   timeout = self.timeout, use_numba=self.use_numba, output_path=self.output_path, hier_gen=self.hier_gen,
+                                   timeout = self.timeout, use_numba=self.use_numba, output_path=self.output_path, hier_gen=self.hier_gen, n_op=len(self.operators)
                                    )
         
         

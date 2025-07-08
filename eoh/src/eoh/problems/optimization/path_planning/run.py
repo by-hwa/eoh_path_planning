@@ -50,24 +50,23 @@ from algorithms.classic.sample_based.core.vertex import Vertex
 from algorithms.classic.sample_based.core.graph import gen_forest, Forest
 from algorithms.classic.sample_based.core.graph import gen_cyclic_graph, CyclicGraph
 
-from algorithms.configuration.entities.agent import Agent
 from algorithms.configuration.entities.entity import Entity
+from algorithms.configuration.entities.agent import Agent
 from algorithms.configuration.entities.goal import Goal
 from algorithms.configuration.entities.obstacle import Obstacle
 from algorithms.configuration.entities.trace import Trace
 from algorithms.configuration.maps.map import Map
-from algorithms.configuration.maps.ros_map import RosMap
 from algorithms.configuration.maps.bresenhams_algo import bresenhamline
+
+from structures import Point, Size, Colour, BLUE, DynamicColour
+from structures.factory import gen_set, gen_heap
+from structures.heap import Heap
 
 from simulator.services.services import Services
 
 from simulator.views.map.display.gradient_list_map_display import GradientListMapDisplay
 from simulator.views.map.display.map_display import MapDisplay
 from simulator.views.map.display.solid_iterable_map_display import SolidIterableMapDisplay
-
-from structures import Point, Size, Colour, BLUE, DynamicColour
-from structures.factory import gen_set, gen_heap
-from structures.heap import Heap
 
 '''
         
@@ -229,7 +228,7 @@ from structures.heap import Heap
 
             if fail_count > len(self.maps)//10: # Early stop of bad algorithm evaluation
                 return float("inf"), {}
-            elif time_limit_count > len(self.maps)//10:
+            elif time_limit_count > len(self.maps)//5:
                 return float("inf"), {}
             
         res_proc = self.__get_results(results)
@@ -241,7 +240,7 @@ from structures.heap import Heap
 
         fitness = 100 * res_proc["goal_found_perc_improvement"] + \
                     0.5 * res_proc["average_distance_improvement"] + \
-                    1.5 * res_proc["average_time_improvement"] + \
+                    0 * res_proc["average_time_improvement"] + \
                     res_proc["average_smoothness_improvement"] + \
                     3 * res_proc["average_clearance_improvement"] + \
                     2 * res_proc["average_memory_improvement"]

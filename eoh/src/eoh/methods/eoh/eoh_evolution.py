@@ -32,7 +32,8 @@ class Evolution():
         self.debug_mode = debug_mode # close prompt checking
         self.hier_gen = hier_gen
 
-        self.interface_llm = InterfaceLLM(self.api_endpoint, self.api_key, self.model_LLM,llm_use_local,llm_local_url, self.debug_mode)
+        if 'no_lm' not in kwargs.keys():
+            self.interface_llm = InterfaceLLM(self.api_endpoint, self.api_key, self.model_LLM,llm_use_local,llm_local_url, self.debug_mode)
 
     def get_prompt_path_e1(self, indivs):
         prompt_indiv = ""
@@ -40,9 +41,7 @@ class Evolution():
             prompt_indiv=prompt_indiv+"No."+str(i+1) +" algorithm and the corresponding code are: \n" + indivs[i]['algorithm']+"\n" +indivs[i]['code']+"\n"
 
         prompt_content = self.prompt_role+"\n"+self.prompt_task+"\n"\
-+ f'# Below is the list of imports used in the code\n {self.import_string}\n'\
-"Below is supplementary reference information describing available classes and utility functions used in the provided code.\n" \
-+ "This context is intended to help you understand the purpose and capabilities of the imported components. \n" +\
+"Below is reference information describing available classes and utility functions to help you understand the purpose and capabilities of the imported components.\n"+\
 self.package_info + "\n" + self.inherit_prompt + "\n"\
 "I have "+str(len(indivs))+" existing algorithms with their codes as follows: \n"\
 +prompt_indiv+"\n"\
@@ -56,9 +55,7 @@ self.package_info + "\n" + self.inherit_prompt + "\n"\
             prompt_indiv=prompt_indiv+"No."+str(i+1) +" algorithm and the corresponding code are: \n" + indivs[i]['algorithm']+"\n" +indivs[i]['code']+"\n"
 
         prompt_content = self.prompt_role+"\n"+self.prompt_task+"\n"\
-+ f'# Below is the list of imports used in the code\n {self.import_string}\n'\
-"Below is supplementary reference information describing available classes and utility functions used in the provided code.\n" \
-+ "This context is intended to help you understand the purpose and capabilities of the imported components. \n" +\
+"Below is reference information describing available classes and utility functions to help you understand the purpose and capabilities of the imported components.\n"+\
 self.package_info + "\n" + self.inherit_prompt + "\n" \
 "I have "+str(len(indivs))+" existing algorithms with their codes as follows: \n"\
 +prompt_indiv+"\n"\
@@ -69,14 +66,10 @@ self.package_info + "\n" + self.inherit_prompt + "\n" \
 
     def get_prompt_time(self, indiv1):
         prompt_content = self.prompt_role+"\n"+self.prompt_task+"\n"\
-+ f'# Below is the list of imports used in the code\n {self.import_string}\n'\
-"Below is supplementary reference information describing available classes and utility functions used in the provided code.\n" \
-+ "This context is intended to help you understand the purpose and capabilities of the imported components. \n" +\
-"I have one algorithm with its code as follows. \
-Algorithm description: "+indiv1['algorithm']+"\n"\
-+self.package_info + "\n" + self.inherit_prompt + "\n\
-Code:\n\
-"+indiv1['code']+"\n\
+"Below is reference information describing available classes and utility functions to help you understand the purpose and capabilities of the imported components.\n"\
++self.package_info + "\n" + self.inherit_prompt + "\n"\
++"Reference Implementation:\n" \
++"Algorithm description: "+indiv1['algorithm']+"\nCode:\n"+indiv1['code']+"\n\
 Please help us create a new algorithm with improved time by modifying the provided algorithm. \n"\
 "Identify the backbone idea in the provided algorithms." \
 + self.prompt_objective + "\n" + self.prompt_constraints + "\n" + "Do not give additional explanations."
@@ -84,14 +77,10 @@ Please help us create a new algorithm with improved time by modifying the provid
     
     def get_prompt_distance(self, indiv1):
         prompt_content = self.prompt_role+"\n"+self.prompt_task+"\n"\
-+ f'# Below is the list of imports used in the code\n {self.import_string}\n'\
-"Below is supplementary reference information describing available classes and utility functions used in the provided code.\n" \
-+ "This context is intended to help you understand the purpose and capabilities of the imported components. \n" +\
-"I have one algorithm with its code as follows. \
-Algorithm description: "+indiv1['algorithm']+"\n"\
-+self.package_info + "\n" + self.inherit_prompt + "\n\
-Code:\n\
-"+indiv1['code']+"\n\
+"Below is reference information describing available classes and utility functions to help you understand the purpose and capabilities of the imported components.\n"\
++self.package_info + "\n" + self.inherit_prompt + "\n"\
++"Reference Implementation:\n" \
++"Algorithm description: "+indiv1['algorithm']+"\nCode:\n"+indiv1['code']+"\n\
 Please help us create a new algorithm with improved distance by modifying the provided algorithm. \n"\
 "Identify the backbone idea in the provided algorithms." \
 + self.inherit_prompt + "\n" \
@@ -100,14 +89,10 @@ Please help us create a new algorithm with improved distance by modifying the pr
     
     def get_prompt_smoothness(self, indiv1):
         prompt_content = self.prompt_role+"\n"+self.prompt_task+"\n"\
-+ f'# Below is the list of imports used in the code\n {self.import_string}\n'\
-"Below is supplementary reference information describing available classes and utility functions used in the provided code.\n" \
-+ "This context is intended to help you understand the purpose and capabilities of the imported components. \n" +\
-"I have one algorithm with its code as follows. \
-Algorithm description: "+indiv1['algorithm']+"\n"\
-+self.package_info + "\n" + self.inherit_prompt + "\n\
-Code:\n\
-"+indiv1['code']+"\n\
+"Below is reference information describing available classes and utility functions to help you understand the purpose and capabilities of the imported components.\n"\
++self.package_info + "\n" + self.inherit_prompt + "\n"\
++"Reference Implementation:\n" \
++"Algorithm description: "+indiv1['algorithm']+"\nCode:\n"+indiv1['code']+"\n\
 Please help us create a new algorithm with improved smoothness by modifying the provided algorithm. \n"\
 "Identify the backbone idea in the provided algorithms." \
 + self.inherit_prompt + "\n" \
@@ -116,14 +101,10 @@ Please help us create a new algorithm with improved smoothness by modifying the 
     
     def get_prompt_clearance(self, indiv1):
         prompt_content = self.prompt_role+"\n"+self.prompt_task+"\n"\
-+ f'# Below is the list of imports used in the code\n {self.import_string}\n'\
-"Below is supplementary reference information describing available classes and utility functions used in the provided code.\n" \
-+ "This context is intended to help you understand the purpose and capabilities of the imported components. \n" +\
-"I have one algorithm with its code as follows. \
-Algorithm description: "+indiv1['algorithm']+"\n"\
-+self.package_info + "\n" + self.inherit_prompt + "\n\
-Code:\n\
-"+indiv1['code']+"\n\
+"Below is reference information describing available classes and utility functions to help you understand the purpose and capabilities of the imported components.\n"\
++self.package_info + "\n" + self.inherit_prompt + "\n"\
++"Reference Implementation:\n" \
++"Algorithm description: "+indiv1['algorithm']+"\nCode:\n"+indiv1['code']+"\n\
 Please help us create a new algorithm with improved clearance by modifying the provided algorithm. \n"\
 "Identify the backbone idea in the provided algorithms." \
 + self.inherit_prompt + "\n" \
@@ -132,14 +113,10 @@ Please help us create a new algorithm with improved clearance by modifying the p
     
     def get_prompt_memory(self, indiv1):
         prompt_content = self.prompt_role+"\n"+self.prompt_task+"\n"\
-+ f'# Below is the list of imports used in the code\n {self.import_string}\n'\
-"Below is supplementary reference information describing available classes and utility functions used in the provided code.\n" \
-+ "This context is intended to help you understand the purpose and capabilities of the imported components. \n" +\
-"I have one algorithm with its code as follows. \
-Algorithm description: "+indiv1['algorithm']+"\n"\
-+self.package_info + "\n" + self.inherit_prompt + "\n\
-Code:\n\
-"+indiv1['code']+"\n\
+"Below is reference information describing available classes and utility functions to help you understand the purpose and capabilities of the imported components.\n"\
++self.package_info + "\n" + self.inherit_prompt + "\n"\
++"Reference Implementation:\n" \
++"Algorithm description: "+indiv1['algorithm']+"\nCode:\n"+indiv1['code']+"\n\
 Please help us create a new algorithm with improved computing memory by modifying the provided algorithm. \n"\
 "Identify the backbone idea in the provided algorithms." \
 + self.inherit_prompt + "\n" \
@@ -148,7 +125,6 @@ Please help us create a new algorithm with improved computing memory by modifyin
     
     def get_fgen_prompt(self, f_name, f_assign, code_string):
         prompt = f'You are provided with a main function that references helper functions which have not yet been defined.'\
-        + f'# Below is the list of imports used in the code\n {self.import_string}\n'\
         +'Below is supplementary reference information describing available classes and utility functions used in the provided code.'+self.package_info + "\n" + self.inherit_prompt + "\n"\
         + f"""
 You are provided with a function call `{f_name}` that is used in the following code but has not been defined yet:
@@ -276,6 +252,8 @@ If the function you generate calls any additional undefined helper functions, do
             defined_funcs, generated_funcs = set(), list()
             code_all = self.get_function(code_all, defined_funcs, generated_funcs)
 
+        code_all = f"{code_all}"
+
         if self.debug_mode: self.debug_info(sys._getframe().f_code.co_name, prompt_content, algorithm, code_all)
 
         return [code_all, algorithm]
@@ -287,6 +265,8 @@ If the function you generate calls any additional undefined helper functions, do
         if self.hier_gen: 
             defined_funcs, generated_funcs = set(), list()
             code_all = self.get_function(code_all, defined_funcs, generated_funcs)
+
+        code_all = f"{code_all}"
 
         if self.debug_mode: self.debug_info(sys._getframe().f_code.co_name, prompt_content, algorithm, code_all)
 
@@ -300,6 +280,8 @@ If the function you generate calls any additional undefined helper functions, do
             defined_funcs, generated_funcs = set(), list()
             code_all = self.get_function(code_all, defined_funcs, generated_funcs)
 
+        code_all = f"{code_all}"
+
         if self.debug_mode: self.debug_info(sys._getframe().f_code.co_name, prompt_content, algorithm, code_all)
 
         return [code_all, algorithm]
@@ -311,6 +293,8 @@ If the function you generate calls any additional undefined helper functions, do
         if self.hier_gen: 
             defined_funcs, generated_funcs = set(), list()
             code_all = self.get_function(code_all, defined_funcs, generated_funcs)
+
+        code_all = f"{code_all}"
 
         if self.debug_mode: self.debug_info(sys._getframe().f_code.co_name, prompt_content, algorithm, code_all)
 
@@ -324,6 +308,8 @@ If the function you generate calls any additional undefined helper functions, do
             defined_funcs, generated_funcs = set(), list()
             code_all = self.get_function(code_all, defined_funcs, generated_funcs)
 
+        code_all = f"{code_all}"
+
         if self.debug_mode: self.debug_info(sys._getframe().f_code.co_name, prompt_content, algorithm, code_all)
         return [code_all, algorithm]
     
@@ -334,6 +320,8 @@ If the function you generate calls any additional undefined helper functions, do
         if self.hier_gen: 
             defined_funcs, generated_funcs = set(), list()
             code_all = self.get_function(code_all, defined_funcs, generated_funcs)
+
+        code_all = f"{code_all}"
 
         if self.debug_mode: self.debug_info(sys._getframe().f_code.co_name, prompt_content, algorithm, code_all)
 
@@ -346,6 +334,8 @@ If the function you generate calls any additional undefined helper functions, do
         if self.hier_gen: 
             defined_funcs, generated_funcs = set(), list()
             code_all = self.get_function(code_all, defined_funcs, generated_funcs)
+
+        code_all = f"{code_all}"
 
         if self.debug_mode: self.debug_info(sys._getframe().f_code.co_name, prompt_content, algorithm, code_all)
 
