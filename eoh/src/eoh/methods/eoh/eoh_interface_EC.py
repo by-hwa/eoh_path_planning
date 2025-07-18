@@ -116,29 +116,9 @@ class InterfaceEC():
             'objective': None,
             'other_inf': None
         }
-        if operator == "i1":
-            parents = None
-        elif operator == "e1":
-            parents = self.select.parent_selection(pop,self.m)
-            [offspring['code'],offspring['algorithm']] = self.evol.e1(parents)
-        elif operator == "e2":
-            parents = self.select.parent_selection(pop,self.m)
-            [offspring['code'],offspring['algorithm']] = self.evol.e2(parents) 
-        elif operator == "time":
-            parents = self.select.parent_selection(pop,1)
-            [offspring['code'],offspring['algorithm']] = self.evol.m_time(parents[0]) 
-        elif operator == "distance":
-            parents = self.select.parent_selection(pop,1)
-            [offspring['code'],offspring['algorithm']] = self.evol.m_distance(parents[0]) 
-        elif operator == "smoothness":
-            parents = self.select.parent_selection(pop,1)
-            [offspring['code'],offspring['algorithm']] = self.evol.m_smoothness(parents[0]) 
-        elif operator == "clearance":
-            parents = self.select.parent_selection(pop,1)
-            [offspring['code'],offspring['algorithm']] = self.evol.m_clearance(parents[0]) 
-        elif operator == "memory":
-            parents = self.select.parent_selection(pop,1)
-            [offspring['code'],offspring['algorithm']] = self.evol.m_memory(parents[0]) 
+        if hasattr(self.evol, operator):
+            parents = self.select.parent_selection(pop,self.m, operator)
+            [offspring['code'],offspring['algorithm']] = self.evol.evol(parents, operator)
         else:
             print(f"Evolution operator [{operator}] has not been implemented ! \n") 
 

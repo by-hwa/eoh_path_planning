@@ -3,30 +3,17 @@ from eoh.methods.eoh.classic_planning_method import GetPlanningCode
 class GetPrompts():
     def __init__(self):
         self.planning_code = GetPlanningCode()
-        self.import_string = ''
-        self.role = "You are given a reference implementations for path planning algorithms on a discrete grid environment."
         
         self.prompt_task = "Your task is to design and implement an **improved path planning algorithm**, written as a Python function named `_find_path_internal`, that is inspired by but not limited to the provided examples."
-
-        self.predefined_information = '''
-
-'''
 
         self.objective = '''
 ### Objective:
 - Improve path planning performance in terms of:
-  - Planning efficiency (e.g., fewer iterations)
-  - Path quality (e.g., smoother, shorter)
-  - Robustness (e.g., fewer failures to connect start and goal)
-  - Success rate (e.g., more successful connections)
-- You may use techniques like:
-    - Goal-biased or adaptive sampling
-    - Heuristic-guided expansion (e.g., A* cost)
-    - Adaptive step size (`max_dist`) based on environment
-    - Rewiring or optimization steps (e.g., RRT*)
-    - Smoothed or shortcut path extraction
-    - Early stopping criteria or dynamic iteration limits
-    - ... and more you think.
+  - Planning efficiency
+  - Path quality
+  - Robustness
+  - Success rate
+  - Path smoothness
 '''
         self.constraints = '''
 ### Constraints:
@@ -81,29 +68,10 @@ Do not implement helper functions inline. Just call them assuming they will be i
 DO NOT IMPLEMENT ANY PLACEHOLDER FUNCTION
 
 ### The `_find_path_internal` function is the main function executed for path planning.
+
+Do not give additional explanations.
 '''
 
-        self.helper_f_constrains = '''
-### Constraints:
-- IMPLEMENT Helper function methods within a Python class.
-- You DO NOT NEED to declare the any imports.
-- You must implement mehods given name.
-- The implementing method operates within a class that is provided as reference code that has already been implemented.
-- Do not implement any functions inline. Just call them assuming they will be implemented later.
-'''
-        self.helper_funtion_task = '''
-Your task is to:
-1. Extract all undefined helper function names and their usage patterns.
-2. For each helper function, generate its full implementation.
-3. Ensure each function aligns with the variables, types, and structure used in the main function.
-'''
-
-        self.prompt_func_name = ""
-        self.prompt_func_inputs = ""
-        self.prompt_func_outputs = ""
-
-        self.prompt_inout_inf = ""
-        self.prompt_other_inf = "A Python class implementing an improved path planner named `PathPlanning`."
 
         self.package_info = '''
 from structures import Point
@@ -319,94 +287,8 @@ Methods:
 '''
 
 
-# TODO: Add the helper functions to the prompt
-        self.helper_funtion = '''
-def _extend(self, root_vertex: Vertex, q: Point) -> str:
-        self._q_near: Vertex = self._get_nearest_vertex(root_vertex, q)
-        self._q_new: Vertex = self._get_new_vertex(self._q_near, q, self._max_dist)
-        if self._get_grid().is_valid_line_sequence(self._get_grid().get_line_sequence(self._q_near.position, self._q_new.position)):
-            self._graph.add_edge(self._q_near, self._q_new)
-            if self._q_new.position == q:
-                return 'reached'
-            else:
-                return 'advanced'
-        return 'trapped'
-
-def _connect(self, root_vertex: Vertex, q: Vertex) -> str:
-    S = 'advanced'
-    while S == 'advanced':
-        S = self._extend(root_vertex, q.position)
-    self._mid_vertex = q
-    return S
-
-def _extract_path(self):
-
-    # trace back
-    path_mid_to_b: List[Vertex] = [self._q_new]
-
-    while len(path_mid_to_b[-1].parents) != 0:
-        for parent in path_mid_to_b[-1].parents:
-            path_mid_to_b.append(parent)
-            break
-
-    path_a_to_mid: List[Vertex] = [self._extension_target]
-
-    while len(path_a_to_mid[-1].parents) != 0:
-        for parent in path_a_to_mid[-1].parents:
-            path_a_to_mid.append(parent)
-            break
-
-    path_a_to_mid.reverse()
-    path = path_a_to_mid + path_mid_to_b
-
-    if self._graph.root_vertices[0] is self._graph.root_vertex_goal:
-        path.reverse()
-
-    for p in path:
-        self.move_agent(p.position)
-        self.key_frame(ignore_key_frame_skip=True)
-
-def _get_random_sample(self) -> Point:
-    while True:
-        rand_pos = np.random.randint(0, self._get_grid().size, self._get_grid().size.n_dim)
-        sample: Point = Point(*rand_pos)
-        if self._get_grid().is_agent_valid_pos(sample):
-            return sample
-
-def _get_nearest_vertex(self, graph_root_vertex: Vertex, q_sample: Point) -> Vertex:
-    return self._graph.get_nearest_vertex([graph_root_vertex], q_sample)
-
-def _get_new_vertex(self, q_near: Vertex, q_sample: Point, max_dist) -> Vertex:
-    dir = q_sample.to_tensor() - q_near.position.to_tensor()
-    if torch.norm(dir) <= max_dist:
-        return Vertex(q_sample)
-
-    dir_normalized = dir / torch.norm(dir)
-    q_new = Point.from_tensor(q_near.position.to_tensor() + max_dist * dir_normalized)
-    return Vertex(q_new)
-
-
-'''
     def get_task(self):
         return self.prompt_task
-    
-    def get_func_name(self):
-        return self.prompt_func_name
-    
-    def get_func_inputs(self):
-        return self.prompt_func_inputs
-    
-    def get_func_outputs(self):
-        return self.prompt_func_outputs
-    
-    def get_inout_inf(self):
-        return self.prompt_inout_inf
-
-    def get_other_inf(self):
-        return self.prompt_other_inf
-    
-    def get_role(self):
-        return self.role
     def get_objective(self):
         return self.objective
     def get_constraints(self):
@@ -415,17 +297,3 @@ def _get_new_vertex(self, q_near: Vertex, q_sample: Point, max_dist) -> Vertex:
         return self.hier_constraints
     def get_package_info(self):
         return self.package_info
-    def get_helper_function(self):
-        return self.helper_funtion
-    def get_helper_function_task(self):
-        return self.helper_funtion_task
-# prompt
-'''
-start_vertex = Vertex(self._get_grid().agent.position)
-start_vertex.cost = 0
-goal_vertex = Vertex(self._get_grid().goal.position)
-
-self._graph = gen_forest(self._services, start_vertex, goal_vertex, [])
-
-
-'''

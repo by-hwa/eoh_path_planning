@@ -3,7 +3,7 @@ from eoh.methods.eoh.classic_planning_method import GetPlanningCode
 class GetPrompts():
     def __init__(self):
         self.planning_code = GetPlanningCode()
-        
+        self.import_string = ''
         self.role = "You are given a reference implementations for path planning algorithms on a discrete grid environment."
         
         self.prompt_task = "Your task is to design and implement an **improved path planning algorithm**, written as a Python function named `_find_path_internal`, that is inspired by but not limited to the provided examples."
@@ -26,7 +26,7 @@ class GetPrompts():
     - Rewiring or optimization steps (e.g., RRT*)
     - Smoothed or shortcut path extraction
     - Early stopping criteria or dynamic iteration limits
-    ... and more.
+    - ... and more you think.
 '''
         self.constraints = '''
 ### Constraints:
@@ -34,9 +34,9 @@ class GetPrompts():
 - Please write a brief description of the algorithm you generated.
 - The description must be inside a brace and placed at the very top of the code.
 - Implement it in Python.
-- You do not need to declare the imports, as they are already provided in the codebase.
+- You DO NOT NEED to declare the any imports.
 - Your function must be named `_find_path_internal`.
-- You must reuse existing helper functions where applicable. If necessary, you may define and use new helper functions to support the implementation.
+- You must reuse existing helper functions where applicable. If necessary, you may define or modify and use new helper functions to support the implementation.
 - It should work with existing components: `Forest`, `Point`, `Vertex`, etc.
 - The `__init__` method must not be modified. However, you are allowed to add new member variables within it (no structural changes or logic modifications).
 - When referencing multiple algorithms, don't forget to declare variables in __init__.
@@ -47,7 +47,7 @@ class GetPrompts():
 - Always verify that any newly introduced variables are properly initialized and assigned in a contextually valid location.
 - Do not assume the existence of any variables that are not shown in the provided reference code. If a variable is required, define it explicitly and ensure it is logically scoped.
 - After code generation, you must review the code to ensure it is syntactically correct, logically coherent, and executable within the expected environment.
-- Add code to treat a route search as not found if it takes more than 30 seconds to find the route.(in function `_find_path_internal`)
+⚠️ Important: Add logic to treat path search as **FAILED** if it takes more than 10 seconds.
 
 ### You may freely define new helper functions if necessary
 - If your approach benefits from additional utility methods (e.g., cost estimation, region sampling, custom distance functions), feel free to create and use them.
@@ -55,22 +55,118 @@ class GetPrompts():
 ### The `_find_path_internal` function is the main function executed for path planning.
 '''
 
+        self.hier_constraints = '''
+### Constraints:
+- A PYTHON CLASS IMPLEMENTING AN IMPROVED PATH PLANNING ALGORITHM NAMED `PathPlanning`.
+- Please write a brief description of the algorithm you generated.
+- The description must be inside a brace and placed at the very top of the code.
+- Implement it in Python.
+- You DO NOT NEED to declare the any imports.
+- Your function must be named `_find_path_internal`.
+- It should work with existing components: `Forest`, `Point`, `Vertex`, etc.
+- The `__init__` method must not be modified. However, you are allowed to add new member variables within it (no structural changes or logic modifications).
+- When referencing multiple algorithms, don't forget to declare variables in __init__.
+- The core logic of the path planning algorithm must be implemented inside the `_find_path_internal` function. You may call any helper functions from within `_find_path_internal`.
+- Analyze the usage patterns and conventions from the provided codebase (e.g., class structure, function calls, and service access), and ensure your code follows the same patterns.
+- All variables or objects used in the code must be explicitly declared before use. Do not use undeclared variables, even if they appear to be implied from context.
+- If the reference code uses specific variable declarations (e.g., `self._graph`, `self._q_new`, 'self._get_random_sample', etc.), ensure these are preserved and correctly initialized before being used.
+- Always verify that any newly introduced variables are properly initialized and assigned in a contextually valid location.
+- Do not assume the existence of any variables that are not shown in the provided reference code. If a variable is required, define it explicitly and ensure it is logically scoped.
+- After code generation, you must review the code to ensure it is syntactically correct, logically coherent, and executable within the expected environment.
+⚠️ Important: Add logic to treat path search as **FAILED** if it takes more than 10 seconds.
+
+### YOU ONLY IMPLIMENT CLASS NAMED `PathPlanning` within method `__init__` and `_find_paht_internal`. YOU DON NOT NEED TO IMPLEMENT HELPFER FUNCTION(BUT YOU CAN CALL them ASSUMING THEY WILL BE IMPLEMENTED LATER.)
+- Within `_find_path_internal`, use clearly named helper functions to delegate subtasks (e.g., sampling, extending, connecting, or path extraction).  
+Do not implement helper functions inline. Just call them assuming they will be implemented later.
+DO NOT IMPLEMENT ANY PLACEHOLDER FUNCTION
+
+### The `_find_path_internal` function is the main function executed for path planning.
+'''
+
+        self.helper_f_constrains = '''
+### Constraints:
+- IMPLEMENT Helper function methods within a Python class.
+- You DO NOT NEED to declare the any imports.
+- You must implement mehods given name.
+- The implementing method operates within a class that is provided as reference code that has already been implemented.
+- Do not implement any functions inline. Just call them assuming they will be implemented later.
+'''
+        self.helper_funtion_task = '''
+Your task is to:
+1. Extract all undefined helper function names and their usage patterns.
+2. For each helper function, generate its full implementation.
+3. Ensure each function aligns with the variables, types, and structure used in the main function.
+'''
+
         self.prompt_func_name = ""
         self.prompt_func_inputs = ""
         self.prompt_func_outputs = ""
-
 
         self.prompt_inout_inf = ""
         self.prompt_other_inf = "A Python class implementing an improved path planner named `PathPlanning`."
 
         self.package_info = '''
 from structures import Point
+
+from algorithms.configuration.entities.entity import Entity
+from algorithms.configuration.entities.agent import Agent
+from algorithms.configuration.entities.goal import Goal
+from algorithms.configuration.entities.obstacle import Obstacle
+from algorithms.configuration.entities.trace import Trace
 from algorithms.configuration.maps.map import Map
+from algorithms.configuration.maps.bresenhams_algo import bresenhamline
+from algorithms.configuration.maps.map import Map
+
 from algorithms.classic.sample_based.core.vertex import Vertex
 from algorithms.classic.sample_based.core.graph import gen_forest, Forest
+from algorithms.classic.sample_based.core.graph import gen_cyclic_graph, CyclicGraph
 
+### Reference Classes and Utilities
 
-### Additional Reference Information
+`Point` class:
+The Point class represents a multi-dimensional, immutable coordinate used in grid-based environments.
+It extends torch.Tensor, supporting tensor operations while preserving structured access to coordinate values (x, y, z, etc.).
+It supports both integer and float coordinates, depending on input.
+
+Constructor: Point(*ords), Point(x=..., y=..., z=...)  # keyword-style initialization also supported
+
+Accepts either positional arguments (e.g., Point(3, 4)) or named arguments (e.g., Point(x=3, y=4)).
+Requires at least 2 dimensions.
+Automatically determines whether the point is float or integer based on input values.
+
+Attributes:
+- x: float | int : First coordinate (e.g., horizontal axis in 2D).
+- y: float | int : Second coordinate (e.g., vertical axis in 2D).
+- z: float | int (only present in 3D or higher) : Third coordinate. Accessing this on 2D points raises an assertion.
+- n_dim: int : The number of dimensions in the point.
+- values: Tuple[float | int, ...] : The full set of coordinates.
+- is_float: bool Indicates whether any of the coordinates are floating-point values.
+
+Methods:
+- to_tensor() -> torch.Tensor : Returns a float tensor representation of the point.
+- from_tensor(inp: torch.Tensor) -> Point (static) : Converts a 1D tensor into a Point by rounding and casting to int.
+- __getitem__(idx: int) -> float | int : Index-based access to coordinates.
+- __iter__() -> Iterator[float | int] : Iterable over coordinates.
+
+`Entity` class:
+The Entity class is a base class for all objects found on the map.
+It defines a common interface and data representation for any object with a spatial location and optional radius.
+All core map components — including Agent, Goal, Obstacle, and Trace — inherit from Entity.
+
+Constructor: Entity(position: Point, radius: float = 0)
+
+Attributes:
+- position: Point
+- radius: int
+
+These attributes are accessed via: entity.position, entity.radius
+
+Methods:
+- __str__(self) -> str: Returns a string representation of the entity with its position and radius.
+- __copy__(self) -> Entity: Returns a shallow copy of the entity.
+- __deepcopy__(self, memo: Dict) -> Entity: Returns a deep copy of the entity.
+- __eq__(self, other: object) -> bool: Returns True if two entities are equal in both position and radius.
+- __ne__(self, other: object) -> bool: Returns True if two entities are not equal.
 
 `Map` class:
 
@@ -89,7 +185,7 @@ Attributes:
 - trace: List[Trace]
 - size: Size
 
-Agent, Goal, Obstacle and Trace are classes that represent the agent, goal, obstacle and trace positions in the grid. Access to their attributes positions and radius.
+Agent, Goal, Obstacle and Trace are classes that represent the agent, goal, obstacle and trace positions in the grid. Access to their attributes positions and radius. and inherit from `Entity` class
 (e.g. `.position`, `.radius`)
 
 methods:
@@ -97,55 +193,34 @@ methods:
 :param obstacle_start_point: The obstacle location
 :param visited: Can pass own visited set so that we do not visit those nodes again
 :return: Obstacle bound
-
 - get_move_index(self, direction: List[float]) -> int: Method for getting the move index from a direction
 :param direction: The direction
 :return: The index as an integer
-
 - get_move_along_dir(self, direction: List[float]) -> Point: Method for getting the movement direction from a normal direction
 :param direction: The true direction
 :return: The movement direction as a Point
-
-- reset(self) -> None: Resets the map by replaying the trace
-
 - get_line_sequence(self, frm: Point, to: Point) -> List[Point]: Bresenham's line algorithm, Given coordinate of two n dimensional points. The task to find all the intermediate points required for drawing line AB.
-
 - is_valid_line_sequence(self, line_sequence: List[Point]) -> bool
-
 - is_goal_reached(self, pos: Point, goal: Goal = None) -> bool: Method that checks if the position coincides with the goal
 :param pos: The position
 :param goal: If not default goal is considered
 :return: If the goal has been reached from the given position
-
 - is_agent_in_goal_radius(self, agent_pos: Point = None, goal: Goal = None) -> bool
-
 - is_agent_valid_pos(self, pos: Point) -> bool: Checks if the point is a valid position for the agent
 :param pos: The position
 :return: If the point is a valid position for the agent
-
-- get_next_positions(self, pos: Point) -> List[Point]: Returns the next available positions valid from the agent point of view given x-point connectivity
+- get_next_positions(self, pos: Point) -> List[Point]: Returns the next available positions
 :param pos: The position
 :return: A list of positions
-
-- get_next_positions_with_move_index(self, pos: Point) -> List[Tuple[Point, int]]: Returns the next available positions valid from the agent point of view given x-point connectivity
+- get_next_positions_with_move_index(self, pos: Point) -> List[Tuple[Point, int]]: Returns the next available positions with move index
 :param pos: The position
 :return: A list of positions with move index
-
-- apply_move(move: Point, pos: Point) -> Point: Applies the given move and returns the new destination (this is staticmethod function, it can use like this `Map.apply_move(move, pos)` or `self._get_grid().apply_move(move, pos)`)
-:param move: The move to apply
-:param pos: The source
-:return: The destination after applying the move
-
 - get_movement_cost(self, frm: Union[Point, Entity] = None, to: Union[Point, Entity] = None) -> float: Returns the movement cost from one point to another
 :param frm: The source point or entity
 :param to: The destination point or entity
 :return: The movement cost as a float
-
 - get_movement_cost_from_index(self, idx: int, frm: Optional[Point] = None) -> float: Returns the movement cost from one point to another using the move index
-
 - get_distance(frm: Point, to: Point) -> float: Returns the distance between two points (this is staticmethod function, it can use like this `Map.get_distance(frm, to)` or `self._get_grid().get_distance(frm, to)`)
-
-
 
 `Vertex` class:
 The `Vertex` class represents a node in the path planning graph. It stores the position of the vertex, its children and parents, and the cost associated with it. The class provides methods to add child and parent vertices, allowing for the construction of a directed graph structure.
@@ -164,7 +239,6 @@ This Attributes cans access the vertex position, cost, children, parents, connec
 (e.g. `.position`, `.cost`, `.children`, `.parents`, `.connectivity`, `.aux`)
 
 Methods:
-
 - add_child(self, child: 'Vertex') -> None: Adds a child vertex to the current vertex.
 - add_parent(self, parent: 'Vertex') -> None: Adds a parent vertex to the current vertex.
 - set_child(self, child: 'Vertex'): Sets a child vertex for the current vertex.
@@ -215,18 +289,15 @@ Methods:
 - walk_dfs_subset_of_vertices(self, root_vertices_subset: List[Vertex], f: Callable[[Vertex], bool]): Applies f to each vertex in the subset; stops early if f returns False.
 - walk_dfs(self, f: Callable[[Vertex], bool]): Applies f to each root vertex; stops early if f returns False.
 
-
-
-
-declare intial variables:
-self.grid: Map = self._get_grid()
-
-start_vertex: Vertex = Vertex(self.grid.agent.position)
-start_vertex.cost = 0
-goal_vertex: Vertex = Vertex(self.grid.goal.position)
-
-self._graph: Forest = gen_forest(self._services, start_vertex, goal_vertex, [])
-
+`Bresenhamline` method
+- bresenhamline(start, end, max_iter=-1): Returns a list of points from (start, end] by ray tracing a line b/w the points.
+    Parameters:
+        start: An array of start points (number of points x dimension)
+        end:   An end points (1 x dimension)
+            or An array of end point corresponding to each start point
+                (number of points x dimension)
+        max_iter: Max points to traverse. if -1, maximum number of required
+                  points are traversed
 
 ### Additional Reference Information (Map API Access)
 You may use the following `Map` methods and properties to support path planning:
@@ -314,7 +385,7 @@ def _get_new_vertex(self, q_near: Vertex, q_sample: Point, max_dist) -> Vertex:
     q_new = Point.from_tensor(q_near.position.to_tensor() + max_dist * dir_normalized)
     return Vertex(q_new)
 
-    
+
 '''
     def get_task(self):
         return self.prompt_task
@@ -340,10 +411,14 @@ def _get_new_vertex(self, q_near: Vertex, q_sample: Point, max_dist) -> Vertex:
         return self.objective
     def get_constraints(self):
         return self.constraints
-
-    def get_prior_knowledge(self):
-        return
-    
+    def get_hier_constraints(self):
+        return self.hier_constraints
+    def get_package_info(self):
+        return self.package_info
+    def get_helper_function(self):
+        return self.helper_funtion
+    def get_helper_function_task(self):
+        return self.helper_funtion_task
 # prompt
 '''
 start_vertex = Vertex(self._get_grid().agent.position)

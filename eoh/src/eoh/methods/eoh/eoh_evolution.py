@@ -11,19 +11,10 @@ class Evolution():
 
     def __init__(self, api_endpoint, api_key, model_LLM,llm_use_local,llm_local_url, debug_mode, prompts, hier_gen, **kwargs):
         self.prompt_task         = prompts.get_task()
-        self.prompt_func_name    = prompts.get_func_name()
-        self.prompt_func_inputs  = prompts.get_func_inputs()
-        self.prompt_func_outputs = prompts.get_func_outputs()
-        self.prompt_inout_inf    = prompts.get_inout_inf()
-        self.prompt_other_inf    = prompts.get_other_inf()
-        self.prompt_role         = prompts.get_role()
         self.prompt_objective    = prompts.get_objective()
         self.prompt_constraints  = prompts.get_constraints() if not hier_gen else prompts.get_hier_constraints()
         self.package_info        = prompts.get_package_info()
-        self.helper_function     = prompts.get_helper_function()
-        self.helper_function_task= prompts.get_helper_function_task()
         self.inherit_prompt = prompts.planning_code.get_inherit_prompt()
-        self.import_string = prompts.import_string
 
         # set LLMs
         self.api_endpoint = api_endpoint
@@ -32,95 +23,34 @@ class Evolution():
         self.debug_mode = debug_mode # close prompt checking
         self.hier_gen = hier_gen
 
+        # set operator instruction
+        self.e1 = ''
+        self.e2 = ''
+        self.m1 = ''
+        self.m2 = ''
+        self.m3 = ''
+
         if 'no_lm' not in kwargs.keys():
             self.interface_llm = InterfaceLLM(self.api_endpoint, self.api_key, self.model_LLM,llm_use_local,llm_local_url, self.debug_mode)
 
-    def get_prompt_path_e1(self, indivs):
+    def get_prompt(self, indivs, op=None):
         prompt_indiv = ""
-        for i in range(len(indivs)):
-            prompt_indiv=prompt_indiv+"No."+str(i+1) +" algorithm and the corresponding code are: \n" + indivs[i]['algorithm']+"\n" +indivs[i]['code']+"\n"
+        if len(indivs)>1:
+            prompt_indiv="I have "+str(len(indivs))+" existing algorithms with their codes as follows: \n"
+            for i in range(len(indivs)):    
+                prompt_indiv=prompt_indiv+f"No.{str(i+1)} algorithm and the corresponding code are: \nAlgorithm description: {indivs[i]['algorithm']}\nCode:\n{indivs[i]['code']}\n"
+        else: 
+            prompt_indiv=f"Reference Implementation:\nAlgorithm description: {indivs[0]['algorithm']}\nCode:\n{indivs['code']}\n"
+            
+            prompt_content= self.prompt_task+"\n"+\
+                "Below is reference information describing available classes and utility functions to help you understand the purpose and capabilities of the imported components.\n"+\
+                self.package_info+"\n"+\
+                self.inherit_prompt+"\n"+\
+                prompt_indiv+\
+                f'Instruction : {getattr(self, op)}' if hasattr(self, op) else ''+\
+                self.prompt_objective+"\n"+\
+                self.prompt_constraints
 
-        prompt_content = self.prompt_role+"\n"+self.prompt_task+"\n"\
-"Below is reference information describing available classes and utility functions to help you understand the purpose and capabilities of the imported components.\n"+\
-self.package_info + "\n" + self.inherit_prompt + "\n"\
-"I have "+str(len(indivs))+" existing algorithms with their codes as follows: \n"\
-+prompt_indiv+"\n"\
-"Please help me create a new algorithm that has a totally different form from the given ones. \n"\
-+ self.prompt_objective + "\n" + self.prompt_constraints + "\n" + "Do not give additional explanations."
-        return prompt_content
-
-    def get_prompt_path_e2(self, indivs):
-        prompt_indiv = ""
-        for i in range(len(indivs)):
-            prompt_indiv=prompt_indiv+"No."+str(i+1) +" algorithm and the corresponding code are: \n" + indivs[i]['algorithm']+"\n" +indivs[i]['code']+"\n"
-
-        prompt_content = self.prompt_role+"\n"+self.prompt_task+"\n"\
-"Below is reference information describing available classes and utility functions to help you understand the purpose and capabilities of the imported components.\n"+\
-self.package_info + "\n" + self.inherit_prompt + "\n" \
-"I have "+str(len(indivs))+" existing algorithms with their codes as follows: \n"\
-+prompt_indiv+"\n"\
-"Please help me create a new algorithm that has a totally different form from the given ones but can be motivated from them. \n"\
-"Identify the common backbone idea in the provided algorithms." \
-+ self.prompt_objective + "\n" + self.prompt_constraints + "\n" + "Do not give additional explanations."
-        return prompt_content
-
-    def get_prompt_time(self, indiv1):
-        prompt_content = self.prompt_role+"\n"+self.prompt_task+"\n"\
-"Below is reference information describing available classes and utility functions to help you understand the purpose and capabilities of the imported components.\n"\
-+self.package_info + "\n" + self.inherit_prompt + "\n"\
-+"Reference Implementation:\n" \
-+"Algorithm description: "+indiv1['algorithm']+"\nCode:\n"+indiv1['code']+"\n\
-Please help us create a new algorithm with improved time by modifying the provided algorithm. \n"\
-"Identify the backbone idea in the provided algorithms." \
-+ self.prompt_objective + "\n" + self.prompt_constraints + "\n" + "Do not give additional explanations."
-        return prompt_content
-    
-    def get_prompt_distance(self, indiv1):
-        prompt_content = self.prompt_role+"\n"+self.prompt_task+"\n"\
-"Below is reference information describing available classes and utility functions to help you understand the purpose and capabilities of the imported components.\n"\
-+self.package_info + "\n" + self.inherit_prompt + "\n"\
-+"Reference Implementation:\n" \
-+"Algorithm description: "+indiv1['algorithm']+"\nCode:\n"+indiv1['code']+"\n\
-Please help us create a new algorithm with improved distance by modifying the provided algorithm. \n"\
-"Identify the backbone idea in the provided algorithms." \
-+ self.inherit_prompt + "\n" \
-+ self.prompt_objective + "\n" + self.prompt_constraints + "\n" + "Do not give additional explanations."
-        return prompt_content
-    
-    def get_prompt_smoothness(self, indiv1):
-        prompt_content = self.prompt_role+"\n"+self.prompt_task+"\n"\
-"Below is reference information describing available classes and utility functions to help you understand the purpose and capabilities of the imported components.\n"\
-+self.package_info + "\n" + self.inherit_prompt + "\n"\
-+"Reference Implementation:\n" \
-+"Algorithm description: "+indiv1['algorithm']+"\nCode:\n"+indiv1['code']+"\n\
-Please help us create a new algorithm with improved smoothness by modifying the provided algorithm. \n"\
-"Identify the backbone idea in the provided algorithms." \
-+ self.inherit_prompt + "\n" \
-+ self.prompt_objective + "\n" + self.prompt_constraints  + "\n" + "Do not give additional explanations."
-        return prompt_content
-    
-    def get_prompt_clearance(self, indiv1):
-        prompt_content = self.prompt_role+"\n"+self.prompt_task+"\n"\
-"Below is reference information describing available classes and utility functions to help you understand the purpose and capabilities of the imported components.\n"\
-+self.package_info + "\n" + self.inherit_prompt + "\n"\
-+"Reference Implementation:\n" \
-+"Algorithm description: "+indiv1['algorithm']+"\nCode:\n"+indiv1['code']+"\n\
-Please help us create a new algorithm with improved clearance by modifying the provided algorithm. \n"\
-"Identify the backbone idea in the provided algorithms." \
-+ self.inherit_prompt + "\n" \
-+ self.prompt_objective + "\n" + self.prompt_constraints  + "\n" + "Do not give additional explanations."
-        return prompt_content
-    
-    def get_prompt_memory(self, indiv1):
-        prompt_content = self.prompt_role+"\n"+self.prompt_task+"\n"\
-"Below is reference information describing available classes and utility functions to help you understand the purpose and capabilities of the imported components.\n"\
-+self.package_info + "\n" + self.inherit_prompt + "\n"\
-+"Reference Implementation:\n" \
-+"Algorithm description: "+indiv1['algorithm']+"\nCode:\n"+indiv1['code']+"\n\
-Please help us create a new algorithm with improved computing memory by modifying the provided algorithm. \n"\
-"Identify the backbone idea in the provided algorithms." \
-+ self.inherit_prompt + "\n" \
-+ self.prompt_objective + "\n" + self.prompt_constraints + "\n" + "Do not give additional explanations."
         return prompt_content
     
     def get_fgen_prompt(self, f_name, f_assign, code_string):
@@ -243,8 +173,8 @@ If the function you generate calls any additional undefined helper functions, do
         print("\n >>> check designed algorithm: \n", algorithm)
         print("\n >>> check designed code: \n", code_all)
 
-    def e1(self,parents):
-        prompt_content = self.get_prompt_path_e1(parents)
+    def evol(self,parents, op):
+        prompt_content = self.get_prompt(parents, op)
 
         [code_all, algorithm] = self._get_alg(prompt_content)
 
@@ -258,88 +188,7 @@ If the function you generate calls any additional undefined helper functions, do
 
         return [code_all, algorithm]
     
-    def e2(self,parents):
-        prompt_content = self.get_prompt_path_e2(parents)
-        [code_all, algorithm] = self._get_alg(prompt_content)
 
-        if self.hier_gen: 
-            defined_funcs, generated_funcs = set(), list()
-            code_all = self.get_function(code_all, defined_funcs, generated_funcs)
-
-        code_all = f"{code_all}"
-
-        if self.debug_mode: self.debug_info(sys._getframe().f_code.co_name, prompt_content, algorithm, code_all)
-
-        return [code_all, algorithm]
-    
-    def m_time(self, parents):
-        prompt_content = self.get_prompt_time(parents)
-        [code_all, algorithm] = self._get_alg(prompt_content)
-
-        if self.hier_gen: 
-            defined_funcs, generated_funcs = set(), list()
-            code_all = self.get_function(code_all, defined_funcs, generated_funcs)
-
-        code_all = f"{code_all}"
-
-        if self.debug_mode: self.debug_info(sys._getframe().f_code.co_name, prompt_content, algorithm, code_all)
-
-        return [code_all, algorithm]
-    
-    def m_distance(self, parents):
-        prompt_content = self.get_prompt_distance(parents)
-        [code_all, algorithm] = self._get_alg(prompt_content)
-
-        if self.hier_gen: 
-            defined_funcs, generated_funcs = set(), list()
-            code_all = self.get_function(code_all, defined_funcs, generated_funcs)
-
-        code_all = f"{code_all}"
-
-        if self.debug_mode: self.debug_info(sys._getframe().f_code.co_name, prompt_content, algorithm, code_all)
-
-        return [code_all, algorithm]
-    
-    def m_smoothness(self, parents):
-        prompt_content = self.get_prompt_smoothness(parents)
-        [code_all, algorithm] = self._get_alg(prompt_content)
-
-        if self.hier_gen: 
-            defined_funcs, generated_funcs = set(), list()
-            code_all = self.get_function(code_all, defined_funcs, generated_funcs)
-
-        code_all = f"{code_all}"
-
-        if self.debug_mode: self.debug_info(sys._getframe().f_code.co_name, prompt_content, algorithm, code_all)
-        return [code_all, algorithm]
-    
-    def m_clearance(self, parents):
-        prompt_content = self.get_prompt_clearance(parents)
-        [code_all, algorithm] = self._get_alg(prompt_content)
-
-        if self.hier_gen: 
-            defined_funcs, generated_funcs = set(), list()
-            code_all = self.get_function(code_all, defined_funcs, generated_funcs)
-
-        code_all = f"{code_all}"
-
-        if self.debug_mode: self.debug_info(sys._getframe().f_code.co_name, prompt_content, algorithm, code_all)
-
-        return [code_all, algorithm]
-    
-    def m_memory(self, parents):
-        prompt_content = self.get_prompt_memory(parents)
-        [code_all, algorithm] = self._get_alg(prompt_content)
-
-        if self.hier_gen: 
-            defined_funcs, generated_funcs = set(), list()
-            code_all = self.get_function(code_all, defined_funcs, generated_funcs)
-
-        code_all = f"{code_all}"
-
-        if self.debug_mode: self.debug_info(sys._getframe().f_code.co_name, prompt_content, algorithm, code_all)
-
-        return [code_all, algorithm]
     
     def _get_trouble_shoot_prompt(self, code_string, error_string):
         prompt = '''
@@ -355,13 +204,6 @@ Your output should only include the complete fixed code block with the issue res
 '''
         code_string = '# Code:\n```python\n' + code_string + '\n```'
         error_string = '# Error \n ```text\n' + error_string + '\n```'
-
-        constraint = '''
-# Constraint
-- Maintain original logic and style as much as possible.
-- Use existing helper functions if available.
-- Do not introduce unnecessary external libraries.
-'''
 
         return 'Below is supplementary reference information describing available classes and utility functions used in the provided code.'+self.package_info + "\n" + self.inherit_prompt + "\n" + prompt + code_string + error_string
     

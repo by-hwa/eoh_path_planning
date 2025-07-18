@@ -81,9 +81,6 @@ class EOH:
 
         time_start = time.time()
 
-        # interface for large language model (llm)
-        # interface_llm = PromptLLMs(self.api_endpoint,self.api_key,self.llm_model,self.debug_mode)
-
         # interface for evaluation
         interface_prob = self.prob
 

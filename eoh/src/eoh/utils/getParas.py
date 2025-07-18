@@ -85,7 +85,9 @@ class Paras():
             elif self.method == 'sa':
                 self.ec_operators  = ['m1']
             elif self.method == 'path_eoh':
-                self.ec_operators = ['e1', 'e2', 'time', 'distance', 'smoothness', 'clearance', 'memory']
+                # self.ec_operators = ['e1', 'e2', 'time', 'distance', 'smoothness', 'clearance', 'memory']
+                self.ec_operators  = ['e1','e2','m1','m2']
+
                 # self.ec_operators = ['time', 'distance', 'smoothness', 'clearance', 'memory']
                 if self.get_initial:
                     # self.ref_algorithm = ['astar', 'rrt', 'sprm', 'rrt_star', 'rrt_connect']
