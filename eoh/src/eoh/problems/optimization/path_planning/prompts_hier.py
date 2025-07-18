@@ -40,6 +40,8 @@ class GetPrompts():
 - If your approach benefits from additional utility methods (e.g., cost estimation, region sampling, custom distance functions), feel free to create and use them.
 
 ### The `_find_path_internal` function is the main function executed for path planning.
+
+⚠️ Do not give additional explanations.
 '''
 
         self.hier_constraints = '''
@@ -69,7 +71,7 @@ DO NOT IMPLEMENT ANY PLACEHOLDER FUNCTION
 
 ### The `_find_path_internal` function is the main function executed for path planning.
 
-Do not give additional explanations.
+⚠️ Do not give additional explanations.
 '''
 
 
@@ -83,7 +85,6 @@ from algorithms.configuration.entities.obstacle import Obstacle
 from algorithms.configuration.entities.trace import Trace
 from algorithms.configuration.maps.map import Map
 from algorithms.configuration.maps.bresenhams_algo import bresenhamline
-from algorithms.configuration.maps.map import Map
 
 from algorithms.classic.sample_based.core.vertex import Vertex
 from algorithms.classic.sample_based.core.graph import gen_forest, Forest

@@ -24,11 +24,11 @@ class Evolution():
         self.hier_gen = hier_gen
 
         # set operator instruction
-        self.e1 = ''
-        self.e2 = ''
-        self.m1 = ''
-        self.m2 = ''
-        self.m3 = ''
+        self.e1 = 'e1'
+        self.e2 = 'e2'
+        self.m1 = 'm1'
+        self.m2 = 'm2'
+        self.m3 = 'm3'
 
         if 'no_lm' not in kwargs.keys():
             self.interface_llm = InterfaceLLM(self.api_endpoint, self.api_key, self.model_LLM,llm_use_local,llm_local_url, self.debug_mode)
@@ -42,14 +42,14 @@ class Evolution():
         else: 
             prompt_indiv=f"Reference Implementation:\nAlgorithm description: {indivs[0]['algorithm']}\nCode:\n{indivs['code']}\n"
             
-            prompt_content= self.prompt_task+"\n"+\
-                "Below is reference information describing available classes and utility functions to help you understand the purpose and capabilities of the imported components.\n"+\
-                self.package_info+"\n"+\
-                self.inherit_prompt+"\n"+\
-                prompt_indiv+\
-                f'Instruction : {getattr(self, op)}' if hasattr(self, op) else ''+\
-                self.prompt_objective+"\n"+\
-                self.prompt_constraints
+        prompt_content= self.prompt_task+"\n"+\
+            "Below is reference information describing available classes and utility functions to help you understand the purpose and capabilities of the imported components.\n"+\
+            self.package_info+\
+            self.inherit_prompt+\
+            prompt_indiv+\
+            (f'Instruction : {getattr(self, op)}\n' if hasattr(self, op) else '')+\
+            self.prompt_objective+\
+            self.prompt_constraints
 
         return prompt_content
     
