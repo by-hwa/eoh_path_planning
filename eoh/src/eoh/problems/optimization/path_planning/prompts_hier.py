@@ -14,6 +14,8 @@ class GetPrompts():
   - Robustness
   - Success rate
   - Path smoothness
+  - Path lengths
+  - Reduce search time
 '''
         self.constraints = '''
 ### Constraints:
@@ -31,7 +33,7 @@ class GetPrompts():
 - Analyze the usage patterns and conventions from the provided codebase (e.g., class structure, function calls, and service access), and ensure your code follows the same patterns.
 - All variables or objects used in the code must be explicitly declared before use. Do not use undeclared variables, even if they appear to be implied from context.
 - If the reference code uses specific variable declarations (e.g., `self._graph`, `self._q_new`, 'self._get_random_sample', etc.), ensure these are preserved and correctly initialized before being used.
-- Always verify that any newly introduced variables are properly initialized and assigned in a contextually valid location.
+- Always verify that any newly introduced variables are prperly initialized and assigned in a contextually valid location.
 - Do not assume the existence of any variables that are not shown in the provided reference code. If a variable is required, define it explicitly and ensure it is logically scoped.
 - After code generation, you must review the code to ensure it is syntactically correct, logically coherent, and executable within the expected environment.
 ⚠️ Important: Add logic to treat path search as **FAILED** if it takes more than 10 seconds.

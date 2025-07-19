@@ -124,8 +124,6 @@ class InterfaceEC():
 
         return parents, offspring
     
-    
-
 
     def get_offspring(self, pop, operator):
 
@@ -170,7 +168,7 @@ class InterfaceEC():
                         offspring['objective'] = np.round(fitness, 5) if fitness else None
                         offspring['results'] = results
                         offspring['results'] = {k: v for k, v in offspring['results'].items() if "alldata" not in k}
-
+                        
                         filename = self.output_path + "/results/pops/evaluated_entire_population_generation.json"
                         if offspring['objective'] and offspring['objective'] != float("inf"):
                             with open(file=filename, mode='a') as f:
@@ -209,10 +207,10 @@ class InterfaceEC():
         # Round the objective values
         return p, offspring
 
-    def get_algorithm(self, pop, operator):
+    def get_algorithm(self, pop, operators):
         results = []
         try:
-            results = Parallel(n_jobs=self.n_p,prefer='threads', timeout=self.timeout+15)(delayed(self.get_offspring)(pop, operator) for _ in range(self.pop_size))
+            results = Parallel(n_jobs=self.n_p,prefer='threads', timeout=self.timeout+15)(delayed(self.get_offspring)(pop, operator) for operator in operators)
         except Exception as e:
             if self.debug:
                 print(f"Error in get_algorithm: {traceback.format_exc()}")

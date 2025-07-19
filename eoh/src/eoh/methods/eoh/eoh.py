@@ -78,7 +78,6 @@ class EOH:
     def run(self):
 
         print("- Evolution Start -")
-
         time_start = time.time()
 
         # interface for evaluation
@@ -89,8 +88,7 @@ class EOH:
                                    self.debug_mode, interface_prob, select=self.select,n_p=self.exp_n_proc,
                                    timeout = self.timeout, use_numba=self.use_numba, output_path=self.output_path, hier_gen=self.hier_gen, n_op=len(self.operators)
                                    )
-        
-        
+        # write astar result
         filename = self.output_path + "/results/pops/evaluated_entire_population_generation.json"
         with open(file=filename, mode='a') as f:
             f.write('Astar')
@@ -159,15 +157,13 @@ class EOH:
         filename = self.output_path + "/results/pops/entire_population_generation.json"
 
         for pop in range(n_start, self.n_pop):  
-            for i in range(n_op):
-                op = self.operators[i]
-                print(f" OP: {op}, [{i + 1} / {n_op}] ", end="|") 
-                op_w = self.operator_weights[i]
-                if (np.random.rand() < op_w):
-                    parents, offsprings = interface_ec.get_algorithm(population, op)
+            for i in range(self.pop_size//n_op):
+                parents, offsprings = interface_ec.get_algorithm(population, self.operators)
                 self.add2pop(population, offsprings)  # Check duplication, and add the new offspring
-                for off in offsprings:
-                    print(" Obj: ", off['objective'], end="|")
+
+
+            for off in offsprings:
+                print(" Obj: ", off['objective'], end="|")
                 print(f"\n len pop size----------------{len(population)}")
                 size_act = min(len(population), self.pop_size)
                 population = self.manage.population_management(population, size_act)

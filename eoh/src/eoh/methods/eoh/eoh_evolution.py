@@ -24,11 +24,11 @@ class Evolution():
         self.hier_gen = hier_gen
 
         # set operator instruction
-        self.e1 = 'e1'
-        self.e2 = 'e2'
-        self.m1 = 'm1'
-        self.m2 = 'm2'
-        self.m3 = 'm3'
+        self.e1 = '''Design a brand new algorithm from scratch.'''
+        self.e2 = '''Create a hybrid algorithm inspired by multiple existing ones.'''
+        self.m1 = '''Modify the structure of an existing algorithm.'''
+        self.m2 = '''Tune and reconfigure the parameters of a given algorithm.'''
+        self.m3 = '''Simplify to enhance generalization for given algorithm.'''
 
         if 'no_lm' not in kwargs.keys():
             self.interface_llm = InterfaceLLM(self.api_endpoint, self.api_key, self.model_LLM,llm_use_local,llm_local_url, self.debug_mode)
