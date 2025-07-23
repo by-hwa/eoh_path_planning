@@ -14,7 +14,7 @@ class Evolution():
         self.prompt_objective    = prompts.get_objective()
         self.prompt_constraints  = prompts.get_constraints() if not hier_gen else prompts.get_hier_constraints()
         self.package_info        = prompts.get_package_info()
-        self.inherit_prompt = prompts.planning_code.get_inherit_prompt()
+        self.inherit_prompt      = prompts.get_inherit_prompt()
 
         # set LLMs
         self.api_endpoint = api_endpoint

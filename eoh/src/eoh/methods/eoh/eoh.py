@@ -92,7 +92,7 @@ class EOH:
         filename = self.output_path + "/results/pops/evaluated_entire_population_generation.json"
         with open(file=filename, mode='a') as f:
             f.write('Astar')
-            filtered = {k: v for k, v in interface_prob.a_star_statistics.items() if "alldata" not in k}
+            filtered = {k: v for k, v in interface_prob.ref_statistics.items() if "alldata" not in k}
             json.dump(InterfaceEC.convert_numpy(filtered), f, indent=5)
             f.write('\n')
 
@@ -158,6 +158,7 @@ class EOH:
 
         for pop in range(n_start, self.n_pop):  
             for i in range(self.pop_size//n_op):
+                # self.operators = ["e1"] # for debug
                 parents, offsprings = interface_ec.get_algorithm(population, self.operators)
                 self.add2pop(population, offsprings)  # Check duplication, and add the new offspring
 

@@ -111,13 +111,14 @@ class InterfaceEC():
 
     def _get_alg(self,pop,operator):
         offspring = {
+            'operator': operator,
             'algorithm': None,
             'code': None,
             'objective': None,
             'other_inf': None
         }
         if hasattr(self.evol, operator):
-            parents = self.select.parent_selection(pop,self.m, operator)
+            parents = self.select.parent_selection(pop, self.m)
             [offspring['code'],offspring['algorithm']] = self.evol.evol(parents, operator)
         else:
             print(f"Evolution operator [{operator}] has not been implemented ! \n") 
@@ -143,7 +144,7 @@ class InterfaceEC():
                 if n_retry > 1:
                     break
 
-            print("here is the offspring code: @@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@")
+            # print("here is the offspring code: @@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@")
             # print(code)
 
             filename = self.output_path + "/results/pops/entire_population_generation.json"
@@ -154,9 +155,9 @@ class InterfaceEC():
                             
             with concurrent.futures.ThreadPoolExecutor() as executor:
                 n_try = 0
-                while n_try <= 3:
-                    n_try += 1
-                    try:
+                try:
+                    while n_try <= 3:
+                        n_try += 1
                         future = executor.submit(self.interface_eval.evaluate, code)
                         fitness, results = future.result(timeout=self.timeout)
 
@@ -168,7 +169,7 @@ class InterfaceEC():
                         offspring['objective'] = np.round(fitness, 5) if fitness else None
                         offspring['results'] = results
                         offspring['results'] = {k: v for k, v in offspring['results'].items() if "alldata" not in k}
-                        
+
                         filename = self.output_path + "/results/pops/evaluated_entire_population_generation.json"
                         if offspring['objective'] and offspring['objective'] != float("inf"):
                             with open(file=filename, mode='a') as f:
@@ -178,15 +179,25 @@ class InterfaceEC():
                         elif offspring['objective'] == float("inf"):
                             break
 
-                        
-                    except Exception as e:
-                        print(f"Error in ThreadPoolExecutor : {offspring['results']['Traceback']}")
-                        if n_try <= 3:
-                            print(f'Trying Trouble shoot {n_try}')
-                            code = self.evol.trouble_shoot(code, offspring['results']['Traceback'])
-                            offspring['code'] = code
-                            print('Trouble shooted CODE')
-                            print(code)
+                        if 'Traceback' in offspring['results']:
+                            print(f"Error in ThreadPoolExecutor : {offspring['results']['Traceback']}")
+                            filename = self.output_path + "/results/pops/error_occured_entire_population_generation.json"
+                            with open(file=filename, mode='a') as f:
+                                json.dump(self.convert_numpy(offspring), f, indent=5)
+                                f.write('\n')
+                            if n_try <= 3:
+                                print(f'Trying Trouble shoot {n_try}')
+                                code = self.evol.trouble_shoot(code, offspring['results']['Traceback'])
+                                offspring['code'] = code
+                                print('Trouble shooted CODE')
+                                print(code)
+                    
+                    
+                except Exception as e:
+                    print(f"Error in get_offspring: {traceback.format_exc()}")
+                    offspring['objective'] = None
+                    offspring['results'] = None
+                    time.sleep(1)
                     
                 future.cancel()
 
@@ -216,6 +227,13 @@ class InterfaceEC():
                 print(f"Error in get_algorithm: {traceback.format_exc()}")
             print("Parallel time out .")
             
+        # for operator in operators:
+        #     p, off = self.get_offspring(pop, operator)
+        #     if off['objective'] is not None:
+        #         results.append((p, off))
+        #     else:
+        #         print(f"Offspring with operator {operator} has no valid objective, skipping...")
+
         time.sleep(2)
         print(len(results))
         out_p = []

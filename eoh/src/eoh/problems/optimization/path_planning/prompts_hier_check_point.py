@@ -419,13 +419,3 @@ def _get_new_vertex(self, q_near: Vertex, q_sample: Point, max_dist) -> Vertex:
         return self.helper_funtion
     def get_helper_function_task(self):
         return self.helper_funtion_task
-# prompt
-'''
-start_vertex = Vertex(self._get_grid().agent.position)
-start_vertex.cost = 0
-goal_vertex = Vertex(self._get_grid().goal.position)
-
-self._graph = gen_forest(self._services, start_vertex, goal_vertex, [])
-
-
-'''

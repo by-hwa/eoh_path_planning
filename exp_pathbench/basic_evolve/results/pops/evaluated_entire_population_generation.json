@@ -1,0 +1,22 @@
+Astar{
+     "goal_found_perc": 100.0,
+     "average_steps": 165.0,
+     "average_distance": 187.2,
+     "average_smoothness": 0.15,
+     "average_clearance": 1.45,
+     "average_time": 1.7635,
+     "average_distance_from_goal": 0.0,
+     "average_original_distance_from_goal": 140.01,
+     "average memory": 2555.21
+}
+Astar{
+     "goal_found_perc": 100.0,
+     "average_steps": 165.0,
+     "average_distance": 187.2,
+     "average_smoothness": 0.15,
+     "average_clearance": 1.45,
+     "average_time": 1.8083,
+     "average_distance_from_goal": 0.0,
+     "average_original_distance_from_goal": 140.01,
+     "average memory": 2555.21
+}

@@ -18,6 +18,10 @@ from structures import Point
 from algorithms.classic.graph_based.a_star import AStar
 from algorithms.classic.testing.a_star_testing import AStarTesting
 from algorithms.algorithm import Algorithm
+
+from algorithms.classic.sample_based.rrt import RRT
+from algorithms.classic.sample_based.rrt_star import RRT_Star
+from algorithms.classic.sample_based.rrt_connect import RRT_Connect
 from algorithms.basic_testing import BasicTesting
 
 import tracemalloc
@@ -28,8 +32,11 @@ class PATHPLANNING():
     def __init__(self):
         self.prompts = GetPrompts()
         self.maps = self.load_maps()
-        self.a_star_results = self.__get_a_star_results(self.maps)
-        self.a_star_statistics = self.__get_results(self.a_star_results)
+        # self.a_star_results = self.__get_ref_results(self.maps)
+        # self.ref_results = self.__get_ref_results(self.maps*5, RRT_Star, BasicTesting)
+        self.ref_results = self.__get_ref_results([self.maps[0]], AStar, AStarTesting)
+        self.ref_statistics = self.__get_results(self.ref_results)
+
         self.import_string = '''
 from typing import List
 
@@ -72,20 +79,23 @@ from simulator.views.map.display.solid_iterable_map_display import SolidIterable
         
     def load_maps(self) -> List[Map]:
         maps = list()
-        for i in range(50):
-            maps.append("testing_maps_pickles/block_map_1000/" + str(i))
-            maps.append("testing_maps_pickles/house_1000/" + str(i))
-            maps.append("testing_maps_pickles/uniform_random_fill_1000/" + str(i))
+        # for i in range(50):
+            # maps.append("testing_maps_pickles/block_map_1000/" + str(i))
+            # maps.append("testing_maps_pickles/house_1000/" + str(i))
+            # maps.append("testing_maps_pickles/uniform_random_fill_1000/" + str(i))
+        # for i in [2,6,7,14,19]:
+        #     maps.append("testing_maps_pickles/testingmaps/" + str(i))
+        for i in range(10):
+            maps.append("testing_maps_pickles/irrtstar_map/IRRTstar_map2")
         return maps
     
-    def __get_a_star_results(self, maps:List[Map]) -> List[Dict[str, Any]]:
+    def __get_ref_results(self, maps:List[Map], algorithm:Algorithm, test:BasicTesting) -> List[Dict[str, Any]]:
         results = list()
         for _, grid in enumerate(maps):
-            result = self.__run_simulation(grid, AStar, AStarTesting, ([], {}))
+            result = self.__run_simulation(grid, algorithm, test, ([], {}))
             results.append(result)
 
         # synthesis_results = self.__get_results(results)
-
         return results
     
     def __get_improvement_result(self, res_proc, a_star_res_proc):
@@ -224,7 +234,7 @@ from simulator.views.map.display.solid_iterable_map_display import SolidIterable
         for _, grid in enumerate(self.maps):
             results.append(self.__run_simulation(grid, planning_module, testing_type, algo_params))
             fail_count += not results[-1].get("goal_found", False)
-            time_limit_count += results[-1].get("total_time", 0.0) > 10.0
+            time_limit_count += results[-1].get("total_time", 0.0) > 60.0
 
             if fail_count > len(self.maps)//10: # Early stop of bad algorithm evaluation
                 return float("inf"), {}
@@ -233,17 +243,17 @@ from simulator.views.map.display.solid_iterable_map_display import SolidIterable
             
         res_proc = self.__get_results(results)
 
-        a_star_res = self.a_star_results
-        a_star_res_proc = self.__get_results(a_star_res, list(map(lambda r: r["goal_found"], results)))
+        ref_results = self.ref_results
+        ref_res_proc = self.__get_results(ref_results, list(map(lambda r: r["goal_found"], results)))
 
-        self.__get_improvement_result(res_proc, a_star_res_proc)
+        self.__get_improvement_result(res_proc, ref_res_proc)
 
-        fitness = 100 * res_proc["goal_found_perc_improvement"] + \
-                    0.5 * res_proc["average_distance_improvement"] + \
-                    0 * res_proc["average_time_improvement"] + \
-                    res_proc["average_smoothness_improvement"] + \
-                    3 * res_proc["average_clearance_improvement"] + \
-                    2 * res_proc["average_memory_improvement"]
+        fitness = 10 * res_proc["goal_found_perc_improvement"] + \
+                    1 * res_proc["average_distance_improvement"] + \
+                    1 * res_proc["average_time_improvement"] + \
+                    1 * res_proc["average_smoothness_improvement"] + \
+                    0.5 * res_proc["average_clearance_improvement"] + \
+                    0 * res_proc["average_memory_improvement"]
 
         return -fitness, res_proc
 
