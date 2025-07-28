@@ -96,3 +96,91 @@ AstarAstar{
      "average_original_distance_from_goal": 51.94,
      "average memory": 1108.0
 }
+Astar{
+     "goal_found_perc": 100.0,
+     "average_steps": 165.0,
+     "average_distance": 187.2,
+     "average_smoothness": 0.15,
+     "average_clearance": 1.45,
+     "average_time": 1.9629,
+     "average_distance_from_goal": 0.0,
+     "average_original_distance_from_goal": 140.01,
+     "average memory": 2555.21
+}
+Astar{
+     "goal_found_perc": 100.0,
+     "average_steps": 165.0,
+     "average_distance": 187.2,
+     "average_smoothness": 0.15,
+     "average_clearance": 1.45,
+     "average_time": 1.9215,
+     "average_distance_from_goal": 0.0,
+     "average_original_distance_from_goal": 140.01,
+     "average memory": 2555.21
+}
+Astar{
+     "goal_found_perc": 100.0,
+     "average_steps": 165.0,
+     "average_distance": 187.2,
+     "average_smoothness": 0.15,
+     "average_clearance": 1.45,
+     "average_time": 1.9916,
+     "average_distance_from_goal": 0.0,
+     "average_original_distance_from_goal": 140.01,
+     "average memory": 2555.21
+}
+Astar{
+     "goal_found_perc": 100.0,
+     "average_steps": 165.0,
+     "average_distance": 187.2,
+     "average_smoothness": 0.15,
+     "average_clearance": 1.45,
+     "average_time": 1.9443,
+     "average_distance_from_goal": 0.0,
+     "average_original_distance_from_goal": 140.01,
+     "average memory": 2555.21
+}
+Astar{
+     "goal_found_perc": 100.0,
+     "average_steps": 165.0,
+     "average_distance": 187.2,
+     "average_smoothness": 0.15,
+     "average_clearance": 1.45,
+     "average_time": 1.975,
+     "average_distance_from_goal": 0.0,
+     "average_original_distance_from_goal": 140.01,
+     "average memory": 2555.21
+}
+Astar{
+     "goal_found_perc": 100.0,
+     "average_steps": 165.0,
+     "average_distance": 187.2,
+     "average_smoothness": 0.15,
+     "average_clearance": 1.45,
+     "average_time": 1.8577,
+     "average_distance_from_goal": 0.0,
+     "average_original_distance_from_goal": 140.01,
+     "average memory": 4144.77
+}
+Astar{
+     "goal_found_perc": 100.0,
+     "average_steps": 165.0,
+     "average_distance": 187.2,
+     "average_smoothness": 0.15,
+     "average_clearance": 1.45,
+     "average_time": 4.4053,
+     "average_distance_from_goal": 0.0,
+     "average_original_distance_from_goal": 140.01,
+     "average memory": 4143.91
+}
+Astar{
+     "goal_found_perc": 100.0,
+     "average_steps": 165.0,
+     "average_distance": 187.2,
+     "average_smoothness": 0.15,
+     "average_clearance": 1.45,
+     "average_time": 1.8202,
+     "average_distance_from_goal": 0.0,
+     "average_original_distance_from_goal": 140.01,
+     "average memory": 4144.37
+}

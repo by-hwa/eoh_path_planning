@@ -196,7 +196,10 @@ from simulator.views.map.display.solid_iterable_map_display import SolidIterable
         }
 
         return ret
-
+    
+    @staticmethod
+    def get_results(results: List[Dict[str, Any]], custom_pick: List[bool] = None) -> Dict[str, Any]:
+        return PATHPLANNING.__get_results(results, custom_pick)
     
     def __run_simulation(self, grid: Map, algorithm_type: Type[Algorithm], testing_type: Type[BasicTesting],
                         algo_params: Tuple[list, dict], agent_pos: Point = None) -> Dict[str, Any]:
