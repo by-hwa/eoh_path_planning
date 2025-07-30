@@ -9,7 +9,7 @@ class Probs():
             self.prob = paras.problem
             print("- Prob local loaded ")
         elif paras.problem == "path_planning":
-            from .optimization.path_planning import run
+            from .optimization.classic_benchmark_path_planning import run
             self.prob = run.PATHPLANNING()
             print("- Prob "+paras.problem+" loaded ")
 

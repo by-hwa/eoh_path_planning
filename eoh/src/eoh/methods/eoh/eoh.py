@@ -90,11 +90,6 @@ class EOH:
                                    )
         # write astar result
         filename = self.output_path + "/results/pops/evaluated_entire_population_generation.json"
-        with open(file=filename, mode='a') as f:
-            f.write('Astar')
-            filtered = {k: v for k, v in interface_prob.ref_statistics.items() if "alldata" not in k}
-            json.dump(InterfaceEC.convert_numpy(filtered), f, indent=5)
-            f.write('\n')
 
         # initialization
         population = []
@@ -123,38 +118,28 @@ class EOH:
             n_start = 0
 
         else:
-            if self.load_pop:  # load population from files
-                print("load initial population from " + self.load_pop_path)
-                with open(self.load_pop_path) as file:
-                    data = json.load(file)
-                for individual in data:
-                    population.append(individual)
-                print("initial population has been loaded!")
-                n_start = self.load_pop_id
-            else:  # create new population
-                print("creating initial population:")
-                population = interface_ec.population_generation()
-                print(f'population len {len(population)}')
-                population = self.manage.population_management(population, self.pop_size)
-                print(f"------------pop size{len(population)}-------------------")
-                
-                print(f"Pop initial: ")
-                for off in population:
-                    print('------------------')
-                    print(" Obj: ", off['objective'], end="|")
-                    print("check - population generate")
-                print()
-                print("initial population has been created!")
-                # Save population to a file
-                filename = self.output_path + "/results/pops/population_generation_0.json"
-                with open(filename, 'w') as f:
-                    json.dump(population, f, indent=5)
-                n_start = 0
+            print("creating initial population:")
+            population = interface_ec.population_generation()
+            print(f'population len {len(population)}')
+            population = self.manage.population_management(population, self.pop_size)
+            print(f"------------pop size{len(population)}-------------------")
+            
+            print(f"Pop initial: ")
+            for off in population:
+                print('------------------')
+                print(" Obj: ", off['objective'], end="|")
+                print("check - population generate")
+            print()
+            print("initial population has been created!")
+            # Save population to a file
+            filename = self.output_path + "/results/pops/population_generation_0.json"
+            with open(filename, 'w') as f:
+                json.dump(population, f, indent=5)
+            n_start = 0
         
 
         # main loop
         n_op = len(self.operators)
-        filename = self.output_path + "/results/pops/entire_population_generation.json"
 
         for pop in range(n_start, self.n_pop):  
             for i in range(self.pop_size//n_op):
