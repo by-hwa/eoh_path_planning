@@ -24,8 +24,9 @@ class GetPrompts():
 - When connecting nodes and adding edges in the planner, always perform two critical checks:
 1.Collision check for the node position: Ensure that the new node itself does not lie inside any obstacle.
 2.Edge-obstacle intersection check: Before adding an edge between two nodes, verify that the straight-line path between them does not intersect or pass through any obstacle.
+- DO NOT OVER MAP BOUND
 - After code generation, you must review the code to ensure it is syntactically correct, logically coherent, and executable within the expected environment.
-- At the top of your response, write an description of the algorithm in curly braces {}, followed by a concise explanation of the planning mechanism in round parentheses ().
+- At the top of your response, write an description of the algorithm in curly braces {}, followed by a concise explanation of the planning mechanism in angle brackets <>.
 - Both the description and the planning mechanism should be placed outside and above the code block.
 - Output the code block containing the implementation only.
 ⚠️ Do not give additional explanations.
@@ -54,8 +55,9 @@ class PlannerResult(NamedTuple):
 
 # --- Main Planner ---
 class Planner:
-    def __init__(self, max_iter: int = 5000):
+    def __init__(self, max_iter: int = 5000, step_size: float=5.0):
         self.max_iter = max_iter
+        self.step_size = step_size
 
     def plan(self, map: Map) -> PlannerResult:
         bounds = map.size                  # Tuple[int, ...]: (W,H) or (W,H,D)
@@ -79,6 +81,30 @@ class Planner:
             nodes=nodes,
             edges=edges
         )
+
+    def _is_in_obstacle(self, pos, obstacles, is_3d):
+        for obs in obstacles:
+            if is_3d:
+                x, y, z, w, h, d = obs
+                px, py, pz = pos
+                if x <= px <= x + w and y <= py <= y + h and z <= pz <= z + d:
+                    return True
+            else:
+                x, y, w, h = obs
+                px, py = pos
+                if x <= px <= x + w and y <= py <= y + h:
+                    return True
+        return False
+
+    def _is_edge_in_obstacle(self, from_pos, to_pos, obstacles, is_3d, resolution=1.0):
+        distance = math.dist(from_pos, to_pos)
+        steps = max(1, int(distance / resolution))
+        for i in range(steps + 1):
+            interp = tuple(from_pos[d] + (to_pos[d] - from_pos[d]) * (i / steps) for d in range(len(from_pos)))
+            if self._is_in_obstacle(interp, obstacles, is_3d):
+                return True
+        return False
+
 '''
 
     def get_task(self):

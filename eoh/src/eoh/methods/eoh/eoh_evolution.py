@@ -54,7 +54,7 @@ class Evolution():
         algorithm_match = re.search(r"\{(.*?)\}", response, re.DOTALL)
         algorithm = algorithm_match.group(1).strip() if algorithm_match else ""
 
-        mechanism_match = re.search(r"\((.*?)\)", response, re.DOTALL)
+        mechanism_match = re.search(r"\<(.*?)\>", response, re.DOTALL)
         mechanism = mechanism_match.group(1).strip() if mechanism_match else ""
         
         if algorithm_pass:
