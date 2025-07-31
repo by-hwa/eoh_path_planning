@@ -11,18 +11,16 @@ import json
 import sys
 import math
 class InterfaceEC():
-    def __init__(self, pop_size, m, api_endpoint, api_key, llm_model,llm_use_local,llm_local_url, debug_mode, interface_prob, select,n_p,timeout,use_numba, output_path, hier_gen, n_op, **kwargs):
+    def __init__(self, pop_size, m, api_endpoint, api_key, llm_model,llm_use_local,llm_local_url, debug_mode, interface_prob, select,n_p,timeout,use_numba, output_path, n_op, **kwargs):
 
         # LLM settings
         self.pop_size = pop_size
         self.interface_eval = interface_prob
         prompts = interface_prob.prompts
-        prompts.import_string = self.interface_eval.get_import_string()
-        self.evol = Evolution(api_endpoint, api_key, llm_model,llm_use_local,llm_local_url, debug_mode,prompts, hier_gen=hier_gen, **kwargs)
+        self.evol = Evolution(api_endpoint, api_key, llm_model,llm_use_local,llm_local_url, debug_mode,prompts, **kwargs)
         self.m = m
         self.debug = debug_mode
         self.output_path = output_path
-        self.hier_gen = hier_gen
         self.n_op = n_op
 
         if not self.debug:
@@ -108,18 +106,56 @@ class InterfaceEC():
         print("Initiliazation finished! Get "+str(len(seeds))+" seed algorithms")
 
         return population
+    
+    def population_generation_initial(self, data):
+        population = []
+
+        for i in range(len(data)):
+            with concurrent.futures.ThreadPoolExecutor() as executor:
+                try:
+                    future = executor.submit(self.interface_eval.evaluate, data[i]['code'])
+                    fitness, results = future.result(timeout=self.timeout)
+
+                    print(data[i]['algorithm'])
+                    print(results)
+
+                    seed_alg = {
+                        'operator': 'initial',
+                        'algorithm_description': data[i]['algorithm_description'],
+                        'planning_mechanism': data[i]['planning_mechanism'],
+                        'code': data[i]['code'],
+                        'objective': fitness,
+                        'other_inf': results.to_dict(orient='records') if not isinstance(results, dict) else results
+                    }
+                except Exception as e:
+                    print(f"Error in population_generation_initial: {traceback.format_exc()}")
+                    seed_alg = {
+                        'operator': 'initial',
+                        'algorithm_description': data[i]['algorithm_description'],
+                        'planning_mechanism': data[i]['planning_mechanism'],
+                        'code': data[i]['code'],
+                        'objective': None,
+                        'other_inf': None
+                    }
+
+            population.append(seed_alg)
+
+        print("Initiliazation finished! Get "+str(len(data))+" Initial algorithms")
+
+        return population
 
     def _get_alg(self,pop,operator):
         offspring = {
             'operator': operator,
-            'algorithm': None,
+            'algorithm_description': None,
+            'planning_mechanism': None,
             'code': None,
             'objective': None,
-            'other_inf': None
+            'other_inf': None,
         }
         if hasattr(self.evol, operator):
             parents = self.select.parent_selection(pop, self.m)
-            [offspring['code'],offspring['algorithm']] = self.evol.evol(parents, operator)
+            [offspring['code'], offspring['planning_mechanism'], offspring['algorithm_description']] = self.evol.evol(parents, operator)
         else:
             print(f"Evolution operator [{operator}] has not been implemented ! \n") 
 
@@ -127,7 +163,6 @@ class InterfaceEC():
     
 
     def get_offspring(self, pop, operator):
-
         try:
             p, offspring = self._get_alg(pop, operator)
             code = offspring['code']
@@ -144,15 +179,11 @@ class InterfaceEC():
                 if n_retry > 1:
                     break
 
-            # print("here is the offspring code: @@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@")
-            # print(code)
-
             filename = self.output_path + "/results/pops/entire_population_generation.json"
             with open(file=filename, mode='a') as f:
                 json.dump(offspring, f, indent=5)
                 f.write('\n')
 
-                            
             with concurrent.futures.ThreadPoolExecutor() as executor:
                 n_try = 0
                 try:
@@ -167,30 +198,32 @@ class InterfaceEC():
                         print("***********************************")
 
                         offspring['objective'] = np.round(fitness, 5) if fitness else None
-                        offspring['results'] = results
-                        offspring['results'] = {k: v for k, v in offspring['results'].items() if "alldata" not in k}
+                        offspring['other_inf'] = results.to_dict(orient='records') if not isinstance(results, dict) else results
 
                         filename = self.output_path + "/results/pops/evaluated_entire_population_generation.json"
-                        if offspring['objective'] and offspring['objective'] != float("inf"):
+                        if offspring['objective']:
                             with open(file=filename, mode='a') as f:
-                                json.dump(self.convert_numpy(offspring), f, indent=5)
+                                json.dump(offspring, f, indent=5)
                                 f.write('\n')
                             break
                         elif offspring['objective'] == float("inf"):
                             break
 
-                        if 'Traceback' in offspring['results']:
-                            print(f"Error in ThreadPoolExecutor : {offspring['results']['Traceback']}")
+                        if 'Traceback' in offspring['other_inf']:
+                            print(f"Error in ThreadPoolExecutor : {offspring['other_inf']['Traceback']}")
                             filename = self.output_path + "/results/pops/error_occured_entire_population_generation.json"
                             with open(file=filename, mode='a') as f:
-                                json.dump(self.convert_numpy(offspring), f, indent=5)
+                                json.dump(offspring, f, indent=5)
                                 f.write('\n')
                             if n_try <= 3:
                                 print(f'Trying Trouble shoot {n_try}')
-                                code = self.evol.trouble_shoot(code, offspring['results']['Traceback'])
+                                code = self.evol.trouble_shoot(code, offspring['other_inf']['Traceback'])
                                 offspring['code'] = code
                                 print('Trouble shooted CODE')
                                 print(code)
+                                continue
+
+                        break
                     
                     
                 except Exception as e:
@@ -205,11 +238,13 @@ class InterfaceEC():
         except Exception as e:
             print(f"Error in get_offspring : {traceback.format_exc()}")
             offspring = {
-                'algorithm': None,
-                'code': None,
-                'objective': None,
-                'other_inf': None
-            }
+            'operator': operator,
+            'algorithm_description': None,
+            'planning_mechanism': None,
+            'code': None,
+            'objective': None,
+            'other_inf': None
+        }
             print(offspring)
             p = None
 
@@ -221,19 +256,18 @@ class InterfaceEC():
     def get_algorithm(self, pop, operators):
         results = []
         try:
-            results = Parallel(n_jobs=self.n_p,prefer='threads', timeout=self.timeout+15)(delayed(self.get_offspring)(pop, operator) for operator in operators)
+            for operator in operators:
+                p, off = self.get_offspring(pop, operator)
+                if off['objective'] is not None:
+                    results.append((p, off))
+                    print("!!!!!!!!!!!!!!!!!!!!!!!")
+                else:
+                    print(f"Offspring with operator {operator} has no valid objective, skipping...")
+
         except Exception as e:
             if self.debug:
                 print(f"Error in get_algorithm: {traceback.format_exc()}")
-            print("Parallel time out .")
             
-        # for operator in operators:
-        #     p, off = self.get_offspring(pop, operator)
-        #     if off['objective'] is not None:
-        #         results.append((p, off))
-        #     else:
-        #         print(f"Offspring with operator {operator} has no valid objective, skipping...")
-
         time.sleep(2)
         print(len(results))
         out_p = []

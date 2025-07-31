@@ -22,6 +22,7 @@ class MultiMapBenchmarker:
 
     def run(self, algorithm) -> pd.DataFrame:
         results = []
+        main_start_time = time.time()
         for i, map_ in enumerate(self.maps):
             for j in range(self.iter):
                 start_time = time.time()
@@ -30,6 +31,8 @@ class MultiMapBenchmarker:
                 except Exception as e:
                     output = {"path": [], "nodes": [], "n_nodes": 0}
                 end_time = time.time()
+
+                print(f"Map {i+1}, Iteration {j+1}: Time taken: {end_time - start_time:.4f} seconds")
 
                 path = output.path
                 nodes = output.nodes
@@ -46,6 +49,8 @@ class MultiMapBenchmarker:
                     "num_nodes": num_nodes,
                     "path_length": path_length
                 })
+
+        print(f"Total time taken for all maps: {time.time() - main_start_time:.4f} seconds")
 
         self.results_df = pd.DataFrame(results)
         return self.results_df, self.get_avg()
@@ -83,10 +88,12 @@ class MultiMapBenchmarker:
         classic_summary = self.results_df.groupby('map_id').agg({
             'success': 'mean',           # 성공률
             'time_taken': 'mean',        # 평균 소요 시간
+            'num_nodes': 'mean',      # 평균 노드 수
             'path_length': lambda x: x[x > 0].mean()  # path=0 제외한 평균 경로 길이
         }).rename(columns={
             'success': 'success_rate',
             'time_taken': 'time_avg',
+            'num_nodes': 'num_nodes_avg',
             'path_length': 'path_length_avg'
         }).reset_index()
         return classic_summary
@@ -96,8 +103,8 @@ class MultiMapBenchmarker:
         improvement_df = pd.DataFrame()
         
         improvement_df['success_improvement'] = (results['success_rate'] - reference_result['success_rate']) * 100 # percent point
-        improvement_df['time_improvement'] = (results['time_avg'] - reference_result['time_avg']) / reference_result['success_rate'] * 100
-        improvement_df['length_improvement'] = (results['path_length_avg'] - reference_result['path_length_avg']) / reference_result['success_rate'] * 100
+        improvement_df['time_improvement'] = (results['time_avg'] - reference_result['time_avg']) / reference_result['time_avg'] * -100
+        improvement_df['length_improvement'] = (results['path_length_avg'] - reference_result['path_length_avg']) / reference_result['path_length_avg'] * -100
 
         improvement_df['objective_score'] = (
             0.5 * improvement_df['success_improvement'] +
@@ -107,7 +114,7 @@ class MultiMapBenchmarker:
 
         return improvement_df
     
-    def set_seed(seed: int = 42):
+    def set_seed(self, seed: int = 42):
         random.seed(seed)                    # Python random
         np.random.seed(seed)                 # NumPy
         # torch.manual_seed(seed)              # PyTorch (CPU)

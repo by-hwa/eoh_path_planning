@@ -86,7 +86,7 @@ class EOH:
         # interface for ec operators
         interface_ec = InterfaceEC(self.pop_size, self.m, self.api_endpoint, self.api_key, self.llm_model, self.use_local_llm, self.llm_local_url,
                                    self.debug_mode, interface_prob, select=self.select,n_p=self.exp_n_proc,
-                                   timeout = self.timeout, use_numba=self.use_numba, output_path=self.output_path, hier_gen=self.hier_gen, n_op=len(self.operators)
+                                   timeout = self.timeout, use_numba=self.use_numba, output_path=self.output_path, n_op=len(self.operators)
                                    )
         # write astar result
         filename = self.output_path + "/results/pops/evaluated_entire_population_generation.json"
@@ -102,15 +102,11 @@ class EOH:
                 json.dump(population, f, indent=5)
             n_start = 0
         elif self.get_initial:
-            get_planning_code = GetPlanningCode()
-            for algorithm in self.ref_algorithm:
-                offspring = {
-                'algorithm': get_planning_code.get_algorithm_description(algorithm),
-                'code': get_planning_code.get_code(algorithm),
-                'objective': 0,
-                'other_inf': None
-                }
-                population.append(offspring)
+            with open("../../eoh/src/eoh/problems/optimization/classic_benchmark_path_planning/utils/classic_method.json", "r") as f:
+                result_data = json.load(f)
+
+            population = interface_ec.population_generation_initial(result_data)
+
             filename = self.output_path + "/results/pops/population_generation_0.json"
             with open(filename, 'w') as f:
                 json.dump(population, f, indent=5)

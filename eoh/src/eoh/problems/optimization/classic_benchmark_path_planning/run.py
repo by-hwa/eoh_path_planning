@@ -3,34 +3,61 @@ import importlib
 from .utils.prompts import GetPrompts
 from .utils.benchmark import MultiMapBenchmarker
 from .utils.map_io import MapIO
+from .utils.architecture_utils import Map
 from .utils.architecture_utils import PlannerResult
 
 import types
 import warnings
 import sys
+import os
 import traceback
 
 import copy
 import json
 import tracemalloc
-from typing import TYPE_CHECKING, List, Tuple, Type, Any, Dict, Union, Optional
+import pandas as pd
+
+from typing import Tuple, Literal, Union, Optional, List, Dict, NamedTuple, Callable, Any, Set, TYPE_CHECKING, Type
+# sys.path.append("C:/Workspace/EoH_Path_planning/eoh/src/eoh/problems/optimization/classic_benchmark_path_planning/utils")
 
 class PATHPLANNING():
     def __init__(self):
+        self.base_dir = os.path.dirname(os.path.abspath(__file__))
         self.prompts = GetPrompts()
         self.maps = self.__load_maps()
+        self.import_string = '''
+from typing import Tuple, Literal, Union, Optional, List, Dict, NamedTuple, Callable, Any, Set, TYPE_CHECKING, Type
+import time
+from queue import Queue
+import numpy as np
+import random
+import math
+import sys
+import os
+
+from eoh.problems.optimization.classic_benchmark_path_planning.utils.architecture_utils import PlannerResult, Map
+'''
         self.benchmarker = MultiMapBenchmarker(maps=self.maps, iter=10)
-        self.ref_result, self.ref_avg_result = self.benchmarker.run(rrt)
+        _, self.ref_avg_result = self.evaluate(self.__load_ref_alg("RRT-Connect"), init=True)
+        print(self.ref_avg_result)
+
+        filename = "./results/pops/evaluated_entire_population_generation.json"
+        with open(filename, "w") as f:
+            json.dump(self.ref_avg_result.to_dict(orient='records'), f)
+            f.write("\n")
 
     def __load_maps(self):
+        maps_dir = os.path.join(self.base_dir, 'utils', 'maps')
+
         maps = []
-        maps.append(MapIO.load_map("Multi_obs_map.pkl"))
-        maps.append(MapIO.load_map("Maze_map_easy.pkl"))
-        maps.append(MapIO.load_map("Narrow_map.pkl"))
+        maps.append(MapIO.load_map(os.path.join(maps_dir, "Multi_obs_map.pkl")))
+        maps.append(MapIO.load_map(os.path.join(maps_dir, "Maze_map_easy.pkl")))
+        maps.append(MapIO.load_map(os.path.join(maps_dir, "Narrow_map.pkl")))
         return maps
     
     def __load_ref_alg(self, alg_name:str):
-        with open("./utils/classic_method.json", "r") as f:
+        alg_dir = os.path.join(self.base_dir, 'utils', 'classic_method.json')
+        with open(alg_dir, "r") as f:
             result_data = json.load(f)
         for ref_alg in result_data:
             if ref_alg['algorithm'] == alg_name:
@@ -38,15 +65,22 @@ class PATHPLANNING():
 
 
     def __evaluate_path(self, alg) -> float:
-        planner = alg.Planner(max_iter=10000)
+        planner = alg.Planner(max_iter=5000)
         result, avg_result = self.benchmarker.run(planner.plan)
 
-        fitness = MultiMapBenchmarker.get_improvement(self.ref_avg_result, avg_result)['objective_score'].sum()
-
+        improvement = MultiMapBenchmarker.get_improvement(self.ref_avg_result, avg_result)
+        fitness = improvement['objective_score'].sum()
+        avg_result = pd.concat([avg_result, improvement], axis=1)
         return -fitness, avg_result
+    
+    def __evaluate_initial(self, alg) -> float:
+        planner = alg.Planner(max_iter=5000)
+        result, avg_result = self.benchmarker.run(planner.plan)
+
+        return None, avg_result
 
         
-    def evaluate(self, code_string):
+    def evaluate(self, code_string, init = False):
         try:
             # Suppress warnings
             with warnings.catch_warnings():
@@ -56,12 +90,15 @@ class PATHPLANNING():
                 planning_module = types.ModuleType("planning_module")
                 
                 # Execute the code string in the new module's namespace
-                exec(code_string, planning_module.__dict__)
+                exec(self.import_string+code_string, planning_module.__dict__)
 
                 # Add the module to sys.modules so it can be imported
                 sys.modules[planning_module.__name__] = planning_module
 
-                fitness, results = self.__evaluate_path(planning_module)
+                if not init:
+                    fitness, results = self.__evaluate_path(planning_module)
+                else:
+                    fitness, results = self.__evaluate_initial(planning_module)
 
                 return fitness, results
         

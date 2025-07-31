@@ -2,6 +2,12 @@ import pickle
 import os
 from .architecture_utils import Map
 
+class CustomUnpickler(pickle.Unpickler):
+    def find_class(self, module, name):
+        if module == "__main__" and name == "Map":
+            return Map
+        return super().find_class(module, name)
+
 class MapIO:
     @staticmethod
     def save_map(map_data: Map, filename: str) -> None:
@@ -15,4 +21,6 @@ class MapIO:
         if not os.path.exists(filename):
             raise FileNotFoundError(f"Map file not found: {filename}")
         with open(filename, 'rb') as f:
-            return pickle.load(f)
+            return CustomUnpickler(f).load()
+        # with open(filename, 'rb') as f:
+        #     return pickle.load(f)
