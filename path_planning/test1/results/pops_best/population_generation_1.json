@@ -1,0 +1,42 @@
+{
+     "operator": "initial",
+     "algorithm_description": "The BI-RRT (Bidirectional Rapidly-exploring Random Tree) algorithm grows two trees simultaneously, one from the start position and one from the goal position, and attempts to connect them to find a feasible path. This bidirectional approach accelerates convergence and increases the success rate compared to a single tree RRT.",
+     "planning_mechanism": "The planning mechanism involves randomly sampling points within the map bounds, extending each tree towards the sampled points, and attempting to connect the two trees whenever new nodes are added. Collision checks are performed for nodes and edges to ensure safety, and once the two trees connect, the final path is reconstructed by backtracking through the parent nodes of each tree.",
+     "code": "\nclass Node:\n    def __init__(self, position, parent=None, cost=0.0):\n        self.position = position        # Tuple[float, ...]\n        self.parent = parent            # Node or None\n        self.cost = cost                # Path cost\n        self.children = []\n        self.valid = True\n\n    def add_child(self, child_node):\n        self.children.append(child_node)\n        child_node.parent = self\n\n    def path_from_root(self):\n        path = []\n        node = self\n        while node is not None:\n            path.append(node.position)\n            node = node.parent\n        return path[::-1]\n\n\nclass Planner:\n    def __init__(self, max_iter: int = 5000, step_size: float = 5.0):\n        self.max_iter = max_iter\n        self.step_size = step_size\n\n    def plan(self, map) -> PlannerResult:\n        import math, random\n        bounds = map.size\n        start_position = map.start\n        goal_position = map.goal\n        obstacles = map.obstacles\n        is_3d = len(bounds) == 3\n\n        success_state = False\n        extracted_path = []\n        nodes = []\n        edges = []\n\n        start_root = Node(start_position)\n        goal_root = Node(goal_position)\n        nodes.extend([start_root, goal_root])\n        tree_a, tree_b = [start_root], [goal_root]\n\n        for _ in range(self.max_iter):\n            rand_point = self._sample_free(bounds, obstacles, is_3d)\n            new_a = self._extend_tree(tree_a, rand_point, obstacles, is_3d, nodes, edges)\n            if new_a is None:\n                continue\n\n            new_b = self._connect_trees(tree_b, new_a, obstacles, is_3d, nodes, edges)\n            if new_b:\n                success_state = True\n                path_a = new_a.path_from_root()\n                path_b = new_b.path_from_root()\n                extracted_path = path_a + path_b[::-1]\n                break\n\n            tree_a, tree_b = tree_b, tree_a  # Swap trees\n\n        return PlannerResult(\n            success=success_state,\n            path=extracted_path,\n            nodes=nodes,\n            edges=edges\n        )\n\n    def _sample_free(self, bounds, obstacles, is_3d):\n        import random\n        while True:\n            if is_3d:\n                p = (random.uniform(0, bounds[0]),\n                     random.uniform(0, bounds[1]),\n                     random.uniform(0, bounds[2]))\n            else:\n                p = (random.uniform(0, bounds[0]),\n                     random.uniform(0, bounds[1]))\n            if not self._is_in_obstacle(p, obstacles, is_3d):\n                return p\n\n    def _nearest(self, tree, point):\n        import math\n        return min(tree, key=lambda node: math.dist(node.position, point))\n\n    def _steer(self, from_pos, to_pos):\n        import math\n        dist = math.dist(from_pos, to_pos)\n        if dist <= self.step_size:\n            return to_pos\n        ratio = self.step_size / dist\n        return tuple(from_pos[d] + (to_pos[d] - from_pos[d]) * ratio for d in range(len(from_pos)))\n\n    def _extend_tree(self, tree, point, obstacles, is_3d, nodes, edges):\n        nearest_node = self._nearest(tree, point)\n        new_pos = self._steer(nearest_node.position, point)\n        if not self._is_in_obstacle(new_pos, obstacles, is_3d) and            not self._is_edge_in_obstacle(nearest_node.position, new_pos, obstacles, is_3d):\n            new_node = Node(new_pos, parent=nearest_node)\n            nearest_node.add_child(new_node)\n            tree.append(new_node)\n            nodes.append(new_node)\n            edges.append((nearest_node, new_node))\n            return new_node\n        return None\n\n    def _connect_trees(self, tree, new_node, obstacles, is_3d, nodes, edges):\n        nearest_node = self._nearest(tree, new_node.position)\n        while True:\n            new_pos = self._steer(nearest_node.position, new_node.position)\n            if not self._is_in_obstacle(new_pos, obstacles, is_3d) and                not self._is_edge_in_obstacle(nearest_node.position, new_pos, obstacles, is_3d):\n                next_node = Node(new_pos, parent=nearest_node)\n                nearest_node.add_child(next_node)\n                tree.append(next_node)\n                nodes.append(next_node)\n                edges.append((nearest_node, next_node))\n                if math.dist(next_node.position, new_node.position) <= self.step_size:\n                    return next_node\n                nearest_node = next_node\n            else:\n                return None\n\n    def _is_in_obstacle(self, pos, obstacles, is_3d):\n        for obs in obstacles:\n            if is_3d:\n                x, y, z, w, h, d = obs\n                px, py, pz = pos\n                if x <= px <= x + w and y <= py <= y + h and z <= pz <= z + d:\n                    return True\n            else:\n                x, y, w, h = obs\n                px, py = pos\n                if x <= px <= x + w and y <= py <= y + h:\n                    return True\n        return False\n\n    def _is_edge_in_obstacle(self, from_pos, to_pos, obstacles, is_3d, resolution=1.0):\n        import math\n        distance = math.dist(from_pos, to_pos)\n        steps = max(1, int(distance / resolution))\n        for i in range(steps + 1):\n            interp = tuple(from_pos[d] + (to_pos[d] - from_pos[d]) * (i / steps) for d in range(len(from_pos)))\n            if self._is_in_obstacle(interp, obstacles, is_3d):\n                return True\n        return False\n    ",
+     "objective": -41.67642381483319,
+     "other_inf": [
+          {
+               "map_id": 0,
+               "success_rate": 1.0,
+               "time_avg": 0.005017662048339843,
+               "num_nodes_avg": 59.1,
+               "path_length_avg": 170.9770888905735,
+               "success_improvement": 0.0,
+               "time_improvement": 48.01655913766018,
+               "length_improvement": 14.547294318234119,
+               "objective_score": 17.314426604944877
+          },
+          {
+               "map_id": 1,
+               "success_rate": 1.0,
+               "time_avg": 0.013940382003784179,
+               "num_nodes_avg": 195.7,
+               "path_length_avg": 276.36470377614694,
+               "success_improvement": 0.0,
+               "time_improvement": 3.305655285096027,
+               "length_improvement": 8.292841453028517,
+               "objective_score": 2.6502648761345116
+          },
+          {
+               "map_id": 2,
+               "success_rate": 1.0,
+               "time_avg": 0.009051012992858886,
+               "num_nodes_avg": 134.2,
+               "path_length_avg": 154.99263582978188,
+               "success_improvement": 0.0,
+               "time_improvement": 69.15565132115084,
+               "length_improvement": 4.825184687042764,
+               "objective_score": 21.711732333753805
+          }
+     ]
+}
