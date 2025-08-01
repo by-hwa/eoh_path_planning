@@ -4,7 +4,9 @@ import random
 import time
 from typing import Tuple, Literal, Union, Optional, List, Dict, NamedTuple, Callable, Any
 import plotly.express as px
-
+from .architecture_utils import PlannerResult
+import math
+# from eoh.problems.optimization.classic_benchmark_path_planning.utils.architecture_utils import PlannerResult
 class MultiMapBenchmarker:
     def __init__(
         self,
@@ -34,11 +36,18 @@ class MultiMapBenchmarker:
 
                 print(f"Map {i+1}, Iteration {j+1}: Time taken: {end_time - start_time:.4f} seconds")
 
-                path = output.path
-                nodes = output.nodes
-                num_nodes = len(nodes)
-                success = output.success
-                path_length = self._compute_path_length(path)
+                if isinstance(output, PlannerResult):
+                    path = output.path
+                    nodes = output.nodes
+                    num_nodes = len(nodes)
+                    success = self._is_path_valid(path, map_)
+                    path_length = self._compute_path_length(path)
+                elif isinstance(output, Dict):
+                    path = output['path']
+                    nodes = output['node']
+                    num_nodes = len(nodes)
+                    success = self._is_path_valid(path, map_)
+                    path_length = self._compute_path_length(path)
 
                 results.append({
                     "map_id": i,
@@ -59,6 +68,42 @@ class MultiMapBenchmarker:
         if not path or len(path) < 2:
             return 0.0
         return sum(np.linalg.norm(np.array(path[i]) - np.array(path[i+1])) for i in range(len(path) - 1))
+    
+    def _is_path_valid(self, path: List[Tuple[float, ...]], map_) -> bool:
+
+        if not path or len(path) < 2:
+            return False
+
+        is_3d = True if len(map_.size) > 2 else False
+        for i in range(len(path) - 1):
+            p1 = path[i]
+            p2 = path[i + 1]
+            if self._is_edge_in_obstacle(p1, p2, map_.obstacles, is_3d):
+                return False
+        return True
+    
+    def _is_in_obstacle(self, pos, obstacles, is_3d):
+        for obs in obstacles:
+            if is_3d:
+                x, y, z, w, h, d = obs
+                px, py, pz = pos
+                if x <= px <= x + w and y <= py <= y + h and z <= pz <= z + d:
+                    return True
+            else:
+                x, y, w, h = obs
+                px, py = pos
+                if x <= px <= x + w and y <= py <= y + h:
+                    return True
+        return False
+
+    def _is_edge_in_obstacle(self, from_pos, to_pos, obstacles, is_3d, resolution=1.0):
+        distance = math.dist(from_pos, to_pos)
+        steps = max(1, int(distance / resolution))
+        for i in range(steps + 1):
+            interp = tuple(from_pos[d] + (to_pos[d] - from_pos[d]) * (i / steps) for d in range(len(from_pos)))
+            if self._is_in_obstacle(interp, obstacles, is_3d):
+                return True
+        return False
 
     def save_results(self, filename: str):
         if self.results_df.empty:
