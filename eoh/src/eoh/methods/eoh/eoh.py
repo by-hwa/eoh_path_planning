@@ -88,8 +88,6 @@ class EOH:
                                    self.debug_mode, interface_prob, select=self.select,n_p=self.exp_n_proc,
                                    timeout = self.timeout, use_numba=self.use_numba, output_path=self.output_path, n_op=len(self.operators)
                                    )
-        # write astar result
-        filename = self.output_path + "/results/pops/evaluated_entire_population_generation.json"
 
         # initialization
         population = []

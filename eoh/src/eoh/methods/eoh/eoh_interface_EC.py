@@ -10,6 +10,7 @@ import traceback
 import json
 import sys
 import math
+
 class InterfaceEC():
     def __init__(self, pop_size, m, api_endpoint, api_key, llm_model,llm_use_local,llm_local_url, debug_mode, interface_prob, select,n_p,timeout,use_numba, output_path, n_op, **kwargs):
 
@@ -206,10 +207,8 @@ class InterfaceEC():
                                 json.dump(offspring, f, indent=5)
                                 f.write('\n')
                             break
-                        elif offspring['objective'] == float("inf"):
-                            break
 
-                        if 'Traceback' in offspring['other_inf']:
+                        elif 'Traceback' in offspring['other_inf']:
                             print(f"Error in ThreadPoolExecutor : {offspring['other_inf']['Traceback']}")
                             filename = self.output_path + "/results/pops/error_occured_entire_population_generation.json"
                             with open(file=filename, mode='a') as f:
