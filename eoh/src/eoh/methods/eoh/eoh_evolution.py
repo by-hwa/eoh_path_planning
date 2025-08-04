@@ -27,7 +27,10 @@ class Evolution():
         self.m1 = '''Modify the structure of an existing algorithm.'''
         self.m2 = '''Tune and reconfigure the parameters of a given algorithm.'''
         self.m3 = '''Simplify to enhance generalization for given algorithm.'''
-
+        self.cross_over = 'Improve the algorithm by minimizing the path length and reducing planning time, while using insights from previously successful heuristics.'
+        self.time_expert = 'Improve the algorithm by minimizing reducing planning time, while using insights from previously successful heuristic.'
+        self.path_expert = 'Improve the algorithm by minimizing the path length, while using insights from previously successful heuristic.'
+        
         if 'no_lm' not in kwargs.keys():
             self.interface_llm = InterfaceLLM(self.api_endpoint, self.api_key, self.model_LLM,llm_use_local,llm_local_url, self.debug_mode)
 
@@ -42,7 +45,7 @@ class Evolution():
 
         prompt_content= self.prompt_task+"\n"+\
             prompt_indiv+\
-            (f'Instruction : {getattr(self, op)}\n' if hasattr(self, op) else '')+\
+            (f'Instruction : {getattr(self, op)}\n' if hasattr(self, op) else 'Generate algorithm')+\
             self.architecture_info+\
             self.prompt_objective+\
             self.prompt_constraints
@@ -87,23 +90,19 @@ class Evolution():
     def _get_alg(self,prompt_content, algorithm_pass=False):
 
         response = self.interface_llm.get_response(prompt_content)
-
-        algorithm, mechanism, code = self._extract_alg(response, algorithm_pass)
+        algorithm, mechanism, code_all = self._extract_alg(response, algorithm_pass)
 
         n_retry = 1
-        while (len(algorithm) == 0 or len(code) == 0):
+        while (len(algorithm) == 0 or len(code_all) == 0):
             if self.debug_mode:
                 print("Error: algorithm or code not identified, wait 1 seconds and retrying ... ")
 
             response = self.interface_llm.get_response(prompt_content)
-
-            algorithm, mechanism, code = self._extract_alg(response, algorithm_pass)
+            algorithm, mechanism, code_all = self._extract_alg(response, algorithm_pass)
 
             if n_retry > 3:
                 break
             n_retry +=1
-
-        code_all = code
 
         return [code_all, mechanism, algorithm]
     

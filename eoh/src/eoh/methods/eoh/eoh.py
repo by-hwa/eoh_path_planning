@@ -154,6 +154,8 @@ class EOH:
 
             # Save population to a file
             filename = self.output_path + "/results/pops/population_generation_" + str(pop + 1) + ".json"
+            population = sorted(population, key=lambda x: x.get('objective', float('inf')))
+
             with open(filename, 'w') as f:
                 json.dump(InterfaceEC.convert_numpy(population), f, indent=5)
 

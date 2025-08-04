@@ -41,7 +41,7 @@ from eoh.problems.optimization.classic_benchmark_path_planning.utils.architectur
         _, self.ref_avg_result = self.evaluate(self.__load_ref_alg("RRT-Connect"), init=True)
         print(self.ref_avg_result)
 
-        filename = "./results/pops/evaluated_entire_population_generation.json"
+        filename = "./results/pops/reference_result.json"
         with open(filename, "w") as f:
             json.dump(self.ref_avg_result.to_dict(orient='records'), f)
             f.write("\n")
@@ -68,8 +68,11 @@ from eoh.problems.optimization.classic_benchmark_path_planning.utils.architectur
         planner = alg.Planner(max_iter=5000)
         result, avg_result = self.benchmarker.run(planner.plan)
 
+        if result is None and avg_result is None:
+            return None, None
+
         improvement = MultiMapBenchmarker.get_improvement(self.ref_avg_result, avg_result)
-        fitness = improvement['objective_score'].sum()
+        fitness = improvement['objective_score'].mean()
         avg_result = pd.concat([avg_result, improvement], axis=1)
         return -fitness, avg_result
     

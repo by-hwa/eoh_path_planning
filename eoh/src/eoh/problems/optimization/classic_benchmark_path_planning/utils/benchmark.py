@@ -12,6 +12,7 @@ class MultiMapBenchmarker:
         self,
         maps: List[np.ndarray],
         name: str = "Algorithm",
+        learning_mode = True,
         iter = 10,
         seed = 42,
     ):
@@ -21,11 +22,16 @@ class MultiMapBenchmarker:
         self.name = name
         self.results_df: pd.DataFrame = pd.DataFrame()
         self.iter = iter
+        self.learning_mode = learning_mode
+
+        self.time_limit = 5.0
+        self.success_limit = 0.8
 
     def run(self, algorithm) -> pd.DataFrame:
         results = []
         main_start_time = time.time()
         for i, map_ in enumerate(self.maps):
+            print(f"Map {i+1}")
             for j in range(self.iter):
                 start_time = time.time()
                 try:
@@ -34,7 +40,6 @@ class MultiMapBenchmarker:
                     output = {"path": [], "nodes": [], "n_nodes": 0}
                 end_time = time.time()
 
-                print(f"Map {i+1}, Iteration {j+1}: Time taken: {end_time - start_time:.4f} seconds")
 
                 if isinstance(output, PlannerResult):
                     path = output.path
@@ -44,10 +49,14 @@ class MultiMapBenchmarker:
                     path_length = self._compute_path_length(path)
                 elif isinstance(output, Dict):
                     path = output['path']
-                    nodes = output['node']
+                    nodes = output['nodes']
                     num_nodes = len(nodes)
                     success = self._is_path_valid(path, map_)
                     path_length = self._compute_path_length(path)
+                else:
+                    return None, None
+                
+                print(f"Iteration {j+1}: Time taken: {end_time - start_time:.4f} seconds, Success: {success}")
 
                 results.append({
                     "map_id": i,
@@ -58,6 +67,15 @@ class MultiMapBenchmarker:
                     "num_nodes": num_nodes,
                     "path_length": path_length
                 })
+
+                time_taken_avg = np.mean([r["time_taken"] for r in results])
+                success_avg = np.mean([r["success"] for r in results]) if len(results) > 6 else 1.0
+                if time_taken_avg > self.time_limit:
+                    print("Time taken Limit")
+                    return None, None
+                elif success_avg < self.success_limit:
+                    print("Success Rate Limit")
+                    return None, None
 
         print(f"Total time taken for all maps: {time.time() - main_start_time:.4f} seconds")
 
@@ -70,10 +88,13 @@ class MultiMapBenchmarker:
         return sum(np.linalg.norm(np.array(path[i]) - np.array(path[i+1])) for i in range(len(path) - 1))
     
     def _is_path_valid(self, path: List[Tuple[float, ...]], map_) -> bool:
-
         if not path or len(path) < 2:
             return False
-
+        
+        if np.linalg.norm(np.array(path[0]) - np.array(map_.start)) > 0.5 or np.linalg.norm(np.array(path[-1]) - np.array(map_.goal)) > 0.5:
+            if np.linalg.norm(np.array(path[0]) - np.array(map_.goal)) > 0.5 or np.linalg.norm(np.array(path[-1]) - np.array(map_.start)) > 0.5:
+                return False
+            
         is_3d = True if len(map_.size) > 2 else False
         for i in range(len(path) - 1):
             p1 = path[i]
