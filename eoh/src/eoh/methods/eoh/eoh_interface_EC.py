@@ -253,7 +253,7 @@ class InterfaceEC():
                     if offspring['objective']:
                         offspring['time_improvement'] = np.round(results['time_improvement'].mean())
                         offspring['length_improvement'] = np.round(results['length_improvement'].mean())
-                        offspring['success_rate'] = np.round(results['success_rate'].mean())
+                        offspring['success_rate'] = results['success_rate'].mean()
                         with open(file=filename, mode='a') as f:
                             json.dump(offspring, f, indent=4)
                             f.write('\n')
