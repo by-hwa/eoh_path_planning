@@ -238,8 +238,11 @@ class InterfaceEC():
             try:
                 while n_try <= 3:
                     n_try+=1
-                    future = executor.submit(self.interface_eval.evaluate, code)
-                    fitness, results = future.result(timeout=self.timeout)
+                    try:
+                        future = executor.submit(self.interface_eval.evaluate, code)
+                        fitness, results = future.result(timeout=self.timeout)
+                    except:
+                        fitness, results = None, None
 
                     print('-----------------------------------')
                     print(fitness)

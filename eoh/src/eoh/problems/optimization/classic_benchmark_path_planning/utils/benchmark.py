@@ -173,7 +173,7 @@ class MultiMapBenchmarker:
         improvement_df['length_improvement'] = (results['path_length_avg'] - reference_result['path_length_avg']) / reference_result['path_length_avg'] * -100
 
         improvement_df['objective_score'] = (
-            0.5 * improvement_df['success_improvement'] +
+            5 * improvement_df['success_improvement'] +
             0.3 * improvement_df['time_improvement'] +
             0.2 * improvement_df['length_improvement']
             )
