@@ -39,6 +39,10 @@ class InterfaceEC():
 
         self.time_db_path = os.path.join(self.base_dir, "..", "..", "problems", "optimization", "classic_benchmark_path_planning", "utils", "database", "time_db.json")
         self.path_db_path = os.path.join(self.base_dir, "..", "..", "problems", "optimization", "classic_benchmark_path_planning", "utils", "database", "path_db.json")
+        self.smooth_db_path = os.path.join(self.base_dir, "..", "..", "problems", "optimization", "classic_benchmark_path_planning", "utils", "database", "smooth_db.json")
+        self.time_analysis_db_path = os.path.join(self.base_dir, "..", "..", "problems", "optimization", "classic_benchmark_path_planning", "utils", "database", "time_analysis_db.json")
+        self.path_analysis_db_path = os.path.join(self.base_dir, "..", "..", "problems", "optimization", "classic_benchmark_path_planning", "utils", "database", "path_analysis_db.json")
+        self.smooth_analysis_db_path = os.path.join(self.base_dir, "..", "..", "problems", "optimization", "classic_benchmark_path_planning", "utils", "database", "smooth_analysis_db.json")
 
     @staticmethod
     def convert_numpy(obj):
@@ -53,6 +57,27 @@ class InterfaceEC():
         if isinstance(obj, list):
             return [InterfaceEC.convert_numpy(i) for i in obj]
         return obj
+    
+    def _compute_improvement(self, parent, child, metric, maximize=False):
+        if maximize:
+            return (child - parent) / parent
+        else:
+            return (parent - child) / parent
+        
+    def _compute_adjust_score(self, parent, child, metric):
+        improvement = parent[metric] - child[metric]
+        final_perform = [metric+'_improvement']
+        return improvement * 0.4 + final_perform * 0.6
+    
+    def _save_data(self, file_path, contents)
+        with open(file=file_path, mode='r+') as f:
+            data = json.load(f)
+            data.append(contents)
+            
+            f.seek(0)
+            json.dump(data, f, indent=4)
+            f.truncate()
+
         
     def code2file(self,code):
         with open("./ael_alg.py", "w") as file:
@@ -261,23 +286,47 @@ class InterfaceEC():
                             json.dump(offspring, f, indent=4)
                             f.write('\n')
 
-                        if offspring['time_improvement'] > -800 and offspring['length_improvement'] > 18 and offspring['success_rate'] >= 1.0:
-                            with open(file=self.time_db_path, mode='r+') as f:
-                                data = json.load(f)
-                                data.append(offspring)
-                                
-                                f.seek(0)
-                                json.dump(data, f, indent=4)
-                                f.truncate()
+                        if offspring['time_improvement'] > -800 and offspring['length_improvement'] > 25 and offspring['success_rate'] >= 1.0:
+                            self._save_data(self.path_db_path, offspring)
 
-                        if offspring['time_improvement'] > 0 and offspring['length_improvement'] > 10 and offspring['success_rate'] >= 1.0:
-                            with open(file=self.path_db_path, mode='r+') as f:
-                                data = json.load(f)
-                                data.append(offspring)
+                            if p['length_improvement'] < offspring['length_improvement']:
+                                analysis = self.evel.get_analysis(p['code'], offspring['code'], 'length')
+                                contents = {
+                                    'parents': p['code'],
+                                    'offspring': offspring,
+                                    'objective': self._compute_adjust_score(p, offspring, 'length'),
+                                    'analysis': analysis
+                                    }
+                                self._save_data(self.path_analysis_db_path, contents)
 
-                                f.seek(0)
-                                json.dump(data, f, indent=4)
-                                f.truncate()
+
+                        if offspring['time_improvement'] > 50 and offspring['length_improvement'] > 10 and offspring['success_rate'] >= 1.0:
+                            self._save_data(self.time_db_path, offspring)
+
+                            if p['time_improvement'] < offspring['time_improvement']:
+                                analysis = self.evel.get_analysis(p['code'], offspring['code'], 'length')
+                                contents = {
+                                    'parents': p['code'],
+                                    'offspring': offspring,
+                                    'objective': self._compute_adjust_score(p, offspring, 'time'),
+                                    'analysis': analysis
+                                    }
+                                self._save_data(self.time_analysis_db_path, contents)
+
+
+                        if offspring['time_improvement'] > 0 and offspring['length_improvement'] > 10 and offspring['smooth_improvment'] > 1000 and offspring['success_rate'] >= 1.0:
+                            self._save_data(self.smooth_db_path, offspring)
+
+                            if p['smooth_improvment'] < offspring['smooth_improvment']:
+                                analysis = self.evel.get_analysis(p['code'], offspring['code'], 'length')
+                                contents = {
+                                    'parents': p['code'],
+                                    'offspring': offspring,
+                                    'objective': self._compute_adjust_score(p, offspring, 'smooth'),
+                                    'analysis': analysis
+                                    }
+                                self._save_data(self.smooth_analysis_db_path, contents)
+
                         break
 
                     elif offspring['other_inf'] is None:
@@ -313,6 +362,7 @@ class InterfaceEC():
 
     def get_algorithm(self, pop, operators):
         # operators = ['cross_over', 'cross_over', 'cross_over']
+        self.evol.load_analysis()
         results = []
         try:
             for operator in operators:

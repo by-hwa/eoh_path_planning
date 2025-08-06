@@ -6,7 +6,7 @@ import sys
 from .function_parser import FunctionParser
 import astunparse
 import textwrap
-
+import os, json, random
 class Evolution():
 
     def __init__(self, api_endpoint, api_key, model_LLM,llm_use_local,llm_local_url, debug_mode, prompts, **kwargs):
@@ -20,6 +20,10 @@ class Evolution():
         self.api_key = api_key
         self.model_LLM = model_LLM
         self.debug_mode = debug_mode # close prompt checking
+        
+        self.time_analysis_db_path = os.path.join(self.base_dir, "..", "..", "problems", "optimization", "classic_benchmark_path_planning", "utils", "database", "time_analysis_db.json")
+        self.path_analysis_db_path = os.path.join(self.base_dir, "..", "..", "problems", "optimization", "classic_benchmark_path_planning", "utils", "database", "path_analysis_db.json")
+        self.smooth_analysis_db_path = os.path.join(self.base_dir, "..", "..", "problems", "optimization", "classic_benchmark_path_planning", "utils", "database", "smooth_analysis_db.json")
 
         # set operator instruction
         self.e1 = '''Design a brand new algorithm from scratch.'''
@@ -30,9 +34,50 @@ class Evolution():
         self.cross_over = 'Improve the algorithm by minimizing the path length and reducing planning time, while using insights from previously successful heuristics.'
         self.time_expert = 'Improve the algorithm by minimizing reducing planning time, while using insights from previously successful heuristic.'
         self.path_expert = 'Improve the algorithm by minimizing the path length, while using insights from previously successful heuristic.'
-        
+
+        self.time_analysis = []
+        self.path_analysis = []
+        self.smooth_analysis = []
+
+        self.analysis_db_dict = {'planning time': (self.time_analysis_db_path, self.time_analysis),
+                            'path length': (self.path_analysis_db_path, self.path_analysis),
+                            'path smoothness': (self.smooth_analysis_db_path, self.smooth_analysis),
+                            }
+                
         if 'no_lm' not in kwargs.keys():
             self.interface_llm = InterfaceLLM(self.api_endpoint, self.api_key, self.model_LLM,llm_use_local,llm_local_url, self.debug_mode)
+
+    def load_analysis(self):
+        for k, (path, analysis) in self.analysis_db_dict:
+            with open(path, "r") as f:
+                data = json.load(f)
+                analysis = data
+
+    def get_analysis(self, improvment_metric, alg1, alg2):
+        prompt = f"""
+The following are the structural differences between two path planning algorithms:
+
+- Parents algorithm:
+{alg1}
+
+- Offspring algorithm:
+{alg2}
+
+Improved performance metric: {improvment_metric}
+
+DO NOT GIVE ANY EXPLANATION JUST BELOW INFORMATION
+Please analyze and output the results in the following format:
+
+1. Summary of key changes:
+   - ...
+   - ...
+2. Primary contributors to the performance improvement:
+   - ...
+3. Expected mechanism of impact:
+   - ...
+"""
+        analysis = self.interface_llm.get_response(prompt)
+        return analysis
 
     def get_prompt(self, indivs, op=None):
         prompt_indiv = ""
@@ -42,14 +87,22 @@ class Evolution():
                 prompt_indiv=prompt_indiv+f"No.{str(i+1)} algorithm and the corresponding code are: \nAlgorithm description: {indivs[i]['algorithm_description']}\nPlanning Mechanism:\n{indivs[i]['planning_mechanism']}\nCode:\n{indivs[i]['code']}\n"
         else: 
             prompt_indiv=f"Reference Implementation:\nAlgorithm description: {indivs[0]['algorithm_description']}\nPlanning Mechanism:\n{indivs[0]['planning_mechanism']}\nCode:\n{indivs[0]['code']}\n"
+        
+        analysis_info = ''
+        for k, (p, a) in self.analysis_db_dict:
+            if len(a):
+                n = random.randint(0, len(a))
+                analysis_info += f"\nThe following prompt is intended to analyze how structural differences between two path planning algorithms (parents alg → offspring alg) have contributed to the improvement of a specific performance metric: {k}.\n"+\
+                a[n]['analysis']
 
         prompt_content= self.prompt_task+"\n"+\
             prompt_indiv+\
+            analysis_info+\
             (f'Instruction : {getattr(self, op)}\n' if hasattr(self, op) else 'Generate algorithm')+\
             self.architecture_info+\
             self.prompt_objective+\
             self.prompt_constraints
-
+        
         return prompt_content
     
     def _extract_alg(self, response: str, algorithm_pass=False) -> str:

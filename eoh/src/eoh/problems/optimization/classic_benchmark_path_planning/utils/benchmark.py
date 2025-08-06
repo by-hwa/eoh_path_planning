@@ -47,12 +47,14 @@ class MultiMapBenchmarker:
                     num_nodes = len(nodes)
                     success = self._is_path_valid(path, map_)
                     path_length = self._compute_path_length(path)
+                    path_smoothness = self._compute_path_smoothness(path)
                 elif isinstance(output, Dict):
                     path = output['path']
                     nodes = output['nodes']
                     num_nodes = len(nodes)
                     success = self._is_path_valid(path, map_)
                     path_length = self._compute_path_length(path)
+                    path_smoothness = self._compute_path_smoothness(path)
                 else:
                     return None, None
                 
@@ -65,7 +67,8 @@ class MultiMapBenchmarker:
                     "success": success,
                     "time_taken": end_time - start_time,
                     "num_nodes": num_nodes,
-                    "path_length": path_length
+                    "path_length": path_length,
+                    "path_smoothness": path_smoothness,
                 })
 
                 time_taken_avg = np.mean([r["time_taken"] for r in results])
@@ -125,6 +128,36 @@ class MultiMapBenchmarker:
             if self._is_in_obstacle(interp, obstacles, is_3d):
                 return True
         return False
+    
+    def _compute_path_smoothness(self, path: List[Tuple[float, ...]]) -> float:
+        """
+        Compute smoothness based on total bending angles (smaller is smoother).
+        Returns a value where 1 = perfectly smooth (straight), 0 = very jagged.
+        """
+        if not path or len(path) < 3:
+            return 1.0  # trivially smooth
+
+        total_angle = 0.0
+        for i in range(1, len(path) - 1):
+            p0 = np.array(path[i - 1])
+            p1 = np.array(path[i])
+            p2 = np.array(path[i + 1])
+
+            v1 = p0 - p1
+            v2 = p2 - p1
+
+            norm_v1 = np.linalg.norm(v1)
+            norm_v2 = np.linalg.norm(v2)
+            if norm_v1 == 0 or norm_v2 == 0:
+                continue  # ignore invalid
+
+            cosine = np.dot(v1, v2) / (norm_v1 * norm_v2)
+            cosine = np.clip(cosine, -1.0, 1.0)  # numerical safety
+            angle = np.arccos(cosine)
+            total_angle += angle
+
+        # Normalize to [0, 1]: smoothness = 1 / (1 + total_bend)
+        return 1.0 / (1.0 + total_angle)
 
     def save_results(self, filename: str):
         if self.results_df.empty:
@@ -155,12 +188,14 @@ class MultiMapBenchmarker:
             'success': 'mean',           # 성공률
             'time_taken': 'mean',        # 평균 소요 시간
             'num_nodes': 'mean',      # 평균 노드 수
-            'path_length': lambda x: x[x > 0].mean()  # path=0 제외한 평균 경로 길이
+            'path_length': lambda x: x[x > 0].mean(),  # path=0 제외한 평균 경로 길이
+            'path_smoothness': 'mean' # 경로 부드러움
         }).rename(columns={
             'success': 'success_rate',
             'time_taken': 'time_avg',
             'num_nodes': 'num_nodes_avg',
-            'path_length': 'path_length_avg'
+            'path_length': 'path_length_avg',
+            'path_smoothness': 'smoothness_avg'
         }).reset_index()
         return classic_summary
     
@@ -171,11 +206,13 @@ class MultiMapBenchmarker:
         improvement_df['success_improvement'] = (results['success_rate'] - reference_result['success_rate']) * 100 # percent point
         improvement_df['time_improvement'] = (results['time_avg'] - reference_result['time_avg']) / reference_result['time_avg'] * -100
         improvement_df['length_improvement'] = (results['path_length_avg'] - reference_result['path_length_avg']) / reference_result['path_length_avg'] * -100
+        improvement_df['smoothness_improvement'] = (results['smoothness_avg'] - reference_result['smoothness_avg']) / reference_result['smoothness_avg'] * 100
 
         improvement_df['objective_score'] = (
             5 * improvement_df['success_improvement'] +
             0.3 * improvement_df['time_improvement'] +
-            0.2 * improvement_df['length_improvement']
+            0.2 * improvement_df['length_improvement'] +
+            0.005 * improvement_df['smoothness_improvement']
             )
 
         return improvement_df
