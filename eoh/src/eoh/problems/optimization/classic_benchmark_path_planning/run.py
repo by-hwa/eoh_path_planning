@@ -38,7 +38,7 @@ import os
 from eoh.problems.optimization.classic_benchmark_path_planning.utils.architecture_utils import PlannerResult, Map
 '''
         self.benchmarker = MultiMapBenchmarker(maps=self.maps, iter=10)
-        _, self.ref_avg_result = self.evaluate(self.__load_ref_alg("RRT-Connect"), init=True)
+        _, self.ref_avg_result = self.evaluate(self.__load_ref_alg("RRT"), init=True)
         print(self.ref_avg_result)
 
         filename = "./results/pops/reference_result.json"

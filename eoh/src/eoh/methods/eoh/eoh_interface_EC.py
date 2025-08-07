@@ -69,7 +69,7 @@ class InterfaceEC():
         final_perform = [metric+'_improvement']
         return improvement * 0.4 + final_perform * 0.6
     
-    def _save_data(self, file_path, contents)
+    def _save_data(self, file_path, contents):
         with open(file=file_path, mode='r+') as f:
             data = json.load(f)
             data.append(contents)
@@ -281,15 +281,16 @@ class InterfaceEC():
                     if offspring['objective']:
                         offspring['time_improvement'] = np.round(results['time_improvement'].mean())
                         offspring['length_improvement'] = np.round(results['length_improvement'].mean())
+                        offspring['smoothness_improvement'] = np.round(results['smoothness_improvement'].mean())
                         offspring['success_rate'] = results['success_rate'].mean()
                         with open(file=filename, mode='a') as f:
                             json.dump(offspring, f, indent=4)
                             f.write('\n')
 
-                        if offspring['time_improvement'] > -800 and offspring['length_improvement'] > 25 and offspring['success_rate'] >= 1.0:
+                        if offspring['time_improvement'] > -800 and offspring['length_improvement'] > 20 and offspring['success_rate'] >= 1.0:
                             self._save_data(self.path_db_path, offspring)
 
-                            if p['length_improvement'] < offspring['length_improvement']:
+                            if  'length_improvement' in p.keys() and p['length_improvement'] < offspring['length_improvement']:
                                 analysis = self.evel.get_analysis(p['code'], offspring['code'], 'length')
                                 contents = {
                                     'parents': p['code'],
@@ -314,10 +315,10 @@ class InterfaceEC():
                                 self._save_data(self.time_analysis_db_path, contents)
 
 
-                        if offspring['time_improvement'] > 0 and offspring['length_improvement'] > 10 and offspring['smooth_improvment'] > 1000 and offspring['success_rate'] >= 1.0:
+                        if offspring['time_improvement'] > -500 and offspring['length_improvement'] > 20 and offspring['smoothness_improvement'] > 1000 and offspring['success_rate'] >= 1.0:
                             self._save_data(self.smooth_db_path, offspring)
 
-                            if p['smooth_improvment'] < offspring['smooth_improvment']:
+                            if p['smoothness_improvement'] < offspring['smoothness_improvement']:
                                 analysis = self.evel.get_analysis(p['code'], offspring['code'], 'length')
                                 contents = {
                                     'parents': p['code'],
@@ -346,6 +347,10 @@ class InterfaceEC():
                         print('Trouble shooted CODE')
                         print(code)
                         continue
+                    else:
+                        offspring['objective'] = None
+                        offspring['results'] = None
+                        break
 
             except Exception as e:
                 print(f"Error in get_offspring: {traceback.format_exc()}")

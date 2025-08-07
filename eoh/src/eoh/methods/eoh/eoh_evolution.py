@@ -20,7 +20,8 @@ class Evolution():
         self.api_key = api_key
         self.model_LLM = model_LLM
         self.debug_mode = debug_mode # close prompt checking
-        
+
+        self.base_dir = os.path.dirname(os.path.abspath(__file__))
         self.time_analysis_db_path = os.path.join(self.base_dir, "..", "..", "problems", "optimization", "classic_benchmark_path_planning", "utils", "database", "time_analysis_db.json")
         self.path_analysis_db_path = os.path.join(self.base_dir, "..", "..", "problems", "optimization", "classic_benchmark_path_planning", "utils", "database", "path_analysis_db.json")
         self.smooth_analysis_db_path = os.path.join(self.base_dir, "..", "..", "problems", "optimization", "classic_benchmark_path_planning", "utils", "database", "smooth_analysis_db.json")
@@ -48,10 +49,10 @@ class Evolution():
             self.interface_llm = InterfaceLLM(self.api_endpoint, self.api_key, self.model_LLM,llm_use_local,llm_local_url, self.debug_mode)
 
     def load_analysis(self):
-        for k, (path, analysis) in self.analysis_db_dict:
+        for k, (path, analysis) in self.analysis_db_dict.items():
             with open(path, "r") as f:
                 data = json.load(f)
-                analysis = data
+                self.analysis_db_dict[k] = (path, data)
 
     def get_analysis(self, improvment_metric, alg1, alg2):
         prompt = f"""
@@ -89,7 +90,7 @@ Please analyze and output the results in the following format:
             prompt_indiv=f"Reference Implementation:\nAlgorithm description: {indivs[0]['algorithm_description']}\nPlanning Mechanism:\n{indivs[0]['planning_mechanism']}\nCode:\n{indivs[0]['code']}\n"
         
         analysis_info = ''
-        for k, (p, a) in self.analysis_db_dict:
+        for k, (p, a) in self.analysis_db_dict.items():
             if len(a):
                 n = random.randint(0, len(a))
                 analysis_info += f"\nThe following prompt is intended to analyze how structural differences between two path planning algorithms (parents alg → offspring alg) have contributed to the improvement of a specific performance metric: {k}.\n"+\

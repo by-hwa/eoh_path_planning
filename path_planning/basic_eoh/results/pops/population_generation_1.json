@@ -1,0 +1,743 @@
+[
+     {
+          "operator": "initial",
+          "algorithm_description": "This algorithm is a bidirectional extension of RRT* that grows two trees from start and goal while optimizing paths via rewiring. It combines RRT*\u2018s asymptotic optimality with RRT-Connect\u2019s fast convergence through connection attempts between the trees.",
+          "planning_mechanism": "The planner alternates growing two trees with sampling, extension, and rewiring. After each extension, it attempts to connect both trees. When connection is successful, a rewired optimal path is extracted across both trees.",
+          "code": "\nclass Node:\n    def __init__(self, position, parent=None, cost=0.0):\n        self.position = position\n        self.parent = parent\n        self.cost = cost\n        self.children = []\n        self.valid = True\n\n    def add_child(self, child):\n        self.children.append(child)\n\n\nclass Planner:\n    def __init__(self, max_iter: int = 5000, step_size: float = 5.0, radius: float = 10.0):\n        self.max_iter = max_iter\n        self.step_size = step_size\n        self.radius = radius\n\n    def plan(self, map) -> PlannerResult:\n        bounds = map.size\n        start_position = map.start\n        goal_position = map.goal\n        obstacles = map.obstacles\n        is_3d = len(bounds) == 3\n\n        start_tree = [Node(start_position)]\n        goal_tree = [Node(goal_position)]\n        nodes = []\n        edges = []\n        success_state = False\n        extracted_path = []\n\n        for iter in range(self.max_iter):\n            rand = self._sample_free(bounds, obstacles, is_3d)\n            for tree_a, tree_b in [(start_tree, goal_tree), (goal_tree, start_tree)]:\n                nearest = self._nearest(tree_a, rand)\n                new_pos = self._steer(nearest.position, rand, self.step_size)\n                if self._is_in_obstacle(new_pos, obstacles, is_3d):\n                    continue\n                if self._is_edge_in_obstacle(nearest.position, new_pos, obstacles, is_3d):\n                    continue\n\n                new_node = Node(new_pos)\n                near_nodes = self._near(tree_a, new_pos, self.radius)\n                min_cost = nearest.cost + self._distance(nearest.position, new_pos)\n                min_parent = nearest\n\n                for near in near_nodes:\n                    cost = near.cost + self._distance(near.position, new_pos)\n                    if cost < min_cost and not self._is_edge_in_obstacle(near.position, new_pos, obstacles, is_3d):\n                        min_cost = cost\n                        min_parent = near\n\n                new_node.parent = min_parent\n                new_node.cost = min_cost\n                min_parent.add_child(new_node)\n                tree_a.append(new_node)\n                nodes.append(new_node)\n                edges.append((min_parent, new_node))\n\n                for near in near_nodes:\n                    if near == min_parent:\n                        continue\n                    new_cost = new_node.cost + self._distance(new_node.position, near.position)\n                    if new_cost < near.cost and not self._is_edge_in_obstacle(new_node.position, near.position, obstacles, is_3d):\n                        if near.parent:\n                            edges.remove((near.parent, near))\n                        near.parent = new_node\n                        near.cost = new_cost\n                        new_node.add_child(near)\n                        edges.append((new_node, near))\n\n                connect_node = self._nearest(tree_b, new_node.position)\n                if self._distance(new_node.position, connect_node.position) < self.step_size and not self._is_edge_in_obstacle(new_node.position, connect_node.position, obstacles, is_3d):\n                    success_state = True\n                    extracted_path = self._extract_path(new_node, connect_node)\n                    return PlannerResult(True, extracted_path, start_tree + goal_tree, edges)\n\n        return PlannerResult(False, [], start_tree + goal_tree, edges)\n\n    def _sample_free(self, bounds, obstacles, is_3d):\n        while True:\n            point = tuple(random.uniform(0, bounds[i]) for i in range(3 if is_3d else 2))\n            if not self._is_in_obstacle(point, obstacles, is_3d):\n                return point\n\n    def _nearest(self, tree, point):\n        return min(tree, key=lambda node: self._distance(node.position, point))\n\n    def _near(self, tree, point, radius):\n        return [node for node in tree if self._distance(node.position, point) <= radius]\n\n    def _steer(self, from_pos, to_pos, step_size):\n        dist = self._distance(from_pos, to_pos)\n        if dist <= step_size:\n            return to_pos\n        ratio = step_size / dist\n        return tuple(from_pos[i] + (to_pos[i] - from_pos[i]) * ratio for i in range(len(from_pos)))\n\n    def _extract_path(self, node_a, node_b):\n        path_a = []\n        while node_a:\n            path_a.append(node_a.position)\n            node_a = node_a.parent\n        path_b = []\n        while node_b:\n            path_b.append(node_b.position)\n            node_b = node_b.parent\n        return list(reversed(path_a)) + path_b\n\n    def _distance(self, a, b):\n        return math.dist(a, b)\n\n    def _is_in_obstacle(self, pos, obstacles, is_3d):\n        for obs in obstacles:\n            if is_3d:\n                x, y, z, w, h, d = obs\n                px, py, pz = pos\n                if x <= px <= x + w and y <= py <= y + h and z <= pz <= z + d:\n                    return True\n            else:\n                x, y, w, h = obs\n                px, py = pos\n                if x <= px <= x + w and y <= py <= y + h:\n                    return True\n        return False\n\n    def _is_edge_in_obstacle(self, from_pos, to_pos, obstacles, is_3d, resolution=1.0):\n        distance = self._distance(from_pos, to_pos)\n        steps = max(1, int(distance / resolution))\n        for i in range(steps + 1):\n            interp = tuple(from_pos[d] + (to_pos[d] - from_pos[d]) * (i / steps) for d in range(len(from_pos)))\n            if self._is_in_obstacle(interp, obstacles, is_3d):\n                return True\n        return False\n    ",
+          "objective": -5.47449114023227,
+          "other_inf": [
+               {
+                    "map_id": 0,
+                    "success_rate": 1.0,
+                    "time_avg": 0.012044763565063477,
+                    "num_nodes_avg": 133.0,
+                    "path_length_avg": 175.27050435154484,
+                    "smoothness_avg": 0.016726285105375487,
+                    "success_improvement": 0.0,
+                    "time_improvement": -21.86446156592386,
+                    "length_improvement": 12.401486536989607,
+                    "smoothness_improvement": 60.71897053377777,
+                    "objective_score": -3.7754463097103477
+               },
+               {
+                    "map_id": 1,
+                    "success_rate": 1.0,
+                    "time_avg": 0.017744064331054688,
+                    "num_nodes_avg": 264.6,
+                    "path_length_avg": 258.5920512869376,
+                    "smoothness_avg": 0.010908242682381757,
+                    "success_improvement": 0.0,
+                    "time_improvement": -16.928046454483464,
+                    "length_improvement": 14.190408824541839,
+                    "smoothness_improvement": 52.81399740357816,
+                    "objective_score": -1.9762621844187802
+               },
+               {
+                    "map_id": 2,
+                    "success_rate": 1.0,
+                    "time_avg": 0.009687995910644532,
+                    "num_nodes_avg": 179.6,
+                    "path_length_avg": 143.86931760330097,
+                    "smoothness_avg": 0.02092975461741331,
+                    "success_improvement": 0.0,
+                    "time_improvement": 65.11466785256512,
+                    "length_improvement": 11.655572158065754,
+                    "smoothness_improvement": 61.933425488650386,
+                    "objective_score": 22.175181914825938
+               }
+          ]
+     },
+     {
+          "operator": "initial",
+          "algorithm_description": "This algorithm is a dual-tree variant of Rapidly-exploring Random Tree (RRT) that grows two trees from the start and goal positions, attempting to connect them as they expand. It is efficient for single-query problems due to its bidirectional search and reduced redundant exploration.",
+          "planning_mechanism": "The planner alternates between growing the start and goal trees by extending towards randomly sampled points. Each extension step involves checking for collision-free motion and attempting to connect the two trees. The algorithm terminates when a valid path is formed connecting the trees.",
+          "code": "\nclass Node:\n    def __init__(self, position, parent=None, cost=0.0):\n        self.position = position\n        self.parent = parent\n        self.cost = cost\n        self.children = []\n        self.valid = True\n\n    def add_child(self, child):\n        self.children.append(child)\n\n\nclass Planner:\n    def __init__(self, max_iter: int = 5000, step_size: float = 5.0):\n        self.max_iter = max_iter\n        self.step_size = step_size\n\n    def plan(self, map) -> PlannerResult:\n        bounds = map.size\n        start_position = map.start\n        goal_position = map.goal\n        obstacles = map.obstacles\n        is_3d = len(bounds) == 3\n\n        start_tree = [Node(start_position)]\n        goal_tree = [Node(goal_position)]\n        nodes = []\n        edges = []\n        success_state = False\n        extracted_path = []\n\n        for iter in range(self.max_iter):\n            rand = self._sample_free(bounds, obstacles, is_3d)\n            for tree_a, tree_b in [(start_tree, goal_tree), (goal_tree, start_tree)]:\n                nearest = self._nearest(tree_a, rand)\n                new_pos = self._steer(nearest.position, rand, self.step_size)\n                if self._is_in_obstacle(new_pos, obstacles, is_3d):\n                    continue\n                if self._is_edge_in_obstacle(nearest.position, new_pos, obstacles, is_3d):\n                    continue\n                new_node = Node(new_pos, parent=nearest, cost=nearest.cost + self._distance(nearest.position, new_pos))\n                nearest.add_child(new_node)\n                tree_a.append(new_node)\n                nodes.append(new_node)\n                edges.append((nearest, new_node))\n\n                connect_node = self._nearest(tree_b, new_pos)\n                if self._connect_trees(new_node, connect_node, obstacles, is_3d, tree_b, nodes, edges):\n                    success_state = True\n                    extracted_path = self._extract_path(new_node, connect_node)\n                    return PlannerResult(True, extracted_path, start_tree + goal_tree, edges)\n\n        return PlannerResult(False, [], start_tree + goal_tree, edges)\n\n    def _sample_free(self, bounds, obstacles, is_3d):\n        while True:\n            if is_3d:\n                point = tuple(random.uniform(0, bounds[i]) for i in range(3))\n            else:\n                point = tuple(random.uniform(0, bounds[i]) for i in range(2))\n            if not self._is_in_obstacle(point, obstacles, is_3d):\n                return point\n\n    def _nearest(self, tree, point):\n        return min(tree, key=lambda node: self._distance(node.position, point))\n\n    def _steer(self, from_pos, to_pos, step_size):\n        dist = self._distance(from_pos, to_pos)\n        if dist <= step_size:\n            return to_pos\n        ratio = step_size / dist\n        return tuple(from_pos[i] + (to_pos[i] - from_pos[i]) * ratio for i in range(len(from_pos)))\n\n    def _connect_trees(self, node_a, node_b, obstacles, is_3d, tree, nodes, edges):\n        from_pos = node_a.position\n        to_pos = node_b.position\n        if self._is_edge_in_obstacle(from_pos, to_pos, obstacles, is_3d):\n            return False\n        curr = node_b\n        path = []\n        while True:\n            new_pos = self._steer(curr.position, from_pos, self.step_size)\n            if self._is_in_obstacle(new_pos, obstacles, is_3d):\n                return False\n            if self._is_edge_in_obstacle(curr.position, new_pos, obstacles, is_3d):\n                return False\n            new_node = Node(new_pos, parent=curr, cost=curr.cost + self._distance(curr.position, new_pos))\n            curr.add_child(new_node)\n            tree.append(new_node)\n            nodes.append(new_node)\n            edges.append((curr, new_node))\n            if self._distance(new_pos, from_pos) < self.step_size:\n                new_node_final = Node(from_pos, parent=new_node, cost=new_node.cost + self._distance(new_pos, from_pos))\n                new_node.add_child(new_node_final)\n                tree.append(new_node_final)\n                nodes.append(new_node_final)\n                edges.append((new_node, new_node_final))\n                return True\n            curr = new_node\n\n    def _extract_path(self, node_a, node_b):\n        path_a = []\n        while node_a:\n            path_a.append(node_a.position)\n            node_a = node_a.parent\n        path_b = []\n        while node_b:\n            path_b.append(node_b.position)\n            node_b = node_b.parent\n        return list(reversed(path_a)) + path_b\n\n    def _distance(self, a, b):\n        return math.dist(a, b)\n\n    def _is_in_obstacle(self, pos, obstacles, is_3d):\n        for obs in obstacles:\n            if is_3d:\n                x, y, z, w, h, d = obs\n                px, py, pz = pos\n                if x <= px <= x + w and y <= py <= y + h and z <= pz <= z + d:\n                    return True\n            else:\n                x, y, w, h = obs\n                px, py = pos\n                if x <= px <= x + w and y <= py <= y + h:\n                    return True\n        return False\n\n    def _is_edge_in_obstacle(self, from_pos, to_pos, obstacles, is_3d, resolution=1.0):\n        distance = self._distance(from_pos, to_pos)\n        steps = max(1, int(distance / resolution))\n        for i in range(steps + 1):\n            interp = tuple(from_pos[d] + (to_pos[d] - from_pos[d]) * (i / steps) for d in range(len(from_pos)))\n            if self._is_in_obstacle(interp, obstacles, is_3d):\n                return True\n        return False\n    ",
+          "objective": -1.486610468143649,
+          "other_inf": [
+               {
+                    "map_id": 0,
+                    "success_rate": 1.0,
+                    "time_avg": 0.008508419990539551,
+                    "num_nodes_avg": 101.7,
+                    "path_length_avg": 188.22576488201025,
+                    "smoothness_avg": 0.011187468717945251,
+                    "success_improvement": 0.0,
+                    "time_improvement": 13.914954384712244,
+                    "length_improvement": 5.9265718433081265,
+                    "smoothness_improvement": 7.497776338222911,
+                    "objective_score": 5.397289565766413
+               },
+               {
+                    "map_id": 1,
+                    "success_rate": 1.0,
+                    "time_avg": 0.017635869979858398,
+                    "num_nodes_avg": 254.8,
+                    "path_length_avg": 300.19012599646163,
+                    "smoothness_avg": 0.0071781032260960454,
+                    "success_improvement": 0.0,
+                    "time_improvement": -16.21507822540353,
+                    "length_improvement": 0.3867603104208941,
+                    "smoothness_improvement": 0.5583282013809732,
+                    "objective_score": -4.784379764529976
+               },
+               {
+                    "map_id": 2,
+                    "success_rate": 1.0,
+                    "time_avg": 0.024777650833129883,
+                    "num_nodes_avg": 310.9,
+                    "path_length_avg": 158.2035597275041,
+                    "smoothness_avg": 0.014027290647026427,
+                    "success_improvement": 0.0,
+                    "time_improvement": 10.77859785250502,
+                    "length_improvement": 2.8534839845313615,
+                    "smoothness_improvement": 8.529090107346295,
+                    "objective_score": 3.84692160319451
+               }
+          ]
+     },
+     {
+          "operator": "m2",
+          "algorithm_description": "This algorithm improves bidirectional RRT by tuning key parameters: reducing step size for finer node expansions, increasing maximum iterations for thorough search, and biasing sampling towards the goal to enhance convergence speed. It also integrates a goal bias sampling with a certain probability to direct growth towards the goal, and employs shortened collision checking resolution to enhance accuracy. Additionally, path smoothing is applied post planning to improve path quality and smoothness.",
+          "planning_mechanism": "The planner grows two trees from start and goal simultaneously, alternately expanding each tree towards sampled points. Sampling is biased towards the goal to increase success and convergence speed. Collision checks are strictly enforced for nodes and edges before insertion. When trees connect, the path is reconstructed and then smoothed by shortcutting to reduce unnecessary detours, resulting in improved path quality.",
+          "code": "class Node:\n    def __init__(self, position, parent=None, cost=0.0):\n        self.position = position        # Tuple[float, ...]\n        self.parent = parent            # Node or None\n        self.cost = cost                # Path cost\n        self.children = []\n        self.valid = True\n\n    def add_child(self, child_node):\n        self.children.append(child_node)\n        child_node.parent = self\n\n    def path_from_root(self):\n        path = []\n        node = self\n        while node is not None:\n            path.append(node.position)\n            node = node.parent\n        return path[::-1]\nclass Planner:\n    def __init__(self, max_iter: int = 8000, step_size: float = 3.0, goal_sample_rate: float = 0.15, collision_resolution: float = 0.5):\n        self.max_iter = max_iter\n        self.step_size = step_size\n        self.goal_sample_rate = goal_sample_rate  # Probability of sampling the goal directly\n        self.collision_resolution = collision_resolution\n\n    def plan(self, map) -> PlannerResult:\n        import math, random\n\n        bounds = map.size\n        start_position = map.start\n        goal_position = map.goal\n        obstacles = map.obstacles\n        is_3d = len(bounds) == 3\n\n        success_state = False\n        extracted_path = []\n        nodes = []\n        edges = []\n\n        start_root = Node(start_position)\n        goal_root = Node(goal_position)\n        nodes.extend([start_root, goal_root])\n        tree_a, tree_b = [start_root], [goal_root]\n\n        def _sample_free():\n            if random.random() < self.goal_sample_rate:\n                return goal_position\n            while True:\n                if is_3d:\n                    p = (random.uniform(0, bounds[0]),\n                         random.uniform(0, bounds[1]),\n                         random.uniform(0, bounds[2]))\n                else:\n                    p = (random.uniform(0, bounds[0]),\n                         random.uniform(0, bounds[1]))\n                if not self._is_in_obstacle(p, obstacles, is_3d):\n                    return p\n\n        def _nearest(tree, point):\n            return min(tree, key=lambda node: math.dist(node.position, point))\n\n        def _steer(from_pos, to_pos):\n            dist = math.dist(from_pos, to_pos)\n            if dist <= self.step_size:\n                return to_pos\n            ratio = self.step_size / dist\n            return tuple(from_pos[d] + (to_pos[d] - from_pos[d]) * ratio for d in range(len(from_pos)))\n\n        def _is_within_bounds(pos):\n            for i, coord in enumerate(pos):\n                if coord < 0 or coord > bounds[i]:\n                    return False\n            return True\n\n        def _extend_tree(tree, point):\n            nearest_node = _nearest(tree, point)\n            new_pos = _steer(nearest_node.position, point)\n            if (not _is_within_bounds(new_pos) or\n                self._is_in_obstacle(new_pos, obstacles, is_3d) or\n                self._is_edge_in_obstacle(nearest_node.position, new_pos, obstacles, is_3d, self.collision_resolution)):\n                return None\n            new_node = Node(new_pos, parent=nearest_node, cost=nearest_node.cost + math.dist(nearest_node.position, new_pos))\n            nearest_node.add_child(new_node)\n            tree.append(new_node)\n            nodes.append(new_node)\n            edges.append((nearest_node, new_node))\n            return new_node\n\n        def _connect_trees(tree, new_node):\n            nearest_node = _nearest(tree, new_node.position)\n            current = nearest_node\n            while True:\n                next_pos = _steer(current.position, new_node.position)\n                if (not _is_within_bounds(next_pos) or\n                    self._is_in_obstacle(next_pos, obstacles, is_3d) or\n                    self._is_edge_in_obstacle(current.position, next_pos, obstacles, is_3d, self.collision_resolution)):\n                    return None\n                next_node = Node(next_pos, parent=current, cost=current.cost + math.dist(current.position, next_pos))\n                current.add_child(next_node)\n                tree.append(next_node)\n                nodes.append(next_node)\n                edges.append((current, next_node))\n                if math.dist(next_node.position, new_node.position) <= self.step_size:\n                    return next_node\n                current = next_node\n\n        def _reconstruct_path(node_a, node_b):\n            path_a = node_a.path_from_root()\n            path_b = node_b.path_from_root()\n            return path_a + path_b[::-1]\n\n        def _smooth_path(path):\n            # Shortcut smoothing with max trials = 50\n            if len(path) <= 2:\n                return path\n            import random\n            for _ in range(50):\n                if len(path) <= 2:\n                    break\n                i = random.randint(0, len(path) - 2)\n                j = random.randint(i + 1, len(path) - 1)\n                if j == i + 1:\n                    continue\n                p1, p2 = path[i], path[j]\n                if (not self._is_edge_in_obstacle(p1, p2, obstacles, is_3d, self.collision_resolution)):\n                    # shortcut possible\n                    path = path[:i + 1] + path[j:]\n            return path\n\n        for _ in range(self.max_iter):\n            rand_point = _sample_free()\n\n            new_a = _extend_tree(tree_a, rand_point)\n            if new_a is None:\n                tree_a, tree_b = tree_b, tree_a\n                continue\n\n            new_b = _connect_trees(tree_b, new_a)\n            if new_b:\n                success_state = True\n                extracted_path = _reconstruct_path(new_a, new_b)\n                extracted_path = _smooth_path(extracted_path)\n                break\n\n            tree_a, tree_b = tree_b, tree_a\n\n        return PlannerResult(\n            success=success_state,\n            path=extracted_path,\n            nodes=nodes,\n            edges=edges\n        )\n\n    def _is_in_obstacle(self, pos, obstacles, is_3d):\n        for obs in obstacles:\n            if is_3d:\n                x, y, z, w, h, d = obs\n                px, py, pz = pos\n                if x <= px <= x + w and y <= py <= y + h and z <= pz <= z + d:\n                    return True\n            else:\n                x, y, w, h = obs\n                px, py = pos\n                if x <= px <= x + w and y <= py <= y + h:\n                    return True\n        return False\n\n    def _is_edge_in_obstacle(self, from_pos, to_pos, obstacles, is_3d, resolution=0.5):\n        import math\n        distance = math.dist(from_pos, to_pos)\n        steps = max(1, int(distance / resolution))\n        for i in range(steps + 1):\n            interp = tuple(from_pos[d] + (to_pos[d] - from_pos[d]) * (i / steps) for d in range(len(from_pos)))\n            if self._is_in_obstacle(interp, obstacles, is_3d):\n                return True\n        return False",
+          "objective": 42.82017,
+          "time_improvement": -50.0,
+          "length_improvement": 21.0,
+          "other_inf": [
+               {
+                    "map_id": 0,
+                    "success_rate": 0.9,
+                    "time_avg": 0.008735418319702148,
+                    "num_nodes_avg": 121.9,
+                    "path_length_avg": 158.79688158358158,
+                    "smoothness_avg": 0.017264620570270624,
+                    "success_improvement": -9.999999999999998,
+                    "time_improvement": 11.618269272519385,
+                    "length_improvement": 20.634844860245124,
+                    "smoothness_improvement": 65.89171039649618,
+                    "objective_score": -42.05809169421266
+               },
+               {
+                    "map_id": 1,
+                    "success_rate": 1.0,
+                    "time_avg": 0.026499056816101076,
+                    "num_nodes_avg": 449.3,
+                    "path_length_avg": 240.15460051249525,
+                    "smoothness_avg": 0.04002816589212556,
+                    "success_improvement": 0.0,
+                    "time_improvement": -74.62081339337057,
+                    "length_improvement": 20.308578758222435,
+                    "smoothness_improvement": 460.75613797892566,
+                    "objective_score": -16.020747576472054
+               },
+               {
+                    "map_id": 2,
+                    "success_rate": 0.9,
+                    "time_avg": 0.052319788932800294,
+                    "num_nodes_avg": 571.0,
+                    "path_length_avg": 128.29426974238464,
+                    "smoothness_avg": 0.06187473290802109,
+                    "success_improvement": -9.999999999999998,
+                    "time_improvement": -88.39739731919414,
+                    "length_improvement": 21.219589801337207,
+                    "smoothness_improvement": 378.7245543077222,
+                    "objective_score": -70.38167846395218
+               }
+          ],
+          "success_rate": 0.9333333333333332
+     },
+     {
+          "operator": "initial",
+          "algorithm_description": "This algorithm grows two trees simultaneously, one from the start position and one from the goal position, and attempts to connect them to find a feasible path. This bidirectional approach accelerates convergence and increases the success rate compared to a single tree RRT.",
+          "planning_mechanism": "The planning mechanism involves randomly sampling points within the map bounds, extending each tree towards the sampled points, and attempting to connect the two trees whenever new nodes are added. Collision checks are performed for nodes and edges to ensure safety, and once the two trees connect, the final path is reconstructed by backtracking through the parent nodes of each tree.",
+          "code": "\nclass Node:\n    def __init__(self, position, parent=None, cost=0.0):\n        self.position = position        # Tuple[float, ...]\n        self.parent = parent            # Node or None\n        self.cost = cost                # Path cost\n        self.children = []\n        self.valid = True\n\n    def add_child(self, child_node):\n        self.children.append(child_node)\n        child_node.parent = self\n\n    def path_from_root(self):\n        path = []\n        node = self\n        while node is not None:\n            path.append(node.position)\n            node = node.parent\n        return path[::-1]\n\n\nclass Planner:\n    def __init__(self, max_iter: int = 5000, step_size: float = 5.0):\n        self.max_iter = max_iter\n        self.step_size = step_size\n\n    def plan(self, map) -> PlannerResult:\n        import math, random\n        bounds = map.size\n        start_position = map.start\n        goal_position = map.goal\n        obstacles = map.obstacles\n        is_3d = len(bounds) == 3\n\n        success_state = False\n        extracted_path = []\n        nodes = []\n        edges = []\n\n        start_root = Node(start_position)\n        goal_root = Node(goal_position)\n        nodes.extend([start_root, goal_root])\n        tree_a, tree_b = [start_root], [goal_root]\n\n        for _ in range(self.max_iter):\n            rand_point = self._sample_free(bounds, obstacles, is_3d)\n            new_a = self._extend_tree(tree_a, rand_point, obstacles, is_3d, nodes, edges)\n            if new_a is None:\n                continue\n\n            new_b = self._connect_trees(tree_b, new_a, obstacles, is_3d, nodes, edges)\n            if new_b:\n                success_state = True\n                path_a = new_a.path_from_root()\n                path_b = new_b.path_from_root()\n                extracted_path = path_a + path_b[::-1]\n                break\n\n            tree_a, tree_b = tree_b, tree_a  # Swap trees\n\n        return PlannerResult(\n            success=success_state,\n            path=extracted_path,\n            nodes=nodes,\n            edges=edges\n        )\n\n    def _sample_free(self, bounds, obstacles, is_3d):\n        import random\n        while True:\n            if is_3d:\n                p = (random.uniform(0, bounds[0]),\n                     random.uniform(0, bounds[1]),\n                     random.uniform(0, bounds[2]))\n            else:\n                p = (random.uniform(0, bounds[0]),\n                     random.uniform(0, bounds[1]))\n            if not self._is_in_obstacle(p, obstacles, is_3d):\n                return p\n\n    def _nearest(self, tree, point):\n        import math\n        return min(tree, key=lambda node: math.dist(node.position, point))\n\n    def _steer(self, from_pos, to_pos):\n        import math\n        dist = math.dist(from_pos, to_pos)\n        if dist <= self.step_size:\n            return to_pos\n        ratio = self.step_size / dist\n        return tuple(from_pos[d] + (to_pos[d] - from_pos[d]) * ratio for d in range(len(from_pos)))\n\n    def _extend_tree(self, tree, point, obstacles, is_3d, nodes, edges):\n        nearest_node = self._nearest(tree, point)\n        new_pos = self._steer(nearest_node.position, point)\n        if not self._is_in_obstacle(new_pos, obstacles, is_3d) and            not self._is_edge_in_obstacle(nearest_node.position, new_pos, obstacles, is_3d):\n            new_node = Node(new_pos, parent=nearest_node)\n            nearest_node.add_child(new_node)\n            tree.append(new_node)\n            nodes.append(new_node)\n            edges.append((nearest_node, new_node))\n            return new_node\n        return None\n\n    def _connect_trees(self, tree, new_node, obstacles, is_3d, nodes, edges):\n        nearest_node = self._nearest(tree, new_node.position)\n        while True:\n            new_pos = self._steer(nearest_node.position, new_node.position)\n            if not self._is_in_obstacle(new_pos, obstacles, is_3d) and                not self._is_edge_in_obstacle(nearest_node.position, new_pos, obstacles, is_3d):\n                next_node = Node(new_pos, parent=nearest_node)\n                nearest_node.add_child(next_node)\n                tree.append(next_node)\n                nodes.append(next_node)\n                edges.append((nearest_node, next_node))\n                if math.dist(next_node.position, new_node.position) <= self.step_size:\n                    return next_node\n                nearest_node = next_node\n            else:\n                return None\n\n    def _is_in_obstacle(self, pos, obstacles, is_3d):\n        for obs in obstacles:\n            if is_3d:\n                x, y, z, w, h, d = obs\n                px, py, pz = pos\n                if x <= px <= x + w and y <= py <= y + h and z <= pz <= z + d:\n                    return True\n            else:\n                x, y, w, h = obs\n                px, py = pos\n                if x <= px <= x + w and y <= py <= y + h:\n                    return True\n        return False\n\n    def _is_edge_in_obstacle(self, from_pos, to_pos, obstacles, is_3d, resolution=1.0):\n        import math\n        distance = math.dist(from_pos, to_pos)\n        steps = max(1, int(distance / resolution))\n        for i in range(steps + 1):\n            interp = tuple(from_pos[d] + (to_pos[d] - from_pos[d]) * (i / steps) for d in range(len(from_pos)))\n            if self._is_in_obstacle(interp, obstacles, is_3d):\n                return True\n        return False\n    ",
+          "objective": 43.98048200212903,
+          "other_inf": [
+               {
+                    "map_id": 0,
+                    "success_rate": 1.0,
+                    "time_avg": 0.002286410331726074,
+                    "num_nodes_avg": 59.1,
+                    "path_length_avg": 170.9770888905735,
+                    "smoothness_avg": 0.011129325160179355,
+                    "success_improvement": 0.0,
+                    "time_improvement": 76.86694616382907,
+                    "length_improvement": 14.547294318234119,
+                    "smoothness_improvement": 6.939088459328463,
+                    "objective_score": 26.004238155092185
+               },
+               {
+                    "map_id": 1,
+                    "success_rate": 0.7,
+                    "time_avg": 0.007691335678100586,
+                    "num_nodes_avg": 195.7,
+                    "path_length_avg": 276.36470377614694,
+                    "smoothness_avg": 0.007463600028392253,
+                    "success_improvement": -30.000000000000004,
+                    "time_improvement": 49.31641146656528,
+                    "length_improvement": 8.292841453028517,
+                    "smoothness_improvement": 4.557864045526364,
+                    "objective_score": -133.5237189491971
+               },
+               {
+                    "map_id": 2,
+                    "success_rate": 0.9,
+                    "time_avg": 0.00499422550201416,
+                    "num_nodes_avg": 134.2,
+                    "path_length_avg": 154.99263582978188,
+                    "smoothness_avg": 0.013133862024542206,
+                    "success_improvement": -9.999999999999998,
+                    "time_improvement": 82.01638222560287,
+                    "length_improvement": 4.825184687042764,
+                    "smoothness_improvement": 1.6166365256828326,
+                    "objective_score": -24.421965212282167
+               }
+          ]
+     },
+     {
+          "operator": "initial",
+          "algorithm_description": "This algorithm enhances the standard BI-RRT by incorporating an optimization step that rewires nearby nodes to minimize cost, resulting in asymptotically optimal paths. It grows two trees\u2014one from the start and one from the goal\u2014and attempts to connect them while optimizing the path cost dynamically.",
+          "planning_mechanism": "The planning mechanism includes sampling a random point, extending each tree toward it, rewiring neighbors within a radius to optimize the cost, and attempting to connect the two trees. When a connection is established, the combined path is extracted from both trees. Node validity and edge collision checks are strictly enforced throughout the process.",
+          "code": "\nclass Node:\n    def __init__(self, position, parent=None, cost=0.0):\n        self.position = position\n        self.parent = parent\n        self.cost = cost\n        self.children = []\n        self.valid = True\n\n    def add_child(self, child_node):\n        self.children.append(child_node)\n        child_node.parent = self\n\n    def path_from_root(self):\n        path = []\n        node = self\n        while node:\n            path.append(node.position)\n            node = node.parent\n        return path[::-1]\n\n\nclass Planner:\n    def __init__(self, max_iter: int = 5000, step_size: float = 5.0):\n        self.max_iter = max_iter\n        self.step_size = step_size\n\n    def plan(self, map) -> PlannerResult:\n        import math, random\n        bounds = map.size\n        start_position = map.start\n        goal_position = map.goal\n        obstacles = map.obstacles\n        is_3d = len(bounds) == 3\n\n        success_state = False\n        extracted_path = []\n        nodes = []\n        edges = []\n\n        start_root = Node(start_position)\n        goal_root = Node(goal_position)\n        nodes.extend([start_root, goal_root])\n        tree_a, tree_b = [start_root], [goal_root]\n\n        for iter_num in range(self.max_iter):\n            rand_point = self._sample_free(bounds, obstacles, is_3d)\n            new_a = self._extend_and_rewire(tree_a, rand_point, obstacles, is_3d, nodes, edges)\n            if new_a is None:\n                continue\n\n            new_b = self._connect_and_rewire(tree_b, new_a, obstacles, is_3d, nodes, edges)\n            if new_b:\n                success_state = True\n                path_a = new_a.path_from_root()\n                path_b = new_b.path_from_root()\n                extracted_path = path_a + path_b[::-1]\n                break\n\n            tree_a, tree_b = tree_b, tree_a\n\n        return PlannerResult(\n            success=success_state,\n            path=extracted_path,\n            nodes=nodes,\n            edges=edges\n        )\n\n    def _sample_free(self, bounds, obstacles, is_3d):\n        import random\n        while True:\n            p = tuple(random.uniform(0, bounds[d]) for d in range(len(bounds)))\n            if not self._is_in_obstacle(p, obstacles, is_3d):\n                return p\n\n    def _nearest(self, tree, point):\n        import math\n        return min(tree, key=lambda node: math.dist(node.position, point))\n\n    def _steer(self, from_pos, to_pos):\n        import math\n        dist = math.dist(from_pos, to_pos)\n        if dist <= self.step_size:\n            return to_pos\n        ratio = self.step_size / dist\n        return tuple(from_pos[d] + (to_pos[d] - from_pos[d]) * ratio for d in range(len(from_pos)))\n\n    def _near_nodes(self, tree, position, radius):\n        import math\n        return [node for node in tree if math.dist(node.position, position) <= radius]\n\n    def _extend_and_rewire(self, tree, point, obstacles, is_3d, nodes, edges):\n        import math\n        nearest = self._nearest(tree, point)\n        new_pos = self._steer(nearest.position, point)\n        if self._is_in_obstacle(new_pos, obstacles, is_3d) or            self._is_edge_in_obstacle(nearest.position, new_pos, obstacles, is_3d):\n            return None\n\n        new_node = Node(new_pos)\n        neighbors = self._near_nodes(tree, new_pos, radius=20.0)\n\n        min_cost = nearest.cost + math.dist(nearest.position, new_pos)\n        best_parent = nearest\n        for neighbor in neighbors:\n            cost = neighbor.cost + math.dist(neighbor.position, new_pos)\n            if cost < min_cost and not self._is_edge_in_obstacle(neighbor.position, new_pos, obstacles, is_3d):\n                min_cost = cost\n                best_parent = neighbor\n\n        best_parent.add_child(new_node)\n        new_node.cost = min_cost\n        new_node.parent = best_parent\n        tree.append(new_node)\n        nodes.append(new_node)\n        edges.append((best_parent, new_node))\n\n        for neighbor in neighbors:\n            new_cost = new_node.cost + math.dist(new_node.position, neighbor.position)\n            if new_cost < neighbor.cost and not self._is_edge_in_obstacle(new_node.position, neighbor.position, obstacles, is_3d):\n                if neighbor.parent:\n                    edges.remove((neighbor.parent, neighbor))\n                    neighbor.parent.children.remove(neighbor)\n                neighbor.parent = new_node\n                neighbor.cost = new_cost\n                new_node.add_child(neighbor)\n                edges.append((new_node, neighbor))\n\n        return new_node\n\n    def _connect_and_rewire(self, tree, new_node, obstacles, is_3d, nodes, edges):\n        import math\n        nearest = self._nearest(tree, new_node.position)\n        while True:\n            new_pos = self._steer(nearest.position, new_node.position)\n            if self._is_in_obstacle(new_pos, obstacles, is_3d) or                self._is_edge_in_obstacle(nearest.position, new_pos, obstacles, is_3d):\n                return None\n\n            connect_node = Node(new_pos)\n            neighbors = self._near_nodes(tree, new_pos, radius=20.0)\n\n            min_cost = nearest.cost + math.dist(nearest.position, new_pos)\n            best_parent = nearest\n            for neighbor in neighbors:\n                cost = neighbor.cost + math.dist(neighbor.position, new_pos)\n                if cost < min_cost and not self._is_edge_in_obstacle(neighbor.position, new_pos, obstacles, is_3d):\n                    min_cost = cost\n                    best_parent = neighbor\n\n            best_parent.add_child(connect_node)\n            connect_node.cost = min_cost\n            connect_node.parent = best_parent\n            tree.append(connect_node)\n            nodes.append(connect_node)\n            edges.append((best_parent, connect_node))\n\n            for neighbor in neighbors:\n                new_cost = connect_node.cost + math.dist(connect_node.position, neighbor.position)\n                if new_cost < neighbor.cost and not self._is_edge_in_obstacle(connect_node.position, neighbor.position, obstacles, is_3d):\n                    if neighbor.parent:\n                        edges.remove((neighbor.parent, neighbor))\n                        neighbor.parent.children.remove(neighbor)\n                    neighbor.parent = connect_node\n                    neighbor.cost = new_cost\n                    connect_node.add_child(neighbor)\n                    edges.append((connect_node, neighbor))\n\n            if math.dist(connect_node.position, new_node.position) <= self.step_size:\n                return connect_node\n\n            nearest = connect_node\n\n    def _is_in_obstacle(self, pos, obstacles, is_3d):\n        for obs in obstacles:\n            if is_3d:\n                x, y, z, w, h, d = obs\n                px, py, pz = pos\n                if x <= px <= x + w and y <= py <= y + h and z <= pz <= z + d:\n                    return True\n            else:\n                x, y, w, h = obs\n                px, py = pos\n                if x <= px <= x + w and y <= py <= y + h:\n                    return True\n        return False\n\n    def _is_edge_in_obstacle(self, from_pos, to_pos, obstacles, is_3d, resolution=1.0):\n        import math\n        distance = math.dist(from_pos, to_pos)\n        steps = max(1, int(distance / resolution))\n        for i in range(steps + 1):\n            interp = tuple(from_pos[d] + (to_pos[d] - from_pos[d]) * (i / steps) for d in range(len(from_pos)))\n            if self._is_in_obstacle(interp, obstacles, is_3d):\n                return True\n        return False\n    ",
+          "objective": 52.752541255711016,
+          "other_inf": [
+               {
+                    "map_id": 0,
+                    "success_rate": 1.0,
+                    "time_avg": 0.0051594734191894535,
+                    "num_nodes_avg": 63.6,
+                    "path_length_avg": 157.74844317172378,
+                    "smoothness_avg": 0.026937243959899278,
+                    "success_improvement": 0.0,
+                    "time_improvement": 47.79835678825919,
+                    "length_improvement": 21.158844301429212,
+                    "smoothness_improvement": 158.83369146092565,
+                    "objective_score": 19.365444354068227
+               },
+               {
+                    "map_id": 1,
+                    "success_rate": 0.8,
+                    "time_avg": 0.021558094024658202,
+                    "num_nodes_avg": 236.6,
+                    "path_length_avg": 218.9843001436935,
+                    "smoothness_avg": 0.022356480598334835,
+                    "success_improvement": -19.999999999999996,
+                    "time_improvement": -42.06135485959018,
+                    "length_improvement": 27.333600643728058,
+                    "smoothness_improvement": 213.19280910618096,
+                    "objective_score": -106.08572228360053
+               },
+               {
+                    "map_id": 2,
+                    "success_rate": 0.8,
+                    "time_avg": 0.008537554740905761,
+                    "num_nodes_avg": 131.2,
+                    "path_length_avg": 111.23634768618506,
+                    "smoothness_avg": 0.047735234271590925,
+                    "success_improvement": -19.999999999999996,
+                    "time_improvement": 69.25727099697029,
+                    "length_improvement": 31.694181530357035,
+                    "smoothness_improvement": 269.3273114473463,
+                    "objective_score": -71.53734583760075
+               }
+          ]
+     },
+     {
+          "operator": "e2",
+          "algorithm_description": "This hybrid algorithm integrates the exploration efficiency of a basic RRT with the path optimality improvements of RRT*\u2014including goal biasing, neighbor rewiring, and adaptive steering\u2014combined with a dynamic neighbor radius scaling based on node density. It performs rigorous collision checking for nodes and edges, ensures nodes stay within bounds, and incrementally improves path cost while promoting path smoothness and robustness. The planner balances exploration and exploitation via goal sampling and rewiring neighbors to progressively shorten path length and increase success rate.",
+          "planning_mechanism": "The planner samples points with goal bias, steers towards them from the nearest nodes with fixed step size, rejects samples in collision or out of bounds, and adds valid nodes. It selects the best parent among neighbors within a dynamically scaled radius to minimize cost, adds edges only if collision-free, and rewires neighbors to improve paths. Once within step size of goal, it attempts final connection. The path is traced back from goal node if successful.",
+          "code": "class Node:\n    def __init__(self, position, parent=None, cost=0.0):\n        self.position = position\n        self.parent = parent\n        self.cost = cost\n        self.children = []\n        self.valid = True\n\n    def add_child(self, child_node):\n        self.children.append(child_node)\n        child_node.parent = self\n\n    def update_parent(self, new_parent, new_cost):\n        if self.parent:\n            try:\n                self.parent.children.remove(self)\n            except ValueError:\n                pass\n        self.parent = new_parent\n        self.cost = new_cost\n        new_parent.children.append(self)\nclass Planner:\n    def __init__(self, max_iter: int = 5000, step_size: float = 5.0, goal_sample_rate: float = 0.1, neighbor_factor: float = 50.0):\n        self.max_iter = max_iter\n        self.step_size = step_size\n        self.goal_sample_rate = goal_sample_rate\n        self.neighbor_factor = neighbor_factor  # factor to scale neighbor search radius\n\n    def plan(self, map) -> 'PlannerResult':\n        import math\n        import random\n\n        bounds = map.size\n        start_position = map.start\n        goal_position = map.goal\n        obstacles = map.obstacles\n        is_3d = len(bounds) == 3\n\n        success_state = False\n        extracted_path = []\n        nodes = []\n        edges = []\n\n        root = Node(start_position)\n        nodes.append(root)\n\n        for iter_idx in range(1, self.max_iter + 1):\n            # Goal bias sampling\n            if random.random() < self.goal_sample_rate:\n                sample = goal_position\n            else:\n                sample = tuple(random.uniform(0, bounds[d]) for d in range(len(bounds)))\n\n            # Find nearest node\n            nearest_node = min(nodes, key=lambda n: math.dist(n.position, sample))\n            direction = tuple(sample[d] - nearest_node.position[d] for d in range(len(bounds)))\n            dist = math.dist(nearest_node.position, sample)\n            if dist == 0:\n                continue\n            scale = min(self.step_size, dist)\n            new_pos = tuple(nearest_node.position[d] + (direction[d] / dist) * scale for d in range(len(bounds)))\n\n            # Check bounds\n            if any(new_pos[d] < 0 or new_pos[d] > bounds[d] for d in range(len(bounds))):\n                continue\n\n            # Check node collision\n            if self._is_in_obstacle(new_pos, obstacles, is_3d):\n                continue\n            # Check edge collision\n            if self._is_edge_in_obstacle(nearest_node.position, new_pos, obstacles, is_3d):\n                continue\n\n            new_node = Node(new_pos)\n\n            # Dynamic neighbor radius based on iteration and nodes count\n            n_nodes = len(nodes)\n            gamma = self.neighbor_factor\n            dim = len(bounds)\n            # Radius scaling as per RRT* theoretical bound:\n            radius = min(self.step_size * 3, gamma * ((math.log(n_nodes + 1) / (n_nodes + 1))**(1/dim)))\n\n            # Find neighbors within radius\n            near_nodes = [node for node in nodes if math.dist(node.position, new_pos) <= radius]\n\n            # Choose best parent minimizing cost + edge validity\n            min_cost = nearest_node.cost + math.dist(nearest_node.position, new_pos)\n            best_parent = nearest_node\n            for near_node in near_nodes:\n                if self._is_edge_in_obstacle(near_node.position, new_pos, obstacles, is_3d):\n                    continue\n                cost = near_node.cost + math.dist(near_node.position, new_pos)\n                if cost < min_cost:\n                    min_cost = cost\n                    best_parent = near_node\n\n            # Connect new_node to best parent\n            new_node.update_parent(best_parent, min_cost)\n            nodes.append(new_node)\n            edges.append((best_parent, new_node))\n\n            # Rewire neighbors to potentially improve their cost through new_node\n            for near_node in near_nodes:\n                if near_node is best_parent:\n                    continue\n                cost_through_new = new_node.cost + math.dist(new_node.position, near_node.position)\n                if cost_through_new < near_node.cost:\n                    if not self._is_edge_in_obstacle(new_node.position, near_node.position, obstacles, is_3d):\n                        # Remove old edge and update parent\n                        if near_node.parent:\n                            try:\n                                edges.remove((near_node.parent, near_node))\n                            except ValueError:\n                                pass\n                            try:\n                                near_node.parent.children.remove(near_node)\n                            except ValueError:\n                                pass\n                        near_node.update_parent(new_node, cost_through_new)\n                        edges.append((new_node, near_node))\n\n            # Check if new node can connect directly to goal\n            dist_to_goal = math.dist(new_node.position, goal_position)\n            if dist_to_goal <= self.step_size:\n                if not self._is_in_obstacle(goal_position, obstacles, is_3d) and \\\n                   not self._is_edge_in_obstacle(new_node.position, goal_position, obstacles, is_3d):\n                    goal_node = Node(goal_position)\n                    goal_cost = new_node.cost + dist_to_goal\n                    goal_node.update_parent(new_node, goal_cost)\n                    nodes.append(goal_node)\n                    edges.append((new_node, goal_node))\n                    success_state = True\n                    break\n\n        # Extract path if success\n        if success_state:\n            path = []\n            node = nodes[-1]\n            while node is not None:\n                path.append(node.position)\n                node = node.parent\n            extracted_path = path[::-1]\n\n        return PlannerResult(\n            success=success_state,\n            path=extracted_path,\n            nodes=nodes,\n            edges=edges\n        )\n\n    def _is_in_obstacle(self, pos, obstacles, is_3d):\n        for obs in obstacles:\n            if is_3d:\n                x, y, z, w, h, d = obs\n                px, py, pz = pos\n                if x <= px <= x + w and y <= py <= y + h and z <= pz <= z + d:\n                    return True\n            else:\n                x, y, w, h = obs\n                px, py = pos\n                if x <= px <= x + w and y <= py <= y + h:\n                    return True\n        return False\n\n    def _is_edge_in_obstacle(self, from_pos, to_pos, obstacles, is_3d, resolution=1.0):\n        distance = math.dist(from_pos, to_pos)\n        steps = max(1, int(distance / resolution))\n        for i in range(steps + 1):\n            interp = tuple(from_pos[d] + (to_pos[d] - from_pos[d]) * (i / steps) for d in range(len(from_pos)))\n            if self._is_in_obstacle(interp, obstacles, is_3d):\n                return True\n        return False",
+          "objective": 177.31653,
+          "time_improvement": -604.0,
+          "length_improvement": 18.0,
+          "other_inf": [
+               {
+                    "map_id": 0,
+                    "success_rate": 1.0,
+                    "time_avg": 0.05419919490814209,
+                    "num_nodes_avg": 284.2,
+                    "path_length_avg": 165.482775399497,
+                    "smoothness_avg": 0.016891900008800545,
+                    "success_improvement": 0.0,
+                    "time_improvement": -448.3674020754835,
+                    "length_improvement": 17.293299392497616,
+                    "smoothness_improvement": 62.310325494896546,
+                    "objective_score": -130.74000911667105
+               },
+               {
+                    "map_id": 1,
+                    "success_rate": 1.0,
+                    "time_avg": 0.15224525928497315,
+                    "num_nodes_avg": 933.7,
+                    "path_length_avg": 259.50582756375985,
+                    "smoothness_avg": 0.007024509778030356,
+                    "success_improvement": 0.0,
+                    "time_improvement": -903.2504626909287,
+                    "length_improvement": 13.887186941464913,
+                    "smoothness_improvement": -1.5933684061602176,
+                    "objective_score": -268.2056682610164
+               },
+               {
+                    "map_id": 2,
+                    "success_rate": 1.0,
+                    "time_avg": 0.15545496940612794,
+                    "num_nodes_avg": 883.6,
+                    "path_length_avg": 124.91386658373274,
+                    "smoothness_avg": 0.019892198189482964,
+                    "success_improvement": 0.0,
+                    "time_improvement": -459.77503414752243,
+                    "length_improvement": 23.295360979661872,
+                    "smoothness_improvement": 53.9058556683744,
+                    "objective_score": -133.00390876998247
+               }
+          ],
+          "success_rate": 1.0
+     },
+     {
+          "operator": "initial",
+          "algorithm_description": "This algorithm is a sampling-based path planning algorithm that incrementally builds a space-filling tree rooted at the start position by randomly sampling the configuration space and extending the nearest existing node toward the sample. It continues this process until the goal is reached or a maximum number of iterations is exceeded.",
+          "planning_mechanism": "The planner randomly samples free configurations, finds the nearest node in the current tree, attempts to extend toward the sample by a fixed step size, and adds the new node if the move is valid. This repeats until the goal is reached or iteration limit is hit.",
+          "code": "\nclass Node:\n    def __init__(self, position, parent=None, cost=0.0):\n        self.position = position\n        self.parent = parent\n        self.cost = cost\n        self.children = []\n        self.valid = True\n\n    def add_child(self, child_node):\n        self.children.append(child_node)\n\n\nclass Planner:\n    def __init__(self, max_iter: int = 5000, step_size: float = 3.0, goal_sample_rate: float = 0.05):\n        self.max_iter = max_iter\n        self.step_size = step_size\n        self.goal_sample_rate = goal_sample_rate\n\n    def plan(self, map) -> PlannerResult:\n        import random\n        import math\n\n        bounds = map.size\n        start_position = map.start\n        goal_position = map.goal\n        obstacles = map.obstacles\n        is_3d = len(bounds) == 3\n\n        success_state = False\n        extracted_path = []\n        nodes = []\n        edges = []\n\n        root = Node(start_position)\n        nodes.append(root)\n\n        for _ in range(self.max_iter):\n            # Goal biasing\n            if random.random() < self.goal_sample_rate:\n                sample = goal_position\n            else:\n                sample = tuple(random.uniform(0, bounds[d]) for d in range(len(bounds)))\n\n            # Find nearest node\n            nearest_node = min(nodes, key=lambda n: math.dist(n.position, sample))\n\n            # Steer\n            direction = tuple(sample[d] - nearest_node.position[d] for d in range(len(bounds)))\n            length = math.dist(nearest_node.position, sample)\n            if length == 0:\n                continue\n            unit = tuple(d / length for d in direction)\n            new_position = tuple(nearest_node.position[d] + unit[d] * min(self.step_size, length) for d in range(len(bounds)))\n\n            if self._is_in_obstacle(new_position, obstacles, is_3d):\n                continue\n            if self._is_edge_in_obstacle(nearest_node.position, new_position, obstacles, is_3d):\n                continue\n\n            new_node = Node(new_position, parent=nearest_node, cost=nearest_node.cost + math.dist(nearest_node.position, new_position))\n            nearest_node.add_child(new_node)\n            nodes.append(new_node)\n            edges.append((nearest_node, new_node))\n\n            # Check if goal reached\n            if math.dist(new_position, goal_position) <= self.step_size:\n                if not self._is_edge_in_obstacle(new_position, goal_position, obstacles, is_3d) and not self._is_in_obstacle(goal_position, obstacles, is_3d):\n                    goal_node = Node(goal_position, parent=new_node, cost=new_node.cost + math.dist(new_position, goal_position))\n                    new_node.add_child(goal_node)\n                    nodes.append(goal_node)\n                    edges.append((new_node, goal_node))\n                    success_state = True\n                    break\n\n        if success_state:\n            path = []\n            node = nodes[-1]\n            while node:\n                path.append(node.position)\n                node = node.parent\n            extracted_path = path[::-1]\n\n        return PlannerResult(\n            success=success_state,\n            path=extracted_path,\n            nodes=nodes,\n            edges=edges\n        )\n\n    def _is_in_obstacle(self, pos, obstacles, is_3d):\n        for obs in obstacles:\n            if is_3d:\n                x, y, z, w, h, d = obs\n                px, py, pz = pos\n                if x <= px <= x + w and y <= py <= y + h and z <= pz <= z + d:\n                    return True\n            else:\n                x, y, w, h = obs\n                px, py = pos\n                if x <= px <= x + w and y <= py <= y + h:\n                    return True\n        return False\n\n    def _is_edge_in_obstacle(self, from_pos, to_pos, obstacles, is_3d, resolution=1.0):\n        import math\n        distance = math.dist(from_pos, to_pos)\n        steps = max(1, int(distance / resolution))\n        for i in range(steps + 1):\n            interp = tuple(from_pos[d] + (to_pos[d] - from_pos[d]) * (i / steps) for d in range(len(from_pos)))\n            if self._is_in_obstacle(interp, obstacles, is_3d):\n                return True\n        return False\n    ",
+          "objective": 188.97047424566063,
+          "other_inf": [
+               {
+                    "map_id": 0,
+                    "success_rate": 1.0,
+                    "time_avg": 0.034190583229064944,
+                    "num_nodes_avg": 461.3,
+                    "path_length_avg": 182.79849371656624,
+                    "smoothness_avg": 0.006355076380337696,
+                    "success_improvement": 0.0,
+                    "time_improvement": -245.92767166641744,
+                    "length_improvement": 8.639069807597604,
+                    "smoothness_improvement": -38.9355540051658,
+                    "objective_score": -72.24516530843155
+               },
+               {
+                    "map_id": 1,
+                    "success_rate": 1.0,
+                    "time_avg": 0.23241231441497803,
+                    "num_nodes_avg": 1743.3,
+                    "path_length_avg": 304.8791467783907,
+                    "smoothness_avg": 0.003864811977420653,
+                    "success_improvement": 0.0,
+                    "time_improvement": -1431.5272414194005,
+                    "length_improvement": -1.1692154216563917,
+                    "smoothness_improvement": -45.85769819397494,
+                    "objective_score": -429.92130400112126
+               },
+               {
+                    "map_id": 2,
+                    "success_rate": 1.0,
+                    "time_avg": 0.08899827003479004,
+                    "num_nodes_avg": 962.7,
+                    "path_length_avg": 149.90205372686268,
+                    "smoothness_avg": 0.007923257886236853,
+                    "success_improvement": 0.0,
+                    "time_improvement": -220.4722874933787,
+                    "length_improvement": 7.95110876006046,
+                    "smoothness_improvement": -38.697786285519925,
+                    "objective_score": -64.74495342742911
+               }
+          ]
+     },
+     {
+          "operator": "e1",
+          "algorithm_description": "This Planner implements RRT* (Rapidly-exploring Random Tree Star), an asymptotically optimal sampling-based path planner that incrementally builds a tree towards the goal while rewiring nodes within a neighborhood radius to reduce path cost. This improves path quality, smoothness, success rate, and efficiency over naive RRT.",
+          "planning_mechanism": "The planner samples random points, connects them by the lowest-cost parent within a radius if free of collisions, and rewires neighbors to shorten paths. It terminates when the goal is reached or max iterations expire, then extracts the optimal path.",
+          "code": "class Node:\n    def __init__(self, position: Tuple[float, ...], parent=None, cost: float=0.0):\n        self.position = position\n        self.parent = parent\n        self.cost = cost\n        self.children = []\n        self.valid = True\n\n    def add_child(self, child_node):\n        self.children.append(child_node)\n\n    def remove_child(self, child_node):\n        if child_node in self.children:\n            self.children.remove(child_node)\nclass Planner:\n    def __init__(self, max_iter: int=5000, step_size: float=5.0, search_radius: float=15.0, goal_sample_rate: float=0.1):\n        self.max_iter = max_iter\n        self.step_size = step_size\n        self.search_radius = search_radius\n        self.goal_sample_rate = goal_sample_rate\n\n    def plan(self, map) -> PlannerResult:\n        bounds = map.size\n        start_position = map.start\n        goal_position = map.goal\n        obstacles = map.obstacles\n        is_3d = len(bounds) == 3\n\n        success_state = False\n        extracted_path: List[Tuple[float, ...]] = []\n        nodes: List[Node] = []\n        edges: List[Tuple[Node, Node]] = []\n\n        root = Node(start_position)\n        nodes.append(root)\n\n        def distance(p1, p2):\n            return math.dist(p1, p2)\n\n        def steer(from_pos, to_pos):\n            dist = distance(from_pos, to_pos)\n            if dist <= self.step_size:\n                return to_pos\n            direction = tuple((to_pos[d] - from_pos[d]) / dist for d in range(len(from_pos)))\n            new_pos = tuple(from_pos[d] + direction[d]*self.step_size for d in range(len(from_pos)))\n            return new_pos\n\n        def find_nearest(nodes, sample):\n            return min(nodes, key=lambda n: distance(n.position, sample))\n\n        def find_near(nodes, new_node, radius):\n            return [node for node in nodes if distance(node.position, new_node.position) <= radius]\n\n        for _ in range(self.max_iter):\n            # Sample point (goal biasing)\n            if random.random() < self.goal_sample_rate:\n                sample = goal_position\n            else:\n                sample = tuple(random.uniform(0, bounds[d]) for d in range(len(bounds)))\n\n            nearest_node = find_nearest(nodes, sample)\n            new_pos = steer(nearest_node.position, sample)\n\n            # Check bounds\n            out_of_bounds = any(new_pos[d] < 0 or new_pos[d] > bounds[d] for d in range(len(bounds)))\n            if out_of_bounds:\n                continue\n\n            # Check collision for new node pos\n            if self._is_in_obstacle(new_pos, obstacles, is_3d):\n                continue\n            if self._is_edge_in_obstacle(nearest_node.position, new_pos, obstacles, is_3d):\n                continue\n\n            new_node = Node(new_pos)\n            \n            # Find neighbors within radius\n            neighbors = find_near(nodes, new_node, self.search_radius)\n\n            # Choose parent with minimum cost + edge cost, check collision\n            min_cost = nearest_node.cost + distance(nearest_node.position, new_pos)\n            min_node = nearest_node\n            for node in neighbors:\n                edge_cost = distance(node.position, new_pos)\n                cost = node.cost + edge_cost\n                if cost < min_cost:\n                    if not self._is_edge_in_obstacle(node.position, new_pos, obstacles, is_3d):\n                        min_cost = cost\n                        min_node = node\n            \n            new_node.parent = min_node\n            new_node.cost = min_cost\n            min_node.add_child(new_node)\n            nodes.append(new_node)\n            edges.append((min_node, new_node))\n\n            # Rewire neighbors to new node if cheaper and collision free\n            for node in neighbors:\n                if node == min_node:\n                    continue\n                edge_cost = distance(new_node.position, node.position)\n                cost_through_new = new_node.cost + edge_cost\n                if cost_through_new < node.cost:\n                    if not self._is_edge_in_obstacle(new_node.position, node.position, obstacles, is_3d):\n                        # Rewire\n                        if node.parent:\n                            node.parent.remove_child(node)\n                            edges.remove((node.parent, node))\n                        node.parent = new_node\n                        node.cost = cost_through_new\n                        new_node.add_child(node)\n                        edges.append((new_node, node))\n\n            # Check if goal can be connected to new node directly (within step size)\n            if distance(new_node.position, goal_position) <= self.step_size:\n                if (not self._is_in_obstacle(goal_position, obstacles, is_3d) and\n                    not self._is_edge_in_obstacle(new_node.position, goal_position, obstacles, is_3d)):\n                    goal_node = Node(goal_position, parent=new_node,\n                                     cost=new_node.cost + distance(new_node.position, goal_position))\n                    new_node.add_child(goal_node)\n                    nodes.append(goal_node)\n                    edges.append((new_node, goal_node))\n                    success_state = True\n                    # Extract path\n                    path = []\n                    node = goal_node\n                    while node:\n                        path.append(node.position)\n                        node = node.parent\n                    extracted_path = path[::-1]\n                    break\n\n        return PlannerResult(\n            success=success_state,\n            path=extracted_path,\n            nodes=nodes,\n            edges=edges\n        )\n\n    def _is_in_obstacle(self, pos, obstacles, is_3d):\n        for obs in obstacles:\n            if is_3d:\n                x, y, z, w, h, d = obs\n                px, py, pz = pos\n                if x <= px <= x + w and y <= py <= y + h and z <= pz <= z + d:\n                    return True\n            else:\n                x, y, w, h = obs\n                px, py = pos\n                if x <= px <= x + w and y <= py <= y + h:\n                    return True\n        return False\n\n    def _is_edge_in_obstacle(self, from_pos, to_pos, obstacles, is_3d, resolution=1.0):\n        distance_ = math.dist(from_pos, to_pos)\n        steps = max(1, int(distance_ / resolution))\n        for i in range(steps + 1):\n            interp = tuple(from_pos[d] + (to_pos[d] - from_pos[d]) * (i / steps) for d in range(len(from_pos)))\n            if self._is_in_obstacle(interp, obstacles, is_3d):\n                return True\n        return False",
+          "objective": 203.21722,
+          "time_improvement": -695.0,
+          "length_improvement": 24.0,
+          "other_inf": [
+               {
+                    "map_id": 0,
+                    "success_rate": 1.0,
+                    "time_avg": 0.08516473770141601,
+                    "num_nodes_avg": 382.4,
+                    "path_length_avg": 166.63575379732103,
+                    "smoothness_avg": 0.020723393476121822,
+                    "success_improvement": 0.0,
+                    "time_improvement": -761.6653077765501,
+                    "length_improvement": 16.71705187111335,
+                    "smoothness_improvement": 99.12625215137012,
+                    "objective_score": -224.6605506979855
+               },
+               {
+                    "map_id": 1,
+                    "success_rate": 1.0,
+                    "time_avg": 0.2160618782043457,
+                    "num_nodes_avg": 907.3,
+                    "path_length_avg": 224.7715692277033,
+                    "smoothness_avg": 0.01672571524002643,
+                    "success_improvement": 0.0,
+                    "time_improvement": -1323.7827850694584,
+                    "length_improvement": 25.41318896962671,
+                    "smoothness_improvement": 134.31119747551438,
+                    "objective_score": -391.38064173953455
+               },
+               {
+                    "map_id": 2,
+                    "success_rate": 1.0,
+                    "time_avg": 0.02791097164154053,
+                    "num_nodes_avg": 283.3,
+                    "path_length_avg": 115.64457953157512,
+                    "smoothness_avg": 0.03213987081764254,
+                    "success_improvement": 0.0,
+                    "time_improvement": -0.5041213119173451,
+                    "length_improvement": 28.987261620933317,
+                    "smoothness_improvement": 148.66604847500068,
+                    "objective_score": 6.3895461729864635
+               }
+          ],
+          "success_rate": 1.0
+     },
+     {
+          "operator": "e1",
+          "algorithm_description": "This algorithm is a hybrid informed bidirectional RRT* with adaptive sampling and path smoothing. It grows two trees from start and goal while focusing sampling in an informed ellipsoidal region to bias exploration towards the optimal path region. It adaptively adjusts step sizes for efficient expansion and performs local shortcut smoothing on the found path to improve path quality and smoothness.",
+          "planning_mechanism": "The planner alternately expands two trees towards samples drawn mostly within an ellipsoidal informed set computed from the current best solution cost. Each extension attempts rewiring for path cost improvement. Once the trees connect, the path is extracted and locally smoothed via shortcutting to reduce unnecessary waypoints and ensure collision-free shortcuts, resulting in better path quality and faster convergence.",
+          "code": "class Node:\n    def __init__(self, position, parent=None, cost=0.0):\n        self.position = position\n        self.parent = parent\n        self.cost = cost\n        self.children = []\n        self.valid = True\n\n    def add_child(self, child):\n        self.children.append(child)\nclass Planner:\n    def __init__(self, max_iter: int = 5000, step_size: float = 5.0, radius: float = 15.0, smooth_iter: int = 50):\n        self.max_iter = max_iter\n        self.step_size = step_size\n        self.radius = radius\n        self.smooth_iter = smooth_iter\n\n    def plan(self, map) -> PlannerResult:\n        bounds = map.size\n        start_position = map.start\n        goal_position = map.goal\n        obstacles = map.obstacles\n        is_3d = len(bounds) == 3\n        dim = len(bounds)\n\n        start_tree = [Node(start_position)]\n        goal_tree = [Node(goal_position)]\n        nodes = []\n        edges = []\n        success_state = False\n        best_path = []\n        best_cost = float('inf')\n\n        def informed_sample(c_best):\n            # If no solution yet, sample whole space uniformly\n            if c_best == float('inf'):\n                while True:\n                    point = tuple(random.uniform(0, bounds[d]) for d in range(dim))\n                    if not self._is_in_obstacle(point, obstacles, is_3d):\n                        return point\n\n            # Informed sampling in ellipsoid around start & goal\n            c_min = math.dist(start_position, goal_position)\n            if c_best < c_min:\n                c_min = c_best  # numerical safeguard\n\n            # Ellipsoid center\n            center = tuple((s + g) / 2 for s, g in zip(start_position, goal_position))\n            # Unit vector from start to goal\n            direction = tuple((g - s) / c_min for s, g in zip(start_position, goal_position))\n\n            # Create orthonormal basis via Gram-Schmidt\n            def ortho_basis(vec):\n                basis = [vec]\n                for _ in range(dim - 1):\n                    v = [random.gauss(0,1) for __ in range(dim)]\n                    # Subtract projections\n                    for b in basis:\n                        proj = sum(v[d]*b[d] for d in range(dim))\n                        v = [v[d] - proj*b[d] for d in range(dim)]\n                    norm = math.sqrt(sum(x*x for x in v))\n                    if norm > 1e-6:\n                        basis.append(tuple(x/norm for x in v))\n                return basis\n\n            basis = ortho_basis(direction)\n            # Radii of the ellipsoid\n            r1 = c_best / 2.0\n            r_others = math.sqrt(c_best*c_best - c_min*c_min)/2.0 if c_best > c_min else 0.0\n            radii = [r1] + [r_others]*(dim-1)\n\n            while True:\n                # sample uniformly in unit n-ball\n                while True:\n                    sample = [random.gauss(0,1) for _ in range(dim)]\n                    norm = math.sqrt(sum(x*x for x in sample))\n                    if norm <= 1.0 and norm > 1e-6:\n                        sample = [x / norm for x in sample]\n                        break\n                # scale with radii and random radius^(1/dim)\n                u = random.uniform(0,1) ** (1.0/dim)\n                sample = [radii[i]*u*sample[i] for i in range(dim)]\n\n                # rotate and translate to ellipsoid space\n                new_point = [center[d] for d in range(dim)]\n                for i in range(dim):\n                    for d in range(dim):\n                        new_point[d] += basis[i][d]*sample[i]\n                new_point = tuple(max(0.0, min(bounds[d], new_point[d])) for d in range(dim))\n                if not self._is_in_obstacle(new_point, obstacles, is_3d):\n                    return new_point\n\n        def nearest(tree, point):\n            return min(tree, key=lambda n: self._distance(n.position, point))\n\n        def near(tree, point, radius):\n            return [node for node in tree if self._distance(node.position, point) <= radius]\n\n        def steer(from_pos, to_pos, max_step):\n            dist = self._distance(from_pos, to_pos)\n            if dist <= max_step:\n                return to_pos\n            ratio = max_step / dist\n            return tuple(from_pos[i] + (to_pos[i] - from_pos[i]) * ratio for i in range(len(from_pos)))\n\n        def extract_path(node_a, node_b):\n            path_a = []\n            cur = node_a\n            while cur:\n                path_a.append(cur.position)\n                cur = cur.parent\n            path_b = []\n            cur = node_b\n            while cur:\n                path_b.append(cur.position)\n                cur = cur.parent\n            return list(reversed(path_a)) + path_b\n\n        def reconstruct_path(node):\n            path = []\n            cur = node\n            while cur:\n                path.append(cur.position)\n                cur = cur.parent\n            return path[::-1]\n\n        def local_shortcut(path):\n            if len(path) <= 2:\n                return path\n            new_path = [path[0]]\n\n            i = 0\n            while i < len(path)-1:\n                j = len(path)-1\n                while j > i + 1:\n                    if not self._is_edge_in_obstacle(path[i], path[j], obstacles, is_3d):\n                        break\n                    j -= 1\n                new_path.append(path[j])\n                i = j\n            return new_path\n\n        def rewire(tree, new_node):\n            near_nodes = near(tree, new_node.position, self.radius)\n            for near_node in near_nodes:\n                if near_node == new_node.parent:\n                    continue\n                dist = self._distance(new_node.position, near_node.position)\n                new_cost = new_node.cost + dist\n                if new_cost < near_node.cost and not self._is_edge_in_obstacle(new_node.position, near_node.position, obstacles, is_3d):\n                    # Remove old edge\n                    if near_node.parent:\n                        if (near_node.parent, near_node) in edges:\n                            edges.remove((near_node.parent, near_node))\n                        if near_node in near_node.parent.children:\n                            near_node.parent.children.remove(near_node)\n                    # Connect new edge\n                    near_node.parent = new_node\n                    near_node.cost = new_cost\n                    new_node.add_child(near_node)\n                    edges.append((new_node, near_node))\n\n        iter_count = 0\n        while iter_count < self.max_iter:\n            iter_count += 1\n            c_best = best_cost\n            sample = informed_sample(c_best)\n\n            for tree_a, tree_b in [(start_tree, goal_tree), (goal_tree, start_tree)]:\n                nearest_node = nearest(tree_a, sample)\n                new_pos = steer(nearest_node.position, sample, self.step_size)\n\n                if self._is_in_obstacle(new_pos, obstacles, is_3d):\n                    continue\n                if self._is_edge_in_obstacle(nearest_node.position, new_pos, obstacles, is_3d):\n                    continue\n\n                new_node = Node(new_pos)\n                near_nodes = near(tree_a, new_pos, self.radius)\n                min_cost = nearest_node.cost + self._distance(nearest_node.position, new_pos)\n                min_parent = nearest_node\n\n                for near_node in near_nodes:\n                    cost = near_node.cost + self._distance(near_node.position, new_pos)\n                    if cost < min_cost and not self._is_edge_in_obstacle(near_node.position, new_pos, obstacles, is_3d):\n                        min_cost = cost\n                        min_parent = near_node\n\n                new_node.parent = min_parent\n                new_node.cost = min_cost\n                min_parent.add_child(new_node)\n                tree_a.append(new_node)\n                nodes.append(new_node)\n                edges.append((min_parent, new_node))\n\n                # Rewire nearby nodes for optimality\n                rewire(tree_a, new_node)\n\n                # Try connecting to other tree\n                connect_node = nearest(tree_b, new_node.position)\n                dist_connect = self._distance(new_node.position, connect_node.position)\n                if dist_connect <= self.step_size and not self._is_edge_in_obstacle(new_node.position, connect_node.position, obstacles, is_3d):\n                    candidate_cost = new_node.cost + dist_connect + connect_node.cost\n                    if candidate_cost < best_cost:\n                        best_cost = candidate_cost\n                        success_state = True\n                        best_path = extract_path(new_node, connect_node)\n\n            # Early break if solution found with good cost\n            if success_state and iter_count > self.max_iter // 10:\n                break\n\n        if success_state and best_path:\n            # Path smoothing via local shortcutting\n            path = best_path\n            for _ in range(self.smooth_iter):\n                path = local_shortcut(path)\n            extracted_path = path\n\n        return PlannerResult(\n            success=success_state,\n            path=extracted_path,\n            nodes=start_tree + goal_tree + nodes,\n            edges=edges\n        )\n\n    def _distance(self, a, b):\n        return math.dist(a, b)\n\n    def _is_in_obstacle(self, pos, obstacles, is_3d):\n        for obs in obstacles:\n            if is_3d:\n                x, y, z, w, h, d = obs\n                px, py, pz = pos\n                if x <= px <= x + w and y <= py <= y + h and z <= pz <= z + d:\n                    return True\n            else:\n                x, y, w, h = obs\n                px, py = pos\n                if x <= px <= x + w and y <= py <= y + h:\n                    return True\n        return False\n\n    def _is_edge_in_obstacle(self, from_pos, to_pos, obstacles, is_3d, resolution=1.0):\n        distance = self._distance(from_pos, to_pos)\n        steps = max(1, int(distance / resolution))\n        for i in range(steps + 1):\n            interp = tuple(from_pos[d] + (to_pos[d] - from_pos[d]) * (i / steps) for d in range(len(from_pos)))\n            if self._is_in_obstacle(interp, obstacles, is_3d):\n                return True\n        return False",
+          "objective": 293.42562,
+          "time_improvement": -1007.0,
+          "length_improvement": 26.0,
+          "other_inf": [
+               {
+                    "map_id": 0,
+                    "success_rate": 1.0,
+                    "time_avg": 0.22914626598358154,
+                    "num_nodes_avg": 1232.2,
+                    "path_length_avg": 151.05556807923077,
+                    "smoothness_avg": 0.04946771756942938,
+                    "success_improvement": 0.0,
+                    "time_improvement": -2218.4171422782074,
+                    "length_improvement": 24.503878944109687,
+                    "smoothness_improvement": 375.3237549358324,
+                    "objective_score": -658.747748119961
+               },
+               {
+                    "map_id": 1,
+                    "success_rate": 1.0,
+                    "time_avg": 0.09055137634277344,
+                    "num_nodes_avg": 1009.0,
+                    "path_length_avg": 225.45937519639352,
+                    "smoothness_avg": 0.08516524523696775,
+                    "success_improvement": 0.0,
+                    "time_improvement": -496.7063318742989,
+                    "length_improvement": 25.184951679703754,
+                    "smoothness_improvement": 1093.0832438791554,
+                    "objective_score": -138.50949300695316
+               },
+               {
+                    "map_id": 2,
+                    "success_rate": 1.0,
+                    "time_avg": 0.11305840015411377,
+                    "num_nodes_avg": 1205.2,
+                    "path_length_avg": 115.90098836757991,
+                    "smoothness_avg": 0.09945529687228734,
+                    "success_improvement": 0.0,
+                    "time_improvement": -307.1099820655753,
+                    "length_improvement": 28.82981114929822,
+                    "smoothness_improvement": 669.4852233060038,
+                    "objective_score": -83.01960627328293
+               }
+          ],
+          "success_rate": 1.0
+     },
+     {
+          "operator": "initial",
+          "algorithm_description": "This algorithm is an optimal variant of RRT that improves path quality over time by rewiring the tree to minimize path cost. It incrementally builds a space-filling tree from start toward the goal while performing local optimizations by choosing better parents and rewiring nearby nodes.",
+          "planning_mechanism": "The planner samples a point, extends the nearest node toward it, finds nearby nodes within a radius, selects the node offering the lowest-cost path as the parent, and rewires suboptimal neighbors to the new node if a shorter path through it is possible and valid.",
+          "code": "\nclass Node:\n    def __init__(self, position, parent=None, cost=0.0):\n        self.position = position\n        self.parent = parent\n        self.cost = cost\n        self.children = []\n        self.valid = True\n\n    def add_child(self, child_node):\n        self.children.append(child_node)\n\n    def update_parent(self, new_parent, new_cost):\n        if self.parent:\n            self.parent.children.remove(self)\n        self.parent = new_parent\n        self.cost = new_cost\n        new_parent.add_child(self)\n\n\nclass Planner:\n    def __init__(self, max_iter: int = 5000, step_size: float = 3.0, goal_sample_rate: float = 0.05, neighbor_radius: float = 10.0):\n        self.max_iter = max_iter\n        self.step_size = step_size\n        self.goal_sample_rate = goal_sample_rate\n        self.neighbor_radius = neighbor_radius\n\n    def plan(self, map) -> PlannerResult:\n        import random\n        import math\n\n        bounds = map.size\n        start_position = map.start\n        goal_position = map.goal\n        obstacles = map.obstacles\n        is_3d = len(bounds) == 3\n\n        success_state = False\n        extracted_path = []\n        nodes = []\n        edges = []\n\n        root = Node(start_position)\n        nodes.append(root)\n\n        for _ in range(self.max_iter):\n            # Goal biasing\n            if random.random() < self.goal_sample_rate:\n                sample = goal_position\n            else:\n                sample = tuple(random.uniform(0, bounds[d]) for d in range(len(bounds)))\n\n            # Nearest node\n            nearest_node = min(nodes, key=lambda n: math.dist(n.position, sample))\n            direction = tuple(sample[d] - nearest_node.position[d] for d in range(len(bounds)))\n            dist_to_sample = math.dist(nearest_node.position, sample)\n            if dist_to_sample == 0:\n                continue\n            unit = tuple(d / dist_to_sample for d in direction)\n            new_position = tuple(nearest_node.position[d] + unit[d] * min(self.step_size, dist_to_sample) for d in range(len(bounds)))\n\n            if self._is_in_obstacle(new_position, obstacles, is_3d):\n                continue\n            if self._is_edge_in_obstacle(nearest_node.position, new_position, obstacles, is_3d):\n                continue\n\n            # Nearby nodes for choosing best parent\n            new_node = Node(new_position)\n            near_nodes = [n for n in nodes if math.dist(n.position, new_position) <= self.neighbor_radius]\n\n            min_cost = nearest_node.cost + math.dist(nearest_node.position, new_position)\n            best_parent = nearest_node\n\n            for near_node in near_nodes:\n                temp_cost = near_node.cost + math.dist(near_node.position, new_position)\n                if temp_cost < min_cost and not self._is_edge_in_obstacle(near_node.position, new_position, obstacles, is_3d):\n                    min_cost = temp_cost\n                    best_parent = near_node\n\n            new_node.update_parent(best_parent, min_cost)\n            nodes.append(new_node)\n            edges.append((best_parent, new_node))\n\n            # Rewiring\n            for near_node in near_nodes:\n                if near_node == best_parent:\n                    continue\n                cost_through_new = new_node.cost + math.dist(near_node.position, new_position)\n                if cost_through_new < near_node.cost and not self._is_edge_in_obstacle(new_position, near_node.position, obstacles, is_3d):\n                    edges.remove((near_node.parent, near_node))\n                    near_node.update_parent(new_node, cost_through_new)\n                    edges.append((new_node, near_node))\n\n            # Check goal connection\n            if math.dist(new_position, goal_position) <= self.step_size:\n                if not self._is_edge_in_obstacle(new_position, goal_position, obstacles, is_3d) and not self._is_in_obstacle(goal_position, obstacles, is_3d):\n                    goal_node = Node(goal_position)\n                    goal_cost = new_node.cost + math.dist(new_position, goal_position)\n                    goal_node.update_parent(new_node, goal_cost)\n                    nodes.append(goal_node)\n                    edges.append((new_node, goal_node))\n                    success_state = True\n                    break\n\n        if success_state:\n            path = []\n            node = nodes[-1]\n            while node:\n                path.append(node.position)\n                node = node.parent\n            extracted_path = path[::-1]\n\n        return PlannerResult(\n            success=success_state,\n            path=extracted_path,\n            nodes=nodes,\n            edges=edges\n        )\n\n    def _is_in_obstacle(self, pos, obstacles, is_3d):\n        for obs in obstacles:\n            if is_3d:\n                x, y, z, w, h, d = obs\n                px, py, pz = pos\n                if x <= px <= x + w and y <= py <= y + h and z <= pz <= z + d:\n                    return True\n            else:\n                x, y, w, h = obs\n                px, py = pos\n                if x <= px <= x + w and y <= py <= y + h:\n                    return True\n        return False\n\n    def _is_edge_in_obstacle(self, from_pos, to_pos, obstacles, is_3d, resolution=1.0):\n        import math\n        distance = math.dist(from_pos, to_pos)\n        steps = max(1, int(distance / resolution))\n        for i in range(steps + 1):\n            interp = tuple(from_pos[d] + (to_pos[d] - from_pos[d]) * (i / steps) for d in range(len(from_pos)))\n            if self._is_in_obstacle(interp, obstacles, is_3d):\n                return True\n        return False\n    ",
+          "objective": 349.28087629035116,
+          "other_inf": [
+               {
+                    "map_id": 0,
+                    "success_rate": 1.0,
+                    "time_avg": 0.04928519725799561,
+                    "num_nodes_avg": 379.9,
+                    "path_length_avg": 157.7438779343973,
+                    "smoothness_avg": 0.014115946270353475,
+                    "success_improvement": 0.0,
+                    "time_improvement": -398.649391876571,
+                    "length_improvement": 21.16112596316623,
+                    "smoothness_improvement": 35.636833785179014,
+                    "objective_score": -115.18440820141214
+               },
+               {
+                    "map_id": 1,
+                    "success_rate": 1.0,
+                    "time_avg": 0.42683241367340086,
+                    "num_nodes_avg": 1647.6,
+                    "path_length_avg": 225.42614332098805,
+                    "smoothness_avg": 0.011462143624438778,
+                    "success_improvement": 0.0,
+                    "time_improvement": -2712.6972131709017,
+                    "length_improvement": 25.195979140247676,
+                    "smoothness_improvement": 60.57361731541344,
+                    "objective_score": -808.467100036644
+               },
+               {
+                    "map_id": 2,
+                    "success_rate": 1.0,
+                    "time_avg": 0.1480414628982544,
+                    "num_nodes_avg": 897.6,
+                    "path_length_avg": 118.59892784173539,
+                    "smoothness_avg": 0.020633789931938304,
+                    "success_improvement": 0.0,
+                    "time_improvement": -433.07987043258106,
+                    "length_improvement": 27.173113785558407,
+                    "smoothness_improvement": 59.64354793304998,
+                    "objective_score": -124.19112063299738
+               }
+          ]
+     },
+     {
+          "operator": "m2",
+          "algorithm_description": "This algorithm is an optimized and refined RRT* variant with tuned parameters for improved efficiency, path quality, and success rate in 2D/3D environments. It employs adaptive neighbor radius scaling based on iteration count, goal biasing, and rewiring to achieve shorter, smoother paths while respecting collision and boundary constraints.",
+          "planning_mechanism": "Planning mechanism: The planner incrementally samples points in the bounded space with goal biasing, finds the nearest node, and steers towards the sample using a fixed step size. It validates node and edge collisions, connects the new node choosing the best parent among neighbors within a dynamically scaled radius, and rewires neighbors to reduce path costs. The process repeats until the goal is reached or iteration limit is exceeded, then extracts and returns the optimized path.",
+          "code": "class Node:\n    def __init__(self, position, parent=None, cost=0.0):\n        self.position = position\n        self.parent = parent\n        self.cost = cost\n        self.children = []\n        self.valid = True\n\n    def add_child(self, child_node):\n        self.children.append(child_node)\n        child_node.parent = self\n\n    def update_parent(self, new_parent, new_cost):\n        if self.parent:\n            try:\n                self.parent.children.remove(self)\n            except ValueError:\n                pass\n        self.parent = new_parent\n        self.cost = new_cost\n        new_parent.children.append(self)\nclass Planner:\n    def __init__(self, max_iter: int = 4000, step_size: float = 4.5, goal_sample_rate: float = 0.15, neighbor_radius: float = 20.0):\n        self.max_iter = max_iter\n        self.step_size = step_size\n        self.goal_sample_rate = goal_sample_rate\n        self.base_neighbor_radius = neighbor_radius\n\n    def plan(self, map) -> 'PlannerResult':\n        import random\n        import math\n\n        bounds = map.size\n        start_position = map.start\n        goal_position = map.goal\n        obstacles = map.obstacles\n        is_3d = len(bounds) == 3\n\n        success_state = False\n        extracted_path = []\n        nodes = []\n        edges = []\n\n        root = Node(start_position)\n        nodes.append(root)\n\n        for iter_count in range(1, self.max_iter + 1):\n            # Dynamic neighbor radius shrinks as iterations increase (for faster convergence)\n            neighbor_radius = self.base_neighbor_radius * (1.0 - (iter_count / self.max_iter)**0.5)\n            neighbor_radius = max(neighbor_radius, self.step_size * 1.5)\n\n            # Goal biased sampling\n            if random.random() < self.goal_sample_rate:\n                sample = goal_position\n            else:\n                sample = tuple(random.uniform(0, bounds[d]) for d in range(len(bounds)))\n\n            # Nearest node search\n            nearest_node = min(nodes, key=lambda n: math.dist(n.position, sample))\n\n            direction = tuple(sample[d] - nearest_node.position[d] for d in range(len(bounds)))\n            dist = math.dist(nearest_node.position, sample)\n            if dist == 0:\n                continue\n\n            scale = min(self.step_size, dist)\n            new_pos = tuple(nearest_node.position[d] + direction[d] / dist * scale for d in range(len(bounds)))\n\n            # Bounds check\n            if any(new_pos[d] < 0 or new_pos[d] > bounds[d] for d in range(len(bounds))):\n                continue\n\n            # Collision checks\n            if self._is_in_obstacle(new_pos, obstacles, is_3d):\n                continue\n            if self._is_edge_in_obstacle(nearest_node.position, new_pos, obstacles, is_3d):\n                continue\n\n            # Find nearby nodes for potential rewiring and best parent selection\n            near_nodes = [n for n in nodes if math.dist(n.position, new_pos) <= neighbor_radius]\n\n            # Choose best parent from near nodes\n            min_cost = nearest_node.cost + math.dist(nearest_node.position, new_pos)\n            best_parent = nearest_node\n            for near_node in near_nodes:\n                if self._is_edge_in_obstacle(near_node.position, new_pos, obstacles, is_3d):\n                    continue\n                cost_through_near = near_node.cost + math.dist(near_node.position, new_pos)\n                if cost_through_near < min_cost:\n                    min_cost = cost_through_near\n                    best_parent = near_node\n\n            new_node = Node(new_pos)\n            new_node.update_parent(best_parent, min_cost)\n            nodes.append(new_node)\n            edges.append((best_parent, new_node))\n\n            # Rewire neighbors to potentially reduce cost\n            for near_node in near_nodes:\n                if near_node == best_parent:\n                    continue\n                cost_through_new = new_node.cost + math.dist(new_node.position, near_node.position)\n                if cost_through_new < near_node.cost:\n                    if not self._is_edge_in_obstacle(new_node.position, near_node.position, obstacles, is_3d):\n                        # Remove old edge\n                        if near_node.parent:\n                            try:\n                                edges.remove((near_node.parent, near_node))\n                            except ValueError:\n                                pass\n                            try:\n                                near_node.parent.children.remove(near_node)\n                            except ValueError:\n                                pass\n                        # Update parent and add new edge\n                        near_node.update_parent(new_node, cost_through_new)\n                        edges.append((new_node, near_node))\n\n            # Check goal reaching with safe connection\n            if math.dist(new_pos, goal_position) <= self.step_size:\n                if not self._is_in_obstacle(goal_position, obstacles, is_3d) and \\\n                   not self._is_edge_in_obstacle(new_pos, goal_position, obstacles, is_3d):\n                    goal_node = Node(goal_position)\n                    goal_cost = new_node.cost + math.dist(new_pos, goal_position)\n                    goal_node.update_parent(new_node, goal_cost)\n                    nodes.append(goal_node)\n                    edges.append((new_node, goal_node))\n                    success_state = True\n                    break\n\n        # Extract path backward from goal_node if success\n        if success_state:\n            node = nodes[-1]\n            while node:\n                extracted_path.append(node.position)\n                node = node.parent\n            extracted_path.reverse()\n\n        return PlannerResult(\n            success=success_state,\n            path=extracted_path,\n            nodes=nodes,\n            edges=edges\n        )\n\n    def _is_in_obstacle(self, pos, obstacles, is_3d):\n        for obs in obstacles:\n            if is_3d:\n                x, y, z, w, h, d = obs\n                px, py, pz = pos\n                if x <= px <= x + w and y <= py <= y + h and z <= pz <= z + d:\n                    return True\n            else:\n                x, y, w, h = obs\n                px, py = pos\n                if x <= px <= x + w and y <= py <= y + h:\n                    return True\n        return False\n\n    def _is_edge_in_obstacle(self, from_pos, to_pos, obstacles, is_3d, resolution=0.5):\n        import math\n        distance = math.dist(from_pos, to_pos)\n        steps = max(1, int(distance / resolution))\n        for i in range(steps + 1):\n            interp = tuple(from_pos[d] + (to_pos[d] - from_pos[d]) * (i / steps) for d in range(len(from_pos)))\n            if self._is_in_obstacle(interp, obstacles, is_3d):\n                return True\n        return False",
+          "objective": 495.55441,
+          "time_improvement": -1613.0,
+          "length_improvement": 23.0,
+          "other_inf": [
+               {
+                    "map_id": 0,
+                    "success_rate": 0.9,
+                    "time_avg": 0.14350197315216065,
+                    "num_nodes_avg": 227.2,
+                    "path_length_avg": 164.12929598622088,
+                    "smoothness_avg": 0.020655984144223045,
+                    "success_improvement": -9.999999999999998,
+                    "time_improvement": -1351.8998731166507,
+                    "length_improvement": 17.969755394289972,
+                    "smoothness_improvement": 98.47853161098192,
+                    "objective_score": -451.48361819808235
+               },
+               {
+                    "map_id": 1,
+                    "success_rate": 1.0,
+                    "time_avg": 0.45711603164672854,
+                    "num_nodes_avg": 1051.9,
+                    "path_length_avg": 235.6620395304657,
+                    "smoothness_avg": 0.009652673888803365,
+                    "success_improvement": 0.0,
+                    "time_improvement": -2912.2571461789116,
+                    "length_improvement": 21.799362482162223,
+                    "smoothness_improvement": 35.22468517899821,
+                    "objective_score": -869.141147931346
+               },
+               {
+                    "map_id": 2,
+                    "success_rate": 1.0,
+                    "time_avg": 0.18728911876678467,
+                    "num_nodes_avg": 439.6,
+                    "path_length_avg": 117.15879937338202,
+                    "smoothness_avg": 0.030292819476407735,
+                    "success_improvement": 0.0,
+                    "time_improvement": -574.4060563238808,
+                    "length_improvement": 28.057439419925913,
+                    "smoothness_improvement": 134.3754198361579,
+                    "objective_score": -166.03845191399824
+               }
+          ],
+          "success_rate": 0.9666666666666667
+     },
+     {
+          "operator": "m3",
+          "algorithm_description": "This algorithm is a streamlined, generalized RRT* variant designed for efficient path planning in 2D or 3D spaces. It incrementally builds a tree from start to goal by sampling, steering, and rewiring nodes to iteratively improve path cost and quality. The approach balances exploration and exploitation, maintaining collision and edge-validity checks to ensure robust, feasible paths.",
+          "planning_mechanism": "The planner samples points within bounds, extends the nearest existing node toward samples with a fixed step size, validates new nodes and connecting edges against obstacles, and rewires neighbors within a radius to optimize path costs. Upon reaching near the goal, it finalizes the path by connecting to the goal node. Throughout, it maintains and updates node parent-child relationships and costs to improve path quality progressively.",
+          "code": "class Node:\n    def __init__(self, position, parent=None, cost=0.0):\n        self.position = position\n        self.parent = parent\n        self.cost = cost\n        self.children = []\n        self.valid = True\n\n    def add_child(self, child_node):\n        self.children.append(child_node)\n        child_node.parent = self\n\n    def update_parent(self, new_parent, new_cost):\n        if self.parent:\n            try:\n                self.parent.children.remove(self)\n            except ValueError:\n                pass\n        self.parent = new_parent\n        self.cost = new_cost\n        new_parent.children.append(self)\nclass Planner:\n    def __init__(self, max_iter: int = 3000, step_size: float = 4.0, goal_sample_rate: float = 0.1, neighbor_radius: float = 15.0):\n        self.max_iter = max_iter\n        self.step_size = step_size\n        self.goal_sample_rate = goal_sample_rate\n        self.neighbor_radius = neighbor_radius\n\n    def plan(self, map) -> 'PlannerResult':\n        bounds = map.size\n        start_position = map.start\n        goal_position = map.goal\n        obstacles = map.obstacles\n        is_3d = len(bounds) == 3\n\n        import random\n        import math\n\n        nodes = []\n        edges = []\n        root = Node(start_position)\n        nodes.append(root)\n        success = False\n\n        for _ in range(self.max_iter):\n            # Sample with goal bias\n            if random.random() < self.goal_sample_rate:\n                sample = goal_position\n            else:\n                sample = tuple(random.uniform(0, bounds[d]) for d in range(len(bounds)))\n\n            # Find nearest node and steer towards sample\n            nearest_node = min(nodes, key=lambda n: math.dist(n.position, sample))\n            direction = tuple(sample[d] - nearest_node.position[d] for d in range(len(bounds)))\n            dist = math.dist(nearest_node.position, sample)\n            if dist == 0:\n                continue\n            scale = min(self.step_size, dist)\n            new_pos = tuple(nearest_node.position[d] + direction[d]/dist * scale for d in range(len(bounds)))\n\n            # Bound check\n            if any(new_pos[d] < 0 or new_pos[d] > bounds[d] for d in range(len(bounds))):\n                continue\n            # Collision checks\n            if self._is_in_obstacle(new_pos, obstacles, is_3d):\n                continue\n            if self._is_edge_in_obstacle(nearest_node.position, new_pos, obstacles, is_3d):\n                continue\n\n            new_node = Node(new_pos)\n            near_nodes = [n for n in nodes if math.dist(n.position, new_pos) <= self.neighbor_radius]\n\n            # Choose best parent\n            min_cost = nearest_node.cost + math.dist(nearest_node.position, new_pos)\n            best_parent = nearest_node\n            for near_node in near_nodes:\n                if self._is_edge_in_obstacle(near_node.position, new_pos, obstacles, is_3d):\n                    continue\n                cost = near_node.cost + math.dist(near_node.position, new_pos)\n                if cost < min_cost:\n                    min_cost = cost\n                    best_parent = near_node\n\n            # Connect new_node\n            new_node.update_parent(best_parent, min_cost)\n            nodes.append(new_node)\n            edges.append((best_parent, new_node))\n\n            # Rewire neighbors\n            for near_node in near_nodes:\n                if near_node == best_parent:\n                    continue\n                cost_through_new = new_node.cost + math.dist(new_node.position, near_node.position)\n                if cost_through_new < near_node.cost:\n                    if not self._is_edge_in_obstacle(new_node.position, near_node.position, obstacles, is_3d):\n                        # Update parent and edges\n                        if near_node.parent:\n                            try:\n                                edges.remove((near_node.parent, near_node))\n                            except ValueError:\n                                pass\n                            try:\n                                near_node.parent.children.remove(near_node)\n                            except ValueError:\n                                pass\n                        near_node.update_parent(new_node, cost_through_new)\n                        edges.append((new_node, near_node))\n\n            # Check if goal reached\n            if math.dist(new_pos, goal_position) <= self.step_size:\n                if not self._is_in_obstacle(goal_position, obstacles, is_3d) and \\\n                   not self._is_edge_in_obstacle(new_pos, goal_position, obstacles, is_3d):\n                    goal_node = Node(goal_position)\n                    goal_cost = new_node.cost + math.dist(new_pos, goal_position)\n                    goal_node.update_parent(new_node, goal_cost)\n                    nodes.append(goal_node)\n                    edges.append((new_node, goal_node))\n                    success = True\n                    break\n\n        path = []\n        if success:\n            node = nodes[-1]\n            while node:\n                path.append(node.position)\n                node = node.parent\n            path.reverse()\n\n        return PlannerResult(success=success, path=path, nodes=nodes, edges=edges)\n\n    def _is_in_obstacle(self, pos, obstacles, is_3d):\n        for obs in obstacles:\n            if is_3d:\n                x, y, z, w, h, d = obs\n                px, py, pz = pos\n                if x <= px <= x + w and y <= py <= y + h and z <= pz <= z + d:\n                    return True\n            else:\n                x, y, w, h = obs\n                px, py = pos\n                if x <= px <= x + w and y <= py <= y + h:\n                    return True\n        return False\n\n    def _is_edge_in_obstacle(self, from_pos, to_pos, obstacles, is_3d, resolution=1.0):\n        import math\n        distance = math.dist(from_pos, to_pos)\n        steps = max(1, int(distance / resolution))\n        for i in range(steps + 1):\n            interp = tuple(from_pos[d] + (to_pos[d] - from_pos[d]) * i / steps for d in range(len(from_pos)))\n            if self._is_in_obstacle(interp, obstacles, is_3d):\n                return True\n        return False",
+          "objective": 795.36845,
+          "time_improvement": -2670.0,
+          "length_improvement": 26.0,
+          "other_inf": [
+               {
+                    "map_id": 0,
+                    "success_rate": 1.0,
+                    "time_avg": 0.12200891971588135,
+                    "num_nodes_avg": 262.1,
+                    "path_length_avg": 160.31053176222167,
+                    "smoothness_avg": 0.020643529268731024,
+                    "success_improvement": 0.0,
+                    "time_improvement": -1134.4411102051843,
+                    "length_improvement": 19.878337049404657,
+                    "smoothness_improvement": 98.35885561869833,
+                    "objective_score": -335.86487137358085
+               },
+               {
+                    "map_id": 1,
+                    "success_rate": 1.0,
+                    "time_avg": 0.9854721784591675,
+                    "num_nodes_avg": 1319.4,
+                    "path_length_avg": 221.71317278337733,
+                    "smoothness_avg": 0.015905122000469153,
+                    "success_improvement": 0.0,
+                    "time_improvement": -6393.965221981668,
+                    "length_improvement": 26.42806838001075,
+                    "smoothness_improvement": 122.81547476101757,
+                    "objective_score": -1912.2898755446931
+               },
+               {
+                    "map_id": 2,
+                    "success_rate": 1.0,
+                    "time_avg": 0.16171705722808838,
+                    "num_nodes_avg": 479.6,
+                    "path_length_avg": 113.56485816767322,
+                    "smoothness_avg": 0.030858624285259855,
+                    "success_improvement": 0.0,
+                    "time_improvement": -482.3240747974543,
+                    "length_improvement": 30.264335822891898,
+                    "smoothness_improvement": 138.7530493177356,
+                    "objective_score": -137.95059002806923
+               }
+          ],
+          "success_rate": 1.0
+     },
+     {
+          "operator": "m3",
+          "algorithm_description": "This algorithm implements a generalized and simplified RRT*-inspired planner that incrementally grows a tree by sampling points with goal biasing, steering from nearest nodes respecting a step size, and rewiring neighbors within a radius to improve path cost. It performs collision checks for nodes and edges, enforces map bounds, and dynamically updates parent-child relationships to ensure robustness and path quality. It balances exploration and exploitation efficiently to achieve a high success rate with smooth, optimized paths.",
+          "planning_mechanism": "The planner samples points within the given map bounds, biased towards the goal intermittently. It extends from the nearest existing node towards the sample by a fixed step size, validating new points and edges for collisions and boundary conformity. For each new node, it selects the best parent among neighbors within a radius to minimize cost, then rewires neighbors to the new node if shorter paths are found and valid. Upon reaching the goal vicinity, it connects the path and returns the optimized route and exploration data.",
+          "code": "class Node:\n    def __init__(self, position, parent=None, cost=0.0):\n        self.position = position        # Tuple[float, ...] \u2192 2D/3D coordinate\n        self.parent = parent            # Node or None\n        self.cost = cost                # Cost from start node\n        self.children = []\n        self.valid = True               # For collision and path validity\n\n    def add_child(self, child_node):\n        self.children.append(child_node)\n        child_node.parent = self\n\n    def update_parent(self, new_parent, new_cost):\n        if self.parent:\n            try:\n                self.parent.children.remove(self)\n            except ValueError:\n                pass\n        self.parent = new_parent\n        self.cost = new_cost\n        new_parent.children.append(self)\nclass Planner:\n    def __init__(self, max_iter: int = 4000, step_size: float=4.0, goal_sample_rate: float=0.1, neighbor_radius: float=12.0):\n        self.max_iter = max_iter\n        self.step_size = step_size\n        self.goal_sample_rate = goal_sample_rate\n        self.neighbor_radius = neighbor_radius\n\n    def plan(self, map) -> 'PlannerResult':\n        bounds = map.size\n        start_position = map.start\n        goal_position = map.goal\n        obstacles = map.obstacles\n        is_3d = len(bounds) == 3\n\n        import random\n        import math\n\n        nodes = []\n        edges = []\n        root = Node(start_position)\n        nodes.append(root)\n        success = False\n\n        for _ in range(self.max_iter):\n            # Sample: goal biasing or uniform random within bounds\n            if random.random() < self.goal_sample_rate:\n                sample = goal_position\n            else:\n                sample = tuple(random.uniform(0, bounds[d]) for d in range(len(bounds)))\n\n            # Nearest node\n            nearest_node = min(nodes, key=lambda n: math.dist(n.position, sample))\n            direction_vec = tuple(sample[d] - nearest_node.position[d] for d in range(len(bounds)))\n            dist = math.dist(nearest_node.position, sample)\n            if dist == 0:\n                continue\n\n            scale = min(self.step_size, dist)\n            new_pos = tuple(nearest_node.position[d] + direction_vec[d]/dist * scale for d in range(len(bounds)))\n\n            # Enforce boundary limits\n            if any(new_pos[d] < 0 or new_pos[d] > bounds[d] for d in range(len(bounds))):\n                continue\n\n            # Collision checks for node and edge\n            if self._is_in_obstacle(new_pos, obstacles, is_3d):\n                continue\n            if self._is_edge_in_obstacle(nearest_node.position, new_pos, obstacles, is_3d):\n                continue\n\n            new_node = Node(new_pos)\n            near_nodes = [n for n in nodes if math.dist(n.position, new_pos) <= self.neighbor_radius]\n\n            # Select best parent minimizing cost\n            min_cost = nearest_node.cost + math.dist(nearest_node.position, new_pos)\n            best_parent = nearest_node\n            for near_node in near_nodes:\n                if self._is_edge_in_obstacle(near_node.position, new_pos, obstacles, is_3d):\n                    continue\n                cost = near_node.cost + math.dist(near_node.position, new_pos)\n                if cost < min_cost:\n                    min_cost = cost\n                    best_parent = near_node\n\n            new_node.update_parent(best_parent, min_cost)\n            nodes.append(new_node)\n            edges.append((best_parent, new_node))\n\n            # Rewire neighbors for improved costs\n            for near_node in near_nodes:\n                if near_node == best_parent:\n                    continue\n                cost_through_new = new_node.cost + math.dist(new_node.position, near_node.position)\n                if cost_through_new < near_node.cost:\n                    if not self._is_edge_in_obstacle(new_node.position, near_node.position, obstacles, is_3d):\n                        # Remove old edge and update parent\n                        try:\n                            edges.remove((near_node.parent, near_node))\n                        except ValueError:\n                            pass\n                        try:\n                            near_node.parent.children.remove(near_node)\n                        except ValueError:\n                            pass\n                        near_node.update_parent(new_node, cost_through_new)\n                        edges.append((new_node, near_node))\n\n            # Goal check and connect if reachable directly\n            if math.dist(new_pos, goal_position) <= self.step_size:\n                if not self._is_in_obstacle(goal_position, obstacles, is_3d) and \\\n                   not self._is_edge_in_obstacle(new_pos, goal_position, obstacles, is_3d):\n                    goal_node = Node(goal_position)\n                    goal_cost = new_node.cost + math.dist(new_pos, goal_position)\n                    goal_node.update_parent(new_node, goal_cost)\n                    nodes.append(goal_node)\n                    edges.append((new_node, goal_node))\n                    success = True\n                    break\n\n        path = []\n        if success:\n            node = nodes[-1]\n            while node:\n                path.append(node.position)\n                node = node.parent\n            path.reverse()\n\n        return PlannerResult(success=success, path=path, nodes=nodes, edges=edges)\n\n    def _is_in_obstacle(self, pos, obstacles, is_3d):\n        for obs in obstacles:\n            if is_3d:\n                x, y, z, w, h, d = obs\n                px, py, pz = pos\n                if x <= px <= x + w and y <= py <= y + h and z <= pz <= z + d:\n                    return True\n            else:\n                x, y, w, h = obs\n                px, py = pos\n                if x <= px <= x + w and y <= py <= y + h:\n                    return True\n        return False\n\n    def _is_edge_in_obstacle(self, from_pos, to_pos, obstacles, is_3d, resolution=0.5):\n        import math\n        distance = math.dist(from_pos, to_pos)\n        steps = max(1, int(distance / resolution))\n        for i in range(steps + 1):\n            interp = tuple(from_pos[d] + (to_pos[d] - from_pos[d]) * i / steps for d in range(len(from_pos)))\n            if self._is_in_obstacle(interp, obstacles, is_3d):\n                return True\n        return False",
+          "objective": 1003.15493,
+          "time_improvement": -3139.0,
+          "length_improvement": 24.0,
+          "other_inf": [
+               {
+                    "map_id": 0,
+                    "success_rate": 0.9,
+                    "time_avg": 0.2550422430038452,
+                    "num_nodes_avg": 378.7,
+                    "path_length_avg": 162.42761281782217,
+                    "smoothness_avg": 0.016900880755929024,
+                    "success_improvement": -9.999999999999998,
+                    "time_improvement": -2480.42305706856,
+                    "length_improvement": 18.820240286133323,
+                    "smoothness_improvement": 62.396619398415474,
+                    "objective_score": -790.0508859663493
+               },
+               {
+                    "map_id": 1,
+                    "success_rate": 0.8,
+                    "time_avg": 0.8316524267196655,
+                    "num_nodes_avg": 1176.4,
+                    "path_length_avg": 224.84692860020942,
+                    "smoothness_avg": 0.013090239592110938,
+                    "success_improvement": -19.999999999999996,
+                    "time_improvement": -5380.339327629169,
+                    "length_improvement": 25.38818218030814,
+                    "smoothness_improvement": 83.38167725878705,
+                    "objective_score": -1708.6072534663952
+               },
+               {
+                    "map_id": 2,
+                    "success_rate": 0.9,
+                    "time_avg": 0.4600382804870605,
+                    "num_nodes_avg": 703.8,
+                    "path_length_avg": 116.76167820148422,
+                    "smoothness_avg": 0.025751628410904864,
+                    "success_improvement": -9.999999999999998,
+                    "time_improvement": -1556.5436611810278,
+                    "length_improvement": 28.301295742453053,
+                    "smoothness_improvement": 99.24024321906015,
+                    "objective_score": -510.80663798972233
+               }
+          ],
+          "success_rate": 0.8666666666666667
+     },
+     {
+          "operator": "initial",
+          "algorithm_description": "This algorithm is a bidirectional, asymptotically optimal planner that enhances RRT*-Connect by incorporating informed heuristic sampling, adaptive step size, node rejection, and pruning. It accelerates convergence and improves success rate in narrow, obstacle-rich environments.",
+          "planning_mechanism": "The planner grows two trees from start and goal using informed sampling. During expansion, it adaptively adjusts the step size near obstacles, rejects inefficient new nodes, and prunes branches that cannot contribute to an improved solution. The planner rewires nearby nodes only if doing so reduces path cost, and updates the current best path whenever a successful connection is found.",
+          "code": "\nclass Node:\n    def __init__(self, position, parent=None, cost=0.0):\n        self.position = position\n        self.parent = parent\n        self.cost = cost\n        self.children = []\n        self.valid = True\n\n    def add_child(self, child):\n        self.children.append(child)\n        child.parent = self\n\n    def path_from_root(self):\n        node, path = self, []\n        while node:\n            path.append(node.position)\n            node = node.parent\n        return path[::-1]\n\n\nclass Planner:\n    def __init__(self, max_iter=5000, step_size=5.0, rewire_radius=15.0):\n        self.max_iter = max_iter\n        self.base_step = step_size\n        self.rewire_radius = rewire_radius\n\n    def plan(self, map):\n        import math, random, numpy as np\n\n        bounds = map.size\n        start, goal = map.start, map.goal\n        obstacles = map.obstacles\n        is_3d = len(bounds) == 3\n        dim = len(bounds)\n\n        tree_a, tree_b = [Node(start)], [Node(goal)]\n        nodes = [tree_a[0], tree_b[0]]\n        edges = []\n        success, c_best, best_path = False, float(\"inf\"), []\n        c_min = math.dist(start, goal)\n\n        for i in range(self.max_iter):\n            tree_a, tree_b = (tree_a, tree_b) if i % 2 == 0 else (tree_b, tree_a)\n\n            sample = self._informed_sample(start, goal, c_best, c_min, bounds, dim)\n            nearest = min(tree_a, key=lambda n: math.dist(n.position, sample))\n\n            step = self._adaptive_step(nearest.position, sample, obstacles, is_3d)\n            new_pos = self._steer(nearest.position, sample, step)\n\n            if self._is_in_obstacle(new_pos, obstacles, is_3d):\n                continue\n            if self._is_edge_in_obstacle(nearest.position, new_pos, obstacles, is_3d):\n                continue\n\n            cost = nearest.cost + math.dist(nearest.position, new_pos)\n            if cost + math.dist(new_pos, goal) >= c_best:\n                continue  # pruning\n\n            new_node = Node(new_pos, nearest, cost)\n            nearest.add_child(new_node)\n            tree_a.append(new_node)\n            nodes.append(new_node)\n            edges.append((nearest, new_node))\n\n            near_nodes = [n for n in tree_a if math.dist(n.position, new_node.position) <= self.rewire_radius]\n            for near in near_nodes:\n                new_cost = new_node.cost + math.dist(new_node.position, near.position)\n                if new_cost < near.cost and not self._is_edge_in_obstacle(new_node.position, near.position, obstacles, is_3d):\n                    if near.parent:\n                        near.parent.children.remove(near)\n                        edges.remove((near.parent, near))\n                    near.parent = new_node\n                    near.cost = new_cost\n                    new_node.add_child(near)\n                    edges.append((new_node, near))\n\n            # Try to connect to the other tree\n            other_nearest = min(tree_b, key=lambda n: math.dist(n.position, new_node.position))\n            connect_cost = new_node.cost + math.dist(new_node.position, other_nearest.position) + other_nearest.cost\n            if connect_cost < c_best and not self._is_edge_in_obstacle(new_node.position, other_nearest.position, obstacles, is_3d):\n                c_best = connect_cost\n                path_a = new_node.path_from_root()\n                path_b = other_nearest.path_from_root()\n                best_path = path_a + path_b[::-1]\n                success = True\n\n        return PlannerResult(success=success, path=best_path, nodes=nodes, edges=edges)\n\n    def _informed_sample(self, start, goal, c_best, c_min, bounds, dim):\n        import numpy as np, math, random\n        if c_best == float(\"inf\"):\n            return tuple(random.uniform(0, bounds[d]) for d in range(dim))\n        x_center = [(s + g) / 2 for s, g in zip(start, goal)]\n        a1 = np.array(goal) - np.array(start)\n        a1 = a1 / np.linalg.norm(a1)\n        M = np.outer(a1, np.eye(dim)[0])\n        U, _, Vt = np.linalg.svd(M)\n        C = U @ np.diag([1] * (dim - 1) + [np.linalg.det(U) * np.linalg.det(Vt)]) @ Vt\n        r1 = c_best / 2\n        r2 = math.sqrt(c_best**2 - c_min**2) / 2\n        L = np.diag([r1] + [r2] * (dim - 1))\n        while True:\n            x_ball = np.random.normal(0, 1, dim)\n            x_ball /= np.linalg.norm(x_ball)\n            x_ball *= random.random() ** (1 / dim)\n            x_rand = C @ L @ x_ball + x_center\n            if all(0 <= x_rand[d] <= bounds[d] for d in range(dim)):\n                return tuple(x_rand)\n\n    def _adaptive_step(self, from_pos, to_pos, obstacles, is_3d):\n        import math\n        distance = math.dist(from_pos, to_pos)\n        steps = max(2, int(distance))\n        for i in range(1, steps + 1):\n            interp = tuple(from_pos[d] + (to_pos[d] - from_pos[d]) * (i / steps) for d in range(len(from_pos)))\n            if self._is_in_obstacle(interp, obstacles, is_3d):\n                return max(self.base_step * 0.3, 1.0)\n        return self.base_step\n\n    def _steer(self, from_pos, to_pos, step):\n        import math\n        dist = math.dist(from_pos, to_pos)\n        if dist <= step:\n            return to_pos\n        return tuple(from_pos[d] + (to_pos[d] - from_pos[d]) * step / dist for d in range(len(from_pos)))\n\n    def _is_in_obstacle(self, pos, obstacles, is_3d):\n        for obs in obstacles:\n            if is_3d:\n                x, y, z, w, h, d = obs\n                px, py, pz = pos\n                if x <= px <= x + w and y <= py <= y + h and z <= pz <= z + d:\n                    return True\n            else:\n                x, y, w, h = obs\n                px, py = pos\n                if x <= px <= x + w and y <= py <= y + h:\n                    return True\n        return False\n\n    def _is_edge_in_obstacle(self, from_pos, to_pos, obstacles, is_3d, resolution=1.0):\n        import math\n        distance = math.dist(from_pos, to_pos)\n        steps = max(1, int(distance / resolution))\n        for i in range(steps + 1):\n            interp = tuple(from_pos[d] + (to_pos[d] - from_pos[d]) * (i / steps) for d in range(len(from_pos)))\n            if self._is_in_obstacle(interp, obstacles, is_3d):\n                return True\n        return False\n\n    ",
+          "objective": 2678.803647236496,
+          "other_inf": [
+               {
+                    "map_id": 0,
+                    "success_rate": 1.0,
+                    "time_avg": 1.0888765811920167,
+                    "num_nodes_avg": 1818.3,
+                    "path_length_avg": 154.56558140968315,
+                    "smoothness_avg": 0.0150601233961907,
+                    "success_improvement": 0.0,
+                    "time_improvement": -10916.850398259334,
+                    "length_improvement": 22.74960801803148,
+                    "smoothness_improvement": 44.70921146558406,
+                    "objective_score": -3270.2816518168656
+               },
+               {
+                    "map_id": 1,
+                    "success_rate": 1.0,
+                    "time_avg": 1.6896430015563966,
+                    "num_nodes_avg": 3093.7,
+                    "path_length_avg": 229.59608695928765,
+                    "smoothness_avg": 0.011376062771551485,
+                    "success_improvement": 0.0,
+                    "time_improvement": -11034.239128727057,
+                    "length_improvement": 23.81225076558798,
+                    "smoothness_improvement": 59.36770728823165,
+                    "objective_score": -3305.2124499285583
+               },
+               {
+                    "map_id": 2,
+                    "success_rate": 1.0,
+                    "time_avg": 1.3855170726776123,
+                    "num_nodes_avg": 2839.3,
+                    "path_length_avg": 117.39619397761064,
+                    "smoothness_avg": 0.01876598180493872,
+                    "success_improvement": 0.0,
+                    "time_improvement": -4889.083781837038,
+                    "length_improvement": 27.91166483203798,
+                    "smoothness_improvement": 45.19232412802079,
+                    "objective_score": -1460.9168399640637
+               }
+          ]
+     },
+     {
+          "operator": "initial",
+          "algorithm_description": "This algorithm is an optimal path planning algorithm that enhances RRT* by focusing exploration within an ellipsoidal subset of the search space after finding an initial solution. This ellipsoid is defined by the start and goal states as focal points and the current best path cost as its transverse diameter, significantly improving convergence speed and path quality.",
+          "planning_mechanism": "The planner starts like RRT*, building a tree through uniform sampling. After discovering a valid path, it switches to informed sampling within a prolate hyperspheroid defined by the current best cost. Samples are drawn by transforming points from the unit n-ball to the ellipsoid, ensuring all new samples can potentially improve the path. Tree rewiring is done locally to maintain asymptotic optimality.",
+          "code": "\nclass Node:\n    def __init__(self, position, parent=None, cost=0.0):\n        self.position = position\n        self.parent = parent\n        self.cost = cost\n        self.children = []\n        self.valid = True\n\n    def add_child(self, child_node):\n        self.children.append(child_node)\n        child_node.parent = self\n\n    def path_from_root(self):\n        path = []\n        node = self\n        while node:\n            path.append(node.position)\n            node = node.parent\n        return path[::-1]\n\n\nclass Planner:\n    def __init__(self, max_iter: int = 5000, step_size: float = 5.0):\n        self.max_iter = max_iter\n        self.step_size = step_size\n\n    def plan(self, map) -> PlannerResult:\n        import math, random\n        import numpy as np\n\n        bounds = map.size\n        start = map.start\n        goal = map.goal\n        obstacles = map.obstacles\n        is_3d = len(bounds) == 3\n\n        success_state = False\n        extracted_path = []\n        nodes = []\n        edges = []\n\n        root = Node(start)\n        goal_node = Node(goal)\n        nodes.append(root)\n        tree = [root]\n        best_cost = float(\"inf\")\n        c_min = math.dist(start, goal)\n        solution_nodes = []\n\n        for _ in range(self.max_iter):\n            x_rand = self._sample(start, goal, best_cost, c_min, is_3d, bounds)\n\n            x_nearest = min(tree, key=lambda n: math.dist(n.position, x_rand))\n            x_new_pos = self._steer(x_nearest.position, x_rand)\n            if self._is_in_obstacle(x_new_pos, obstacles, is_3d) or                self._is_edge_in_obstacle(x_nearest.position, x_new_pos, obstacles, is_3d):\n                continue\n\n            x_new = Node(x_new_pos)\n            near_nodes = [n for n in tree if math.dist(n.position, x_new_pos) <= 20.0]\n\n            min_cost = x_nearest.cost + math.dist(x_nearest.position, x_new_pos)\n            best_parent = x_nearest\n            for n in near_nodes:\n                new_cost = n.cost + math.dist(n.position, x_new_pos)\n                if new_cost < min_cost and not self._is_edge_in_obstacle(n.position, x_new_pos, obstacles, is_3d):\n                    best_parent = n\n                    min_cost = new_cost\n\n            best_parent.add_child(x_new)\n            x_new.cost = min_cost\n            x_new.parent = best_parent\n            tree.append(x_new)\n            nodes.append(x_new)\n            edges.append((best_parent, x_new))\n\n            for n in near_nodes:\n                alt_cost = x_new.cost + math.dist(x_new.position, n.position)\n                if alt_cost < n.cost and not self._is_edge_in_obstacle(x_new.position, n.position, obstacles, is_3d):\n                    if n.parent:\n                        edges.remove((n.parent, n))\n                        n.parent.children.remove(n)\n                    n.parent = x_new\n                    n.cost = alt_cost\n                    x_new.add_child(n)\n                    edges.append((x_new, n))\n\n            if math.dist(x_new.position, goal) < self.step_size and                not self._is_edge_in_obstacle(x_new.position, goal, obstacles, is_3d):\n                goal_node.parent = x_new\n                goal_node.cost = x_new.cost + math.dist(x_new.position, goal)\n                nodes.append(goal_node)\n                edges.append((x_new, goal_node))\n                solution_nodes.append(goal_node)\n                if goal_node.cost < best_cost:\n                    best_cost = goal_node.cost\n                    success_state = True\n                    extracted_path = goal_node.path_from_root()\n\n        return PlannerResult(\n            success=success_state,\n            path=extracted_path,\n            nodes=nodes,\n            edges=edges\n        )\n\n    def _sample(self, start, goal, c_best, c_min, is_3d, bounds):\n        import numpy as np\n        import math, random\n\n        if c_best == float(\"inf\"):\n            return tuple(random.uniform(0, bounds[d]) for d in range(len(bounds)))\n\n        dim = len(start)\n        L = np.diag([c_best / 2] + [math.sqrt(c_best**2 - c_min**2) / 2] * (dim - 1))\n        x_center = np.array([(s + g) / 2 for s, g in zip(start, goal)])\n        a1 = np.array(goal) - np.array(start)\n        a1 = a1 / np.linalg.norm(a1)\n        I = np.eye(dim)\n        M = np.outer(a1, I[:, 0])\n        U, _, Vt = np.linalg.svd(M)\n        C = np.dot(U, np.dot(np.diag([1] * (dim - 1) + [np.linalg.det(U) * np.linalg.det(Vt)]), Vt))\n\n        while True:\n            x_ball = np.random.normal(0, 1, dim)\n            norm = np.linalg.norm(x_ball)\n            if norm > 1e-6:\n                x_ball = x_ball / norm * random.random() ** (1.0 / dim)\n            x_rand = np.dot(C, np.dot(L, x_ball)) + x_center\n            if all(0 <= x_rand[d] <= bounds[d] for d in range(dim)):\n                return tuple(x_rand)\n\n    def _steer(self, from_pos, to_pos):\n        import math\n        dist = math.dist(from_pos, to_pos)\n        if dist <= self.step_size:\n            return to_pos\n        return tuple(from_pos[d] + (to_pos[d] - from_pos[d]) * self.step_size / dist for d in range(len(from_pos)))\n\n    def _is_in_obstacle(self, pos, obstacles, is_3d):\n        for obs in obstacles:\n            if is_3d:\n                x, y, z, w, h, d = obs\n                px, py, pz = pos\n                if x <= px <= x + w and y <= py <= y + h and z <= pz <= z + d:\n                    return True\n            else:\n                x, y, w, h = obs\n                px, py = pos\n                if x <= px <= x + w and y <= py <= y + h:\n                    return True\n        return False\n\n    def _is_edge_in_obstacle(self, from_pos, to_pos, obstacles, is_3d, resolution=1.0):\n        import math\n        distance = math.dist(from_pos, to_pos)\n        steps = max(1, int(distance / resolution))\n        for i in range(steps + 1):\n            interp = tuple(from_pos[d] + (to_pos[d] - from_pos[d]) * i / steps for d in range(len(from_pos)))\n            if self._is_in_obstacle(interp, obstacles, is_3d):\n                return True\n        return False\n    ",
+          "objective": 8535.58848481049,
+          "other_inf": [
+               {
+                    "map_id": 0,
+                    "success_rate": 1.0,
+                    "time_avg": 4.160760974884033,
+                    "num_nodes_avg": 3092.9,
+                    "path_length_avg": 144.17782833834022,
+                    "smoothness_avg": 0.025832904194730322,
+                    "success_improvement": 0.0,
+                    "time_improvement": -41997.040192592525,
+                    "length_improvement": 27.94130716123327,
+                    "smoothness_improvement": 148.22234835280017,
+                    "objective_score": -12592.782684603746
+               },
+               {
+                    "map_id": 1,
+                    "success_rate": 1.0,
+                    "time_avg": 4.010024189949036,
+                    "num_nodes_avg": 4230.3,
+                    "path_length_avg": 216.04260686110948,
+                    "smoothness_avg": 0.019191384723471337,
+                    "success_improvement": 0.0,
+                    "time_improvement": -26324.85318007711,
+                    "length_improvement": 28.30975399680244,
+                    "smoothness_improvement": 168.85285748549887,
+                    "objective_score": -7890.949738936344
+               },
+               {
+                    "map_id": 2,
+                    "success_rate": 1.0,
+                    "time_avg": 4.77699909210205,
+                    "num_nodes_avg": 4590.3,
+                    "path_length_avg": 109.81726433629747,
+                    "smoothness_avg": 0.03559960377842232,
+                    "success_improvement": 0.0,
+                    "time_improvement": -17101.411058903726,
+                    "length_improvement": 32.56558419420729,
+                    "smoothness_improvement": 175.43398817883943,
+                    "objective_score": -5123.033030891382
+               }
+          ]
+     }
+]

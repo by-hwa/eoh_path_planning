@@ -1,0 +1,13 @@
+{
+    "operator": "e1",
+    "algorithm_description": null,
+    "planning_mechanism": null,
+    "code": null,
+    "objective": null,
+    "time_improvement": null,
+    "length_improvement": null,
+    "success_rate": null,
+    "other_inf": {
+        "Traceback": "Traceback (most recent call last):\n  File \"c:\\workspace\\eoh_path_planning\\eoh\\src\\eoh\\problems\\optimization\\classic_benchmark_path_planning\\run.py\", line 96, in evaluate\n    exec(self.import_string+code_string, planning_module.__dict__)\nTypeError: can only concatenate str (not \"NoneType\") to str\n"
+    }
+}
