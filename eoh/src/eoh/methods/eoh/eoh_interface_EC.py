@@ -287,6 +287,9 @@ class InterfaceEC():
                             json.dump(offspring, f, indent=4)
                             f.write('\n')
 
+                        print("length improvement here@@@@@@@@@@@@@@@@@@@")
+                        print(p['length_improvement'], offspring['length_improvement'])
+
                         if offspring['time_improvement'] > -800 and offspring['length_improvement'] > 20 and offspring['success_rate'] >= 1.0:
                             self._save_data(self.path_db_path, offspring)
 
