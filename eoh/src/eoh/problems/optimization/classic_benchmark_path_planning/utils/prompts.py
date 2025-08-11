@@ -35,6 +35,7 @@ class GetPrompts():
         self.architecture_info = '''
 Refer to below architecture:
 !!!!!generate Only class Node and Planner!!!!!!
+```python
 # --- Node class ---
 class Node:
     def __init__(self, position, parent=None, cost=0.0):
@@ -104,7 +105,7 @@ class Planner:
             if self._is_in_obstacle(interp, obstacles, is_3d):
                 return True
         return False
-
+```
 '''
 
     def get_task(self):

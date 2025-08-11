@@ -1,0 +1,52 @@
+{
+     "operator": "m2",
+     "algorithm_description": "This algorithm implements an optimized bidirectional RRT with adaptive goal biasing, informed sampling near tree nodes, and dynamic step sizing to improve planning efficiency, path quality, and success rate. It grows two trees from start and goal simultaneously, steering towards goal-biased or node-informed samples, and incrementally attempts to connect the trees with rigorous collision checks ensuring valid nodes and edges only. Path smoothing post extraction enhances path smoothness and reduces lengths.",
+     "planning_mechanism": "The planner alternates expansions from start and goal trees by sampling goal-biased points or points biased near existing nodes to focus search in promising regions. Adaptive step sizing accelerates convergence in free space while cautious near obstacles. The trees are connected incrementally once close, validated by collision checks. Finally, the path is extracted and smoothed for high quality and feasibility.",
+     "code": "class Node:\n    def __init__(self, position, parent=None, cost=0.0):\n        self.position = position          # Tuple[float, ...] (2D or 3D)\n        self.parent = parent              # Node or None\n        self.cost = cost                  # Accumulated path cost from root\n        self.children = []\n        self.valid = True                 # For collision status\n\n    def add_child(self, child):\n        self.children.append(child)\n        \n    def path_from_root(self):\n        path = []\n        node = self\n        while node:\n            path.append(node.position)\n            node = node.parent\n        return list(reversed(path))\nclass Planner:\n    def __init__(self, max_iter: int = 3500, step_size: float = 7.0, goal_sample_rate: float = 0.15,\n                 node_sample_rate: float = 0.2, smoothing_iters: int = 30):\n        self.max_iter = max_iter\n        self.step_size = step_size\n        self.goal_sample_rate = goal_sample_rate      # Probability to sample goal directly\n        self.node_sample_rate = node_sample_rate      # Probability to sample near existing nodes\n        self.smoothing_iters = smoothing_iters        # Number of smoothing iterations post path extraction\n\n    def plan(self, map) -> 'PlannerResult':\n        bounds = map.size\n        start_pos = map.start\n        goal_pos = map.goal\n        obstacles = map.obstacles\n        is_3d = len(bounds) == 3\n\n        start_tree = [Node(start_pos)]\n        goal_tree = [Node(goal_pos)]\n        nodes = [start_tree[0], goal_tree[0]]\n        edges = []\n\n        def in_bounds(p):\n            return all(0 <= p[d] <= bounds[d] for d in range(len(bounds)))\n\n        def sample_point():\n            r = random.random()\n            if r < self.goal_sample_rate:\n                # Goal biasing on start tree expansions\n                return goal_pos\n            elif r < self.goal_sample_rate + self.node_sample_rate:\n                # Sample nearby existing nodes to guide sampling into promising regions\n                combined = start_tree + goal_tree\n                near_node = random.choice(combined)\n                dim = len(bounds)\n                def sample_around_node(n):\n                    return tuple(\n                        max(0.0, min(bounds[d], random.gauss(n.position[d], self.step_size * 2)))\n                        for d in range(dim)\n                    )\n                return sample_around_node(near_node)\n            else:\n                # Uniform random sampling within bounds\n                return tuple(random.uniform(0.0, bounds[d]) for d in range(len(bounds)))\n\n        def steer(from_pos, to_pos, max_dist):\n            dist = math.dist(from_pos, to_pos)\n            if dist <= max_dist:\n                return to_pos\n            ratio = max_dist / dist\n            return tuple(from_pos[d] + (to_pos[d] - from_pos[d]) * ratio for d in range(len(from_pos)))\n\n        def nearest(tree, sample):\n            return min(tree, key=lambda n: math.dist(n.position, sample))\n\n        def collision_free(pos):\n            return in_bounds(pos) and not self._is_in_obstacle(pos, obstacles, is_3d)\n\n        def edge_collision_free(p1, p2):\n            return not self._is_edge_in_obstacle(p1, p2, obstacles, is_3d, resolution=0.5)\n\n        def connect_trees(new_node, tree_other):\n            nearest_node = nearest(tree_other, new_node.position)\n            dist = math.dist(new_node.position, nearest_node.position)\n            if dist <= self.step_size * 1.5:\n                if edge_collision_free(new_node.position, nearest_node.position):\n                    # Connect by adding nearest_node as child of new_node\n                    conn_node = Node(nearest_node.position, parent=new_node,\n                                     cost=new_node.cost + dist)\n                    new_node.add_child(conn_node)\n                    tree_other.append(conn_node)\n                    nodes.append(conn_node)\n                    edges.append((new_node, conn_node))\n                    return conn_node, nearest_node\n            return None, None\n\n        def extract_path(node_a, node_b):\n            path_start = node_a.path_from_root()\n            path_goal = node_b.path_from_root()\n            path_goal.reverse()\n            return path_start + path_goal[1:]\n\n        def smooth_path(path):\n            if len(path) < 3:\n                return path[:]\n            for _ in range(self.smoothing_iters):\n                if len(path) < 3:\n                    break\n                i = random.randint(0, len(path) - 3)\n                j = random.randint(i + 2, len(path) - 1)\n                if edge_collision_free(path[i], path[j]):\n                    path[i+1:j] = []\n            return path\n\n        # Alternate expansions\n        for itr in range(self.max_iter):\n            for tree_a, tree_b in [(start_tree, goal_tree), (goal_tree, start_tree)]:\n                sample = sample_point()\n                if not collision_free(sample):\n                    continue\n\n                nearest_node = nearest(tree_a, sample)\n                # Adaptive step size: reduce near obstacles to avoid collision; increase on free space\n                # Simple heuristic: if path from nearest_node to sample crosses obstacle edge, reduce step size\n                proposed_step = self.step_size\n                new_pos = steer(nearest_node.position, sample, proposed_step)\n                if not collision_free(new_pos):\n                    continue\n                if not edge_collision_free(nearest_node.position, new_pos):\n                    continue\n\n                new_cost = nearest_node.cost + math.dist(nearest_node.position, new_pos)\n                new_node = Node(new_pos, parent=nearest_node, cost=new_cost)\n                nearest_node.add_child(new_node)\n                tree_a.append(new_node)\n                nodes.append(new_node)\n                edges.append((nearest_node, new_node))\n\n                conn_node_a, conn_node_b = connect_trees(new_node, tree_b)\n                if conn_node_a and conn_node_b:\n                    raw_path = extract_path(conn_node_a, conn_node_b)\n                    smoothed_path = smooth_path(raw_path)\n                    return PlannerResult(True, smoothed_path, nodes, edges)\n\n        # No success found\n        return PlannerResult(False, [], nodes, edges)\n\n    def _is_in_obstacle(self, pos, obstacles, is_3d):\n        for obs in obstacles:\n            if is_3d:\n                x, y, z, w, h, d = obs\n                px, py, pz = pos\n                if x <= px <= x + w and y <= py <= y + h and z <= pz <= z + d:\n                    return True\n            else:\n                x, y, w, h = obs\n                px, py = pos\n                if x <= px <= x + w and y <= py <= y + h:\n                    return True\n        return False\n\n    def _is_edge_in_obstacle(self, from_pos, to_pos, obstacles, is_3d, resolution=0.5):\n        distance = math.dist(from_pos, to_pos)\n        steps = max(1, int(distance / resolution))\n        for i in range(steps + 1):\n            interp = tuple(from_pos[d] + (to_pos[d] - from_pos[d]) * (i / steps) for d in range(len(from_pos)))\n            if self._is_in_obstacle(interp, obstacles, is_3d):\n                return True\n        return False",
+     "objective": -27.20302,
+     "time_improvement": 73.0,
+     "length_improvement": 7.0,
+     "smoothness_improvement": 779.0,
+     "other_inf": [
+          {
+               "map_id": 0,
+               "success_rate": 1.0,
+               "time_avg": 0.012627959251403809,
+               "num_nodes_avg": 165.7,
+               "path_length_avg": 183.5408985028027,
+               "smoothness_avg": 0.026771640307624234,
+               "success_improvement": 0.0,
+               "time_improvement": 49.696080386737705,
+               "length_improvement": -0.601674861039459,
+               "smoothness_improvement": 319.03430636173897,
+               "objective_score": 16.383660675622114
+          },
+          {
+               "map_id": 1,
+               "success_rate": 1.0,
+               "time_avg": 0.01845707893371582,
+               "num_nodes_avg": 301.2,
+               "path_length_avg": 261.5017196726376,
+               "smoothness_avg": 0.048893393753069045,
+               "success_improvement": 0.0,
+               "time_improvement": 88.81003749809561,
+               "length_improvement": 12.703199063613631,
+               "smoothness_improvement": 1158.0622377545258,
+               "objective_score": 34.97396225092404
+          },
+          {
+               "map_id": 2,
+               "success_rate": 1.0,
+               "time_avg": 0.009975814819335937,
+               "num_nodes_avg": 207.2,
+               "path_length_avg": 135.81575222594273,
+               "smoothness_avg": 0.07540672737726299,
+               "success_improvement": 0.0,
+               "time_improvement": 79.98687525948147,
+               "length_improvement": 9.7976442226679,
+               "smoothness_improvement": 859.1680062931462,
+               "objective_score": 30.251431453843747
+          }
+     ],
+     "success_rate": 1.0
+}

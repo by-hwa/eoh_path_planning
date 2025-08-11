@@ -1,5 +1,6 @@
 import numpy as np
 import time
+import multiprocessing as mp
 from .eoh_evolution import Evolution
 import warnings
 from joblib import Parallel, delayed
@@ -39,10 +40,10 @@ class InterfaceEC():
 
         self.time_db_path = os.path.join(self.base_dir, "..", "..", "problems", "optimization", "classic_benchmark_path_planning", "utils", "database", "time_db.json")
         self.path_db_path = os.path.join(self.base_dir, "..", "..", "problems", "optimization", "classic_benchmark_path_planning", "utils", "database", "path_db.json")
-        self.smooth_db_path = os.path.join(self.base_dir, "..", "..", "problems", "optimization", "classic_benchmark_path_planning", "utils", "database", "smooth_db.json")
+        self.smoothness_db_path = os.path.join(self.base_dir, "..", "..", "problems", "optimization", "classic_benchmark_path_planning", "utils", "database", "smoothness_db.json")
         self.time_analysis_db_path = os.path.join(self.base_dir, "..", "..", "problems", "optimization", "classic_benchmark_path_planning", "utils", "database", "time_analysis_db.json")
         self.path_analysis_db_path = os.path.join(self.base_dir, "..", "..", "problems", "optimization", "classic_benchmark_path_planning", "utils", "database", "path_analysis_db.json")
-        self.smooth_analysis_db_path = os.path.join(self.base_dir, "..", "..", "problems", "optimization", "classic_benchmark_path_planning", "utils", "database", "smooth_analysis_db.json")
+        self.smoothness_analysis_db_path = os.path.join(self.base_dir, "..", "..", "problems", "optimization", "classic_benchmark_path_planning", "utils", "database", "smoothness_analysis_db.json")
 
     @staticmethod
     def convert_numpy(obj):
@@ -63,10 +64,21 @@ class InterfaceEC():
             return (child - parent) / parent
         else:
             return (parent - child) / parent
-        
-    def _compute_adjust_score(self, parent, child, metric):
-        improvement = parent[metric] - child[metric]
-        final_perform = [metric+'_improvement']
+    
+    def _compute_adjust_score(self, parents, child, metric):
+        best_parent = None
+        best_val = None
+        for p in parents:
+            if best_val is None or p[metric] > best_val:
+                best_val = p[metric]
+                best_parent = p
+
+        if best_parent is None:
+            return 0
+
+        improvement = best_parent.get(metric + '_improvement', 0) - child.get(metric + '_improvement', 0)
+        final_perform = child.get(metric + '_improvement', 0)
+
         return improvement * 0.4 + final_perform * 0.6
     
     def _save_data(self, file_path, contents):
@@ -77,6 +89,24 @@ class InterfaceEC():
             f.seek(0)
             json.dump(data, f, indent=4)
             f.truncate()
+
+    def is_improvement(self, parents, offspring, metric):
+        if not parents: return False
+        for p in parents:
+            if p[metric] > offspring[metric]:
+                False
+        return True
+                            
+    def save_analysis_db(self, p, offspring, metric, save_path):
+        parents_codes = [inv['code'] for inv in p]
+        analysis = self.evol.get_analysis(parents_codes, offspring['code'], metric)
+        contents = {
+            'parents': parents_codes,
+            'offspring': offspring,
+            'objective': self._compute_adjust_score(p, offspring, metric),
+            'analysis': analysis
+            }
+        self._save_data(save_path, contents)
 
         
     def code2file(self,code):
@@ -160,8 +190,12 @@ class InterfaceEC():
                         'planning_mechanism': data[i]['planning_mechanism'],
                         'code': data[i]['code'],
                         'objective': fitness,
+                        'time_improvement': np.round(results['time_improvement'].mean()),
+                        'length_improvement': np.round(results['length_improvement'].mean()),
+                        'smoothness_improvement': np.round(results['smoothness_improvement'].mean()),
                         'other_inf': results.to_dict(orient='records') if isinstance(results, pd.DataFrame) else results
                     }
+                    seed_alg['success_rate'] = results['success_rate'].mean()
                 except Exception as e:
                     print(f"Error in population_generation_initial: {traceback.format_exc()}")
                     seed_alg = {
@@ -189,6 +223,7 @@ class InterfaceEC():
             'objective': None,
             'time_improvement': None,
             'length_improvement': None,
+            'smoothness_improvement': None,
             'other_inf': None,
         }
         if hasattr(self.evol, operator):
@@ -244,128 +279,115 @@ class InterfaceEC():
             'objective': None,
             'time_improvement': None,
             'length_improvement': None,
+            'smoothness_improvement': None,
             'success_rate': None,
             'other_inf': None
             }
             p = None
         
         return p, offspring
-            
+
+
     def get_offspring(self, pop, operator):
-            
         p, offspring = self.get_offspring_code(pop, operator)
         if offspring is None:
-            raise
-        code = offspring['code'] if offspring['code'] else '' ### temporary
+            raise RuntimeError("get_offspring_code returned None")
 
-        with concurrent.futures.ThreadPoolExecutor() as executor:
-            n_try = 0
-            try:
-                while n_try <= 3:
-                    n_try+=1
-                    try:
-                        future = executor.submit(self.interface_eval.evaluate, code)
-                        fitness, results = future.result(timeout=self.timeout)
-                    except:
-                        fitness, results = None, None
+        code = offspring.get('code', '')  # temporary
+        n_try = 0
+        while n_try <= 3:
+            n_try += 1
+            # === run evaluate with HARD timeout ===
+            with concurrent.futures.ThreadPoolExecutor() as executor:
+                try:
+                    if code is None:code =''
+                    future = executor.submit(self.interface_eval.evaluate, code)
+                    fitness, results = future.result(timeout=self.timeout)
+                except:
+                    fitness, results = None, None
 
-                    print('-----------------------------------')
-                    print(fitness)
-                    print(results)
-                    print("***********************************")
+                future.cancel()
 
-                    offspring['objective'] = np.round(fitness, 5) if fitness is not None and not np.isnan(fitness) else None
-                    offspring['other_inf'] = results.to_dict(orient='records') if isinstance(results, pd.DataFrame) else results
+            print('-----------------------------------')
+            print(fitness)
+            print(results)
+            print("***********************************")
 
-                    filename = self.output_path + "/results/pops/evaluated_entire_population_generation.json"
-                    if offspring['objective']:
-                        offspring['time_improvement'] = np.round(results['time_improvement'].mean())
-                        offspring['length_improvement'] = np.round(results['length_improvement'].mean())
-                        offspring['smoothness_improvement'] = np.round(results['smoothness_improvement'].mean())
-                        offspring['success_rate'] = results['success_rate'].mean()
-                        with open(file=filename, mode='a') as f:
-                            json.dump(offspring, f, indent=4)
-                            f.write('\n')
+            # Normalize outputs
+            is_df = isinstance(results, pd.DataFrame)
+            offspring['objective'] = np.round(fitness, 5) if (fitness is not None and not np.isnan(fitness)) else None
+            offspring['other_inf'] = results.to_dict(orient='records') if is_df else results
 
-                        print("length improvement here@@@@@@@@@@@@@@@@@@@")
-                        print(p['length_improvement'], offspring['length_improvement'])
-
-                        if offspring['time_improvement'] > -800 and offspring['length_improvement'] > 20 and offspring['success_rate'] >= 1.0:
-                            self._save_data(self.path_db_path, offspring)
-
-                            if  'length_improvement' in p.keys() and p['length_improvement'] < offspring['length_improvement']:
-                                analysis = self.evel.get_analysis(p['code'], offspring['code'], 'length')
-                                contents = {
-                                    'parents': p['code'],
-                                    'offspring': offspring,
-                                    'objective': self._compute_adjust_score(p, offspring, 'length'),
-                                    'analysis': analysis
-                                    }
-                                self._save_data(self.path_analysis_db_path, contents)
-
-
-                        if offspring['time_improvement'] > 50 and offspring['length_improvement'] > 10 and offspring['success_rate'] >= 1.0:
-                            self._save_data(self.time_db_path, offspring)
-
-                            if p['time_improvement'] < offspring['time_improvement']:
-                                analysis = self.evel.get_analysis(p['code'], offspring['code'], 'length')
-                                contents = {
-                                    'parents': p['code'],
-                                    'offspring': offspring,
-                                    'objective': self._compute_adjust_score(p, offspring, 'time'),
-                                    'analysis': analysis
-                                    }
-                                self._save_data(self.time_analysis_db_path, contents)
-
-
-                        if offspring['time_improvement'] > -500 and offspring['length_improvement'] > 20 and offspring['smoothness_improvement'] > 1000 and offspring['success_rate'] >= 1.0:
-                            self._save_data(self.smooth_db_path, offspring)
-
-                            if p['smoothness_improvement'] < offspring['smoothness_improvement']:
-                                analysis = self.evel.get_analysis(p['code'], offspring['code'], 'length')
-                                contents = {
-                                    'parents': p['code'],
-                                    'offspring': offspring,
-                                    'objective': self._compute_adjust_score(p, offspring, 'smooth'),
-                                    'analysis': analysis
-                                    }
-                                self._save_data(self.smooth_analysis_db_path, contents)
-
-                        break
-
-                    elif offspring['other_inf'] is None:
-                        print(f"Try new code generation : {n_try}")
-                        p, offspring = self.get_offspring_code(pop, operator)
-                        code = offspring['code']
-
-                    elif 'Traceback' in offspring['other_inf']:
-                        print(f"Error in ThreadPoolExecutor : {offspring['other_inf']['Traceback']}")
+            # Early retry paths
+            if offspring['objective'] is None:
+                if results is None or (isinstance(results, dict) and 'Traceback' in results):
+                    # Error or timeout: try troubleshoot if we have a traceback; otherwise regenerate code
+                    if isinstance(results, dict) and 'Traceback' in results:
+                        print(f"Error/Timeout: {results['Traceback']}")
                         filename = self.output_path + "/results/pops/error_occured_entire_population_generation.json"
                         with open(file=filename, mode='a') as f:
                             json.dump(offspring, f, indent=4)
                             f.write('\n')
-                        print(f'Trying Trouble shoot {n_try}')
-                        code = self.evol.trouble_shoot(code, offspring['other_inf']['Traceback'])
-                        offspring['code'] = code
-                        print('Trouble shooted CODE')
-                        print(code)
-                        continue
-                    else:
-                        offspring['objective'] = None
-                        offspring['results'] = None
-                        break
 
-            except Exception as e:
-                print(f"Error in get_offspring: {traceback.format_exc()}")
-                offspring['objective'] = None
-                offspring['results'] = None
-                time.sleep(1)
-                
-            future.cancel()
+                        # Try troubleshooting – keep same offspring but patch code
+                        try:
+                            code = self.evol.trouble_shoot(code, results['Traceback'])
+                            offspring['code'] = code
+                            print('Troubleshot CODE')
+                            print(code)
+                        except Exception:
+                            # If troubleshooting itself fails, fall back to new code
+                            print('Troubleshoot failed; regenerating code')
+                            p, offspring = self.get_offspring_code(pop, operator)
+                            code = offspring['code']
+                    else:
+                        print(f"Try new code generation : {n_try}")
+                        p, offspring = self.get_offspring_code(pop, operator)
+                        code = offspring['code']
+                    continue
+                else:
+                    # Some non-error but no objective -> stop
+                    offspring['results'] = None
+                    break
+
+            # === objective exists: compute aggregated metrics (guarded) ===
+            filename = self.output_path + "/results/pops/evaluated_entire_population_generation.json"
+
+            offspring['time_improvement'] = np.round(results['time_improvement'].mean())
+            offspring['length_improvement'] = np.round(results['length_improvement'].mean())
+            offspring['smoothness_improvement'] = np.round(results['smoothness_improvement'].mean())
+            offspring['success_rate'] = results['success_rate'].mean()
+
+            # Persist evaluation snapshot
+            with open(file=filename, mode='a') as f:
+                json.dump(offspring, f, indent=4)
+                f.write('\n')
+
+            # === gating and DB updates (unchanged logic, but with None guards) ===
+            ti, li, si, sr = (offspring['time_improvement'], offspring['length_improvement'],
+                            offspring['smoothness_improvement'], offspring['success_rate'])
+
+            if (ti is not None and li is not None and sr is not None
+                and ti > -800 and li > 20 and sr >= 1.0):
+                self._save_data(self.path_db_path, offspring)
+                if self.is_improvement(p, offspring, 'length_improvement'):
+                    self.save_analysis_db(p, offspring, 'length', self.path_analysis_db_path)
+
+            if (ti is not None and li is not None and sr is not None
+                and ti > 50 and li > 10 and sr >= 1.0):
+                self._save_data(self.time_db_path, offspring)
+                if self.is_improvement(p, offspring, 'time_improvement'):
+                    self.save_analysis_db(p, offspring, 'time', self.time_analysis_db_path)
+
+            if (ti is not None and li is not None and si is not None and sr is not None
+                and ti > -500 and li > 20 and si > 1000 and sr >= 1.0):
+                self._save_data(self.smoothness_db_path, offspring)
+                if self.is_improvement(p, offspring, 'smoothness_improvement'):
+                    self.save_analysis_db(p, offspring, 'smoothness', self.smoothness_analysis_db_path)
+
+            break  # success path: exit retry loop
 
         print(offspring['objective'])
-
-        # Round the objective values
         return p, offspring
 
     def get_algorithm(self, pop, operators):

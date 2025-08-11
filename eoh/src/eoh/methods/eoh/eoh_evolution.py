@@ -24,7 +24,7 @@ class Evolution():
         self.base_dir = os.path.dirname(os.path.abspath(__file__))
         self.time_analysis_db_path = os.path.join(self.base_dir, "..", "..", "problems", "optimization", "classic_benchmark_path_planning", "utils", "database", "time_analysis_db.json")
         self.path_analysis_db_path = os.path.join(self.base_dir, "..", "..", "problems", "optimization", "classic_benchmark_path_planning", "utils", "database", "path_analysis_db.json")
-        self.smooth_analysis_db_path = os.path.join(self.base_dir, "..", "..", "problems", "optimization", "classic_benchmark_path_planning", "utils", "database", "smooth_analysis_db.json")
+        self.smoothness_analysis_db_path = os.path.join(self.base_dir, "..", "..", "problems", "optimization", "classic_benchmark_path_planning", "utils", "database", "smoothness_analysis_db.json")
 
         # set operator instruction
         self.e1 = '''Design a brand new algorithm from scratch.'''
@@ -38,11 +38,11 @@ class Evolution():
 
         self.time_analysis = []
         self.path_analysis = []
-        self.smooth_analysis = []
+        self.smoothness_analysis = []
 
         self.analysis_db_dict = {'planning time': (self.time_analysis_db_path, self.time_analysis),
                             'path length': (self.path_analysis_db_path, self.path_analysis),
-                            'path smoothness': (self.smooth_analysis_db_path, self.smooth_analysis),
+                            'path smoothness': (self.smoothness_analysis_db_path, self.smoothness_analysis),
                             }
                 
         if 'no_lm' not in kwargs.keys():
@@ -54,15 +54,22 @@ class Evolution():
                 data = json.load(f)
                 self.analysis_db_dict[k] = (path, data)
 
-    def get_analysis(self, improvment_metric, alg1, alg2):
+    def get_analysis(self, improvment_metric, parents, offspring_code):
+        parent_block_lines = []
+        for i, code in enumerate(parents, start=1):
+            parent_block_lines.append(f"- Parent #{i} algorithm:\n```python\n{code}\n```")
+        parent_block = "\n\n".join(parent_block_lines)
+
         prompt = f"""
-The following are the structural differences between two path planning algorithms:
+The following are the structural differences between multiple or single parent path planning algorithms and one offspring algorithm:
 
 - Parents algorithm:
-{alg1}
+{parent_block}
 
 - Offspring algorithm:
-{alg2}
+```python
+{offspring_code}
+```
 
 Improved performance metric: {improvment_metric}
 
@@ -77,6 +84,7 @@ Please analyze and output the results in the following format:
 3. Expected mechanism of impact:
    - ...
 """
+        print("Waiting response")
         analysis = self.interface_llm.get_response(prompt)
         return analysis
 
@@ -143,6 +151,7 @@ Please analyze and output the results in the following format:
 
     def _get_alg(self,prompt_content, algorithm_pass=False):
 
+        print("Waiting response")
         response = self.interface_llm.get_response(prompt_content)
         algorithm, mechanism, code_all = self._extract_alg(response, algorithm_pass)
 
@@ -208,7 +217,7 @@ Please analyze and output the results in the following format:
 
         code_all = f"{code_all}"
 
-        if self.debug_mode: self.debug_info(sys._getframe().f_code.co_name, prompt_content, algorithm, code_all)
+        if self.debug_mode: self.debug_info(op, prompt_content, algorithm, code_all) # sys._getframe().f_code.co_name
 
         return [code_all, mechanism, algorithm]
     
