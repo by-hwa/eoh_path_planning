@@ -66,11 +66,12 @@ class InterfaceEC():
             return (parent - child) / parent
     
     def _compute_adjust_score(self, parents, child, metric):
+        metric_name = metric+'_improvement'
         best_parent = None
         best_val = None
         for p in parents:
-            if best_val is None or p[metric] > best_val:
-                best_val = p[metric]
+            if best_val is None or p[metric_name] > best_val:
+                best_val = p[metric_name]
                 best_parent = p
 
         if best_parent is None:
@@ -89,11 +90,14 @@ class InterfaceEC():
             f.seek(0)
             json.dump(data, f, indent=4)
             f.truncate()
+        print(f"[{time.strftime('%Y.%m.%d - %H:%M:%S')}] {file_path} DB SAVED -----------------")
 
     def is_improvement(self, parents, offspring, metric):
         if not parents: return False
         for p in parents:
-            if p[metric] > offspring[metric]:
+            if not metric in p.keys():
+                continue
+            elif p[metric] > offspring[metric]:
                 False
         return True
                             
@@ -320,35 +324,35 @@ class InterfaceEC():
 
             # Early retry paths
             if offspring['objective'] is None:
-                if results is None or (isinstance(results, dict) and 'Traceback' in results):
+                # if results is None or (isinstance(results, dict) and 'Traceback' in results):
                     # Error or timeout: try troubleshoot if we have a traceback; otherwise regenerate code
-                    if isinstance(results, dict) and 'Traceback' in results:
-                        print(f"Error/Timeout: {results['Traceback']}")
-                        filename = self.output_path + "/results/pops/error_occured_entire_population_generation.json"
-                        with open(file=filename, mode='a') as f:
-                            json.dump(offspring, f, indent=4)
-                            f.write('\n')
+                    # if isinstance(results, dict) and 'Traceback' in results:
+                    #     print(f"Error/Timeout: {results['Traceback']}")
+                    #     filename = self.output_path + "/results/pops/error_occured_entire_population_generation.json"
+                    #     with open(file=filename, mode='a') as f:
+                    #         json.dump(offspring, f, indent=4)
+                    #         f.write('\n')
 
-                        # Try troubleshooting – keep same offspring but patch code
-                        try:
-                            code = self.evol.trouble_shoot(code, results['Traceback'])
-                            offspring['code'] = code
-                            print('Troubleshot CODE')
-                            print(code)
-                        except Exception:
-                            # If troubleshooting itself fails, fall back to new code
-                            print('Troubleshoot failed; regenerating code')
-                            p, offspring = self.get_offspring_code(pop, operator)
-                            code = offspring['code']
-                    else:
-                        print(f"Try new code generation : {n_try}")
-                        p, offspring = self.get_offspring_code(pop, operator)
-                        code = offspring['code']
-                    continue
-                else:
-                    # Some non-error but no objective -> stop
-                    offspring['results'] = None
-                    break
+                    #     # Try troubleshooting – keep same offspring but patch code
+                    #     try:
+                    #         code = self.evol.trouble_shoot(code, results['Traceback'])
+                    #         offspring['code'] = code
+                    #         print('Troubleshot CODE')
+                    #         print(code)
+                    #     except Exception:
+                    #         # If troubleshooting itself fails, fall back to new code
+                    #         print('Troubleshoot failed; regenerating code')
+                    #         p, offspring = self.get_offspring_code(pop, operator)
+                    #         code = offspring['code']
+                    # else:
+                print(f"Try new code generation : {n_try}")
+                p, offspring = self.get_offspring_code(pop, operator)
+                code = offspring['code']
+                    # continue
+                # else:
+                #     # Some non-error but no objective -> stop
+                #     offspring['results'] = None
+                #     break
 
             # === objective exists: compute aggregated metrics (guarded) ===
             filename = self.output_path + "/results/pops/evaluated_entire_population_generation.json"

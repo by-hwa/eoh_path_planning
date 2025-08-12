@@ -100,7 +100,7 @@ Please analyze and output the results in the following format:
         analysis_info = ''
         for k, (p, a) in self.analysis_db_dict.items():
             if len(a):
-                n = random.randint(0, len(a))
+                n = random.randint(0, len(a)-1)
                 analysis_info += f"\nThe following prompt is intended to analyze how structural differences between two path planning algorithms (parents alg → offspring alg) have contributed to the improvement of a specific performance metric: {k}.\n"+\
                 a[n]['analysis']
 
