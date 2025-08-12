@@ -44,7 +44,10 @@ class InterfaceEC():
         self.time_analysis_db_path = os.path.join(self.base_dir, "..", "..", "problems", "optimization", "classic_benchmark_path_planning", "utils", "database", "time_analysis_db.json")
         self.path_analysis_db_path = os.path.join(self.base_dir, "..", "..", "problems", "optimization", "classic_benchmark_path_planning", "utils", "database", "path_analysis_db.json")
         self.smoothness_analysis_db_path = os.path.join(self.base_dir, "..", "..", "problems", "optimization", "classic_benchmark_path_planning", "utils", "database", "smoothness_analysis_db.json")
-
+        
+        self.initial_path = self.output_path + "/results/pops/population_generation_0.json"
+        self.db_paths = [self.time_db_path, self.path_db_path, self.smoothness_db_path]
+        
     @staticmethod
     def convert_numpy(obj):
         if isinstance(obj, np.ndarray):
@@ -58,6 +61,43 @@ class InterfaceEC():
         if isinstance(obj, list):
             return [InterfaceEC.convert_numpy(i) for i in obj]
         return obj
+    
+    def _get_improv_from_json(self, path):
+        ti, li, si = [], [], []
+        with open(path, "r") as f:
+            datas = json.load(f)
+            if len(datas):return [],[],[]
+
+        for data in datas:
+            ti.append(data["time_improvement"])
+            li.append(data["length_improvement"])
+            si.append(data["smoothness_improvement"])
+
+        ti = sorted(ti, reverse=True)
+        li = sorted(li, reverse=True)
+        si = sorted(si, reverse=True)
+
+        return [ti, li, si]
+
+
+    def compute_thresholds_from_db(self, db_paths, q=0.66, q2=0.9, initial_path=None, q_bootstrap=0.5):
+        thresholds = dict()
+        name_keys = {0:'time', 1:'length', 2:'smoothness'}
+        for i, path in enumerate(db_paths):
+            threshold = list()
+            improvements = self._get_improv_from_json(path)
+
+            if len(improvements[0]) > 10:
+                for j, improvement in enumerate(improvements):
+                    threshold.append(float(np.quantile(improvement, q if i==j else q2)))
+            else:
+                initial_improvements = self._get_improv_from_json(initial_path)
+                for j, improvement in enumerate(initial_improvements):
+                    threshold.append(float(np.quantile(improvement, q if i==j else q_bootstrap)))
+
+            thresholds[name_keys[i]] = tuple(threshold)
+
+        return thresholds
     
     def _compute_improvement(self, parent, child, metric, maximize=False):
         if maximize:
@@ -323,36 +363,21 @@ class InterfaceEC():
             offspring['other_inf'] = results.to_dict(orient='records') if is_df else results
 
             # Early retry paths
-            if offspring['objective'] is None:
-                # if results is None or (isinstance(results, dict) and 'Traceback' in results):
-                    # Error or timeout: try troubleshoot if we have a traceback; otherwise regenerate code
-                    # if isinstance(results, dict) and 'Traceback' in results:
-                    #     print(f"Error/Timeout: {results['Traceback']}")
-                    #     filename = self.output_path + "/results/pops/error_occured_entire_population_generation.json"
-                    #     with open(file=filename, mode='a') as f:
-                    #         json.dump(offspring, f, indent=4)
-                    #         f.write('\n')
+            if offspring['objective'] is None or results is None:
+                if results is None or (isinstance(results, dict) and 'Traceback' in results):
+                    if isinstance(results, dict) and 'Traceback' in results:
+                        print(f"Error/Timeout: {results['Traceback']}")
+                        filename = self.output_path + "/results/pops/error_occured_entire_population_generation.json"
+                        with open(file=filename, mode='a') as f:
+                            json.dump(offspring, f, indent=4)
+                            f.write('\n')
 
-                    #     # Try troubleshooting – keep same offspring but patch code
-                    #     try:
-                    #         code = self.evol.trouble_shoot(code, results['Traceback'])
-                    #         offspring['code'] = code
-                    #         print('Troubleshot CODE')
-                    #         print(code)
-                    #     except Exception:
-                    #         # If troubleshooting itself fails, fall back to new code
-                    #         print('Troubleshoot failed; regenerating code')
-                    #         p, offspring = self.get_offspring_code(pop, operator)
-                    #         code = offspring['code']
-                    # else:
+
                 print(f"Try new code generation : {n_try}")
                 p, offspring = self.get_offspring_code(pop, operator)
                 code = offspring['code']
-                    # continue
-                # else:
-                #     # Some non-error but no objective -> stop
-                #     offspring['results'] = None
-                #     break
+                continue
+
 
             # === objective exists: compute aggregated metrics (guarded) ===
             filename = self.output_path + "/results/pops/evaluated_entire_population_generation.json"
@@ -370,24 +395,35 @@ class InterfaceEC():
             # === gating and DB updates (unchanged logic, but with None guards) ===
             ti, li, si, sr = (offspring['time_improvement'], offspring['length_improvement'],
                             offspring['smoothness_improvement'], offspring['success_rate'])
+            
+            thresholds = self.compute_thresholds_from_db(db_paths=self.db_paths, initial_path=self.initial_path)
 
-            if (ti is not None and li is not None and sr is not None
-                and ti > -800 and li > 20 and sr >= 1.0):
-                self._save_data(self.path_db_path, offspring)
-                if self.is_improvement(p, offspring, 'length_improvement'):
-                    self.save_analysis_db(p, offspring, 'length', self.path_analysis_db_path)
+            for i, (metric, (tt, lt, st)) in enumerate(thresholds.items()):
+                print(f"[{i}] Metric: {metric} | Time Thres: {tt:.2f}% > {ti:.2f} | Length Thres: {lt:.2f}% > {li:.2f} | Smoothness Thres: {st:.2f}% > {si:.2f}")
 
-            if (ti is not None and li is not None and sr is not None
-                and ti > 50 and li > 10 and sr >= 1.0):
-                self._save_data(self.time_db_path, offspring)
-                if self.is_improvement(p, offspring, 'time_improvement'):
-                    self.save_analysis_db(p, offspring, 'time', self.time_analysis_db_path)
+                if (ti is not None and li is not None and si is not None and sr is not None
+                and ti > tt and li > lt and si > st and sr >= 1.0):
+                    self._save_data(self.time_db_path, offspring)
+                    if self.is_improvement(p, offspring, metric+'_improvement'):
+                        self.save_analysis_db(p, offspring, metric, self.db_paths[i])
 
-            if (ti is not None and li is not None and si is not None and sr is not None
-                and ti > -500 and li > 20 and si > 1000 and sr >= 1.0):
-                self._save_data(self.smoothness_db_path, offspring)
-                if self.is_improvement(p, offspring, 'smoothness_improvement'):
-                    self.save_analysis_db(p, offspring, 'smoothness', self.smoothness_analysis_db_path)
+            # if (ti is not None and li is not None and sr is not None
+            #     and ti > 50 and li > 10 and sr >= 1.0):
+            #     self._save_data(self.time_db_path, offspring)
+            #     if self.is_improvement(p, offspring, 'time_improvement'):
+            #         self.save_analysis_db(p, offspring, 'time', self.time_analysis_db_path)
+
+            # if (ti is not None and li is not None and sr is not None
+            #     and ti > -800 and li > 18 and sr >= 1.0):
+            #     self._save_data(self.path_db_path, offspring)
+            #     if self.is_improvement(p, offspring, 'length_improvement'):
+            #         self.save_analysis_db(p, offspring, 'length', self.path_analysis_db_path)
+
+            # if (ti is not None and li is not None and si is not None and sr is not None
+            #     and ti > -500 and li > 20 and si > 500 and sr >= 1.0):
+            #     self._save_data(self.smoothness_db_path, offspring)
+            #     if self.is_improvement(p, offspring, 'smoothness_improvement'):
+            #         self.save_analysis_db(p, offspring, 'smoothness', self.smoothness_analysis_db_path)
 
             break  # success path: exit retry loop
 
