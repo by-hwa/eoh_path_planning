@@ -102,7 +102,7 @@ Please analyze and output the results in the following format:
             if len(a):
                 n = random.randint(0, len(a)-1)
                 analysis_info += f"\nThe following prompt is intended to analyze how structural differences between two path planning algorithms (parents alg → offspring alg) have contributed to the improvement of a specific performance metric: {k}.\n"+\
-                a[n]['analysis']
+                a[n]['analysis']+"\n"
 
         prompt_content= self.prompt_task+"\n"+\
             prompt_indiv+\

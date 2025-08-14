@@ -31,7 +31,7 @@ class MultiMapBenchmarker:
         results = []
         main_start_time = time.time()
         for i, map_ in enumerate(self.maps):
-            print(f"Map {i+1}")
+            print(f"[{time.strftime('%Y.%m.%d - %H:%M:%S')}] Map {i+1}")
             for j in range(self.iter):
                 start_time = time.time()
                 try:

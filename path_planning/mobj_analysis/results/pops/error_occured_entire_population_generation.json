@@ -555,3 +555,156 @@
         "Traceback": "Traceback (most recent call last):\n  File \"c:\\workspace\\eoh_path_planning\\eoh\\src\\eoh\\problems\\optimization\\classic_benchmark_path_planning\\run.py\", line 96, in evaluate\n    exec(self.import_string+code_string, planning_module.__dict__)\n  File \"<string>\", line 39, in <module>\n  File \"<string>\", line 273, in Planner\nNameError: name 'KDTree' is not defined\n"
     }
 }
+{
+    "operator": "path_expert",
+    "algorithm_description": null,
+    "planning_mechanism": null,
+    "code": null,
+    "objective": null,
+    "time_improvement": null,
+    "length_improvement": null,
+    "smoothness_improvement": null,
+    "success_rate": null,
+    "other_inf": {
+        "Traceback": "Traceback (most recent call last):\n  File \"c:\\workspace\\eoh_path_planning\\eoh\\src\\eoh\\problems\\optimization\\classic_benchmark_path_planning\\run.py\", line 102, in evaluate\n    fitness, results = self.__evaluate_path(planning_module)\n  File \"c:\\workspace\\eoh_path_planning\\eoh\\src\\eoh\\problems\\optimization\\classic_benchmark_path_planning\\run.py\", line 68, in __evaluate_path\n    planner = alg.Planner(max_iter=5000)\nAttributeError: module 'planning_module' has no attribute 'Planner'\n"
+    }
+}
+{
+    "operator": "cross_over",
+    "algorithm_description": null,
+    "planning_mechanism": null,
+    "code": null,
+    "objective": null,
+    "time_improvement": null,
+    "length_improvement": null,
+    "smoothness_improvement": null,
+    "success_rate": null,
+    "other_inf": {
+        "Traceback": "Traceback (most recent call last):\n  File \"c:\\workspace\\eoh_path_planning\\eoh\\src\\eoh\\problems\\optimization\\classic_benchmark_path_planning\\run.py\", line 102, in evaluate\n    fitness, results = self.__evaluate_path(planning_module)\n  File \"c:\\workspace\\eoh_path_planning\\eoh\\src\\eoh\\problems\\optimization\\classic_benchmark_path_planning\\run.py\", line 68, in __evaluate_path\n    planner = alg.Planner(max_iter=5000)\nAttributeError: module 'planning_module' has no attribute 'Planner'\n"
+    }
+}
+{
+    "operator": "e1",
+    "algorithm_description": null,
+    "planning_mechanism": null,
+    "code": null,
+    "objective": null,
+    "time_improvement": null,
+    "length_improvement": null,
+    "smoothness_improvement": null,
+    "success_rate": null,
+    "other_inf": {
+        "Traceback": "Traceback (most recent call last):\n  File \"c:\\workspace\\eoh_path_planning\\eoh\\src\\eoh\\problems\\optimization\\classic_benchmark_path_planning\\run.py\", line 102, in evaluate\n    fitness, results = self.__evaluate_path(planning_module)\n  File \"c:\\workspace\\eoh_path_planning\\eoh\\src\\eoh\\problems\\optimization\\classic_benchmark_path_planning\\run.py\", line 68, in __evaluate_path\n    planner = alg.Planner(max_iter=5000)\nAttributeError: module 'planning_module' has no attribute 'Planner'\n"
+    }
+}
+{
+    "operator": "m3",
+    "algorithm_description": null,
+    "planning_mechanism": null,
+    "code": null,
+    "objective": null,
+    "time_improvement": null,
+    "length_improvement": null,
+    "smoothness_improvement": null,
+    "success_rate": null,
+    "other_inf": {
+        "Traceback": "Traceback (most recent call last):\n  File \"c:\\workspace\\eoh_path_planning\\eoh\\src\\eoh\\problems\\optimization\\classic_benchmark_path_planning\\run.py\", line 102, in evaluate\n    fitness, results = self.__evaluate_path(planning_module)\n  File \"c:\\workspace\\eoh_path_planning\\eoh\\src\\eoh\\problems\\optimization\\classic_benchmark_path_planning\\run.py\", line 68, in __evaluate_path\n    planner = alg.Planner(max_iter=5000)\nAttributeError: module 'planning_module' has no attribute 'Planner'\n"
+    }
+}
+{
+    "operator": "e1",
+    "algorithm_description": null,
+    "planning_mechanism": null,
+    "code": null,
+    "objective": null,
+    "time_improvement": null,
+    "length_improvement": null,
+    "smoothness_improvement": null,
+    "success_rate": null,
+    "other_inf": {
+        "Traceback": "Traceback (most recent call last):\n  File \"c:\\workspace\\eoh_path_planning\\eoh\\src\\eoh\\problems\\optimization\\classic_benchmark_path_planning\\run.py\", line 102, in evaluate\n    fitness, results = self.__evaluate_path(planning_module)\n  File \"c:\\workspace\\eoh_path_planning\\eoh\\src\\eoh\\problems\\optimization\\classic_benchmark_path_planning\\run.py\", line 68, in __evaluate_path\n    planner = alg.Planner(max_iter=5000)\nAttributeError: module 'planning_module' has no attribute 'Planner'\n"
+    }
+}
+{
+    "operator": "e1",
+    "algorithm_description": "This algorithm implements a hybrid bidirectional informed RRT* planner that combines goal-biased and ellipsoidal informed sampling to accelerate convergence. It dynamically adjusts the neighbor radius for rewiring based on iterations count and tree density, leveraging incremental rewiring on both trees to locally optimize path costs. To enhance path smoothness and reduce length, the planner applies iterative shortcut smoothing on the final path. It enforces strict collision and boundary checking, maintains best found path with early termination on time or connection, and ensures robustness in 2D/3D environments with a hard 30-second execution time limit.",
+    "planning_mechanism": "The planner grows two trees bidirectionally from start and goal, alternately extending them toward sampled points generated by combined goal biasing and informed sampling focused around the best path estimate so far. After each node insertion, neighbors are rewired to reduce cost locally using a dynamically shrinking radius. When connection between trees is found, the path is extracted and iteratively smoothed using shortcutting. The exploration prioritizes promising regions via ellipsoidal sampling, while the bidirectional approach halves the search space for efficient convergence. The process stops when either a collision-free connection is achieved or the 30-second time limit expires, returning the best feasible path found.",
+    "code": "class Node:\n    def __init__(self, position: Tuple[float, ...], parent=None, cost=0.0):\n        self.position = position        # Tuple[float, ...] \u2192 2D: (x,y), 3D: (x,y,z)\n        self.parent = parent            # Node or None\n        self.cost = cost                # Path cost from root\n        self.children = []\n        self.valid = True               # For collision checking etc.\n\n    def add_child(self, child_node: 'Node') -> None:\n        self.children.append(child_node)\n        child_node.parent = self\n\n    def remove_child(self, child_node: 'Node') -> None:\n        if child_node in self.children:\n            self.children.remove(child_node)\n            child_node.parent = None\n\n    def update_parent(self, new_parent: 'Node', new_cost: float) -> None:\n        if self.parent is not None:\n            self.parent.remove_child(self)\n        new_parent.add_child(self)\n        self.parent = new_parent\n        self.cost = new_cost\n\n    def path_from_root(self) -> List[Tuple[float, ...]]:\n        path = []\n        node = self\n        while node is not None:\n            path.append(node.position)\n            node = node.parent\n        return path[::-1]\nclass Planner:\n    def __init__(self, max_iter: int = 10000, step_size: float = 5.0, \n                 goal_sample_rate: float = 0.2, smoothing_iters: int = 150, \n                 max_time_sec: float = 30.0, neighbor_factor: float = 3.0):\n        self.max_iter = max_iter\n        self.step_size = step_size\n        self.goal_sample_rate = goal_sample_rate\n        self.smoothing_iters = smoothing_iters\n        self.max_time_sec = max_time_sec\n        self.neighbor_factor = neighbor_factor\n\n    def plan(self, map) -> PlannerResult:\n        bounds = map.size                      # Tuple[int, ...]\n        start_pos = map.start                 # Tuple[float, ...]\n        goal_pos = map.goal                   # Tuple[float, ...]\n        obstacles = map.obstacles             # Rectangular blocks\n        dim = len(bounds)\n        is_3d = (dim == 3)\n\n        def dist(a: Tuple[float, ...], b: Tuple[float, ...]) -> float:\n            return math.dist(a, b)\n\n        def within_bounds(pos: Tuple[float, ...]) -> bool:\n            return all(0 <= pos[d] <= bounds[d] for d in range(dim))\n\n        def steer(from_p: Tuple[float, ...], to_p: Tuple[float, ...]) -> Tuple[float, ...]:\n            d = dist(from_p, to_p)\n            if d <= self.step_size:\n                return to_p\n            ratio = self.step_size / d\n            p = tuple(from_p[i] + ratio * (to_p[i] - from_p[i]) for i in range(dim))\n            # Clamp to bounds\n            clamped = tuple(max(0, min(p[i], bounds[i])) for i in range(dim))\n            return clamped\n\n        def is_free_point(p: Tuple[float, ...]) -> bool:\n            return (within_bounds(p) and not self._is_in_obstacle(p, obstacles, is_3d))\n\n        def is_free_edge(p1: Tuple[float, ...], p2: Tuple[float, ...]) -> bool:\n            if not (within_bounds(p2) and within_bounds(p1)):\n                return False\n            if self._is_edge_in_obstacle(p1, p2, obstacles, is_3d, resolution=0.5):\n                return False\n            return True\n\n        def nearest(tree: List[Node], point: Tuple[float, ...]) -> Node:\n            return min(tree, key=lambda node: dist(node.position, point))\n\n        def near_nodes(tree: List[Node], point: Tuple[float, ...], radius: float) -> List[Node]:\n            return [n for n in tree if dist(n.position, point) <= radius]\n\n        def dynamic_neighbor_radius(n_nodes: int) -> float:\n            if n_nodes < 2:\n                return self.step_size * 5\n            return min(self.step_size * 7, self.neighbor_factor * ((math.log(n_nodes) / n_nodes) ** (1 / dim)))\n\n        # Bidirectional sampling helpers & ellipsoidal informed sampler\n        c_min = dist(start_pos, goal_pos)\n        best_cost = float('inf')\n        best_path_nodes = (None, None)\n\n        center = tuple((s + g) * 0.5 for s, g in zip(start_pos, goal_pos))\n\n        def rotation_matrix():\n            try:\n                import numpy as np\n            except ImportError:\n                return None\n            if c_min < 1e-9:\n                return None\n            a1 = np.array([(g - s)/c_min for s,g in zip(start_pos, goal_pos)])\n            if dim == 2:\n                angle = math.atan2(a1[1], a1[0])\n                c_, s_ = math.cos(angle), math.sin(angle)\n                return np.array([[c_, -s_],\n                                 [s_,  c_]])\n            elif dim == 3:\n                eye = np.eye(3)\n                v = np.cross([1,0,0], a1)\n                s_ = np.linalg.norm(v)\n                if s_ < 1e-9:\n                    return eye\n                c_ = np.dot([1,0,0], a1)\n                vx = np.array([[0, -v[2], v[1]],\n                               [v[2], 0, -v[0]],\n                               [-v[1], v[0], 0]])\n                R = eye + vx + vx @ vx * ((1 - c_) / (s_ * s_))\n                return R\n            else:\n                return None\n\n        rotation = rotation_matrix()\n\n        def informed_sample(np_module):\n            if best_cost == float('inf') or np_module is None or rotation is None:\n                return uniform_sample()\n            r1 = best_cost * 0.5\n            r_rest = math.sqrt(max(best_cost**2 - c_min**2, 0)) * 0.5\n            while True:\n                if dim == 2:\n                    theta = random.uniform(0, 2*math.pi)\n                    radius = math.sqrt(random.uniform(0,1))\n                    unit_sample = np_module.array([radius*math.cos(theta), radius*math.sin(theta)])\n                    sample_ellipsoid = np_module.array([r1, r_rest]) * unit_sample\n                    sample_world = rotation @ sample_ellipsoid + np_module.array(center)\n                else:  # dim==3\n                    while True:\n                        unit_sample = np_module.random.uniform(-1,1,3)\n                        norm = np.linalg.norm(unit_sample)\n                        if 1e-9 < norm <=1:\n                            unit_sample /= norm\n                            break\n                    r2 = r3 = r_rest\n                    sample_ellipsoid = np_module.array([r1, r2, r3]) * unit_sample\n                    sample_world = rotation @ sample_ellipsoid + np_module.array(center)\n                p = tuple(np_module.clip(sample_world, np_module.zeros(dim), np_module.array(bounds)))\n                if is_free_point(p):\n                    return p\n\n        def uniform_sample():\n            while True:\n                p = tuple(random.uniform(0, bounds[d]) for d in range(dim))\n                if is_free_point(p):\n                    return p\n\n        # Initialize trees\n        tree_start: List[Node] = [Node(start_pos)]\n        tree_goal: List[Node] = [Node(goal_pos)]\n        nodes: List[Node] = tree_start + tree_goal\n        edges: List[Tuple[Node, Node]] = []\n\n        connected = False\n        best_nodes_pair = (None, None)\n\n        try:\n            import numpy as np\n        except ImportError:\n            np = None\n\n        start_time = time.perf_counter()\n\n        def extend_and_rewire(tree_from: List[Node], tree_to: List[Node]) -> Tuple[Node, bool]:\n            # 1. Sample with goal bias (towards goal of opposite tree) or informed sampling\n            sample_goal = tree_to[0].position\n            if random.random() < self.goal_sample_rate:\n                sample = sample_goal\n            else:\n                if best_cost < float('inf') and np is not None:\n                    sample = informed_sample(np)\n                else:\n                    sample = uniform_sample()\n            nearest_node = nearest(tree_from, sample)\n            new_position = steer(nearest_node.position, sample)\n            if not is_free_point(new_position):\n                return None, False\n            if not is_free_edge(nearest_node.position, new_position):\n                return None, False\n\n            # Find neighbors for rewiring with dynamic radius\n            rad = dynamic_neighbor_radius(len(tree_from))\n            neighbors = near_nodes(tree_from, new_position, rad)\n\n            # Choose best parent considering cost and collision\n            min_cost = nearest_node.cost + dist(nearest_node.position, new_position)\n            best_parent = nearest_node\n            for nbr in neighbors:\n                if nbr == nearest_node:\n                    continue\n                tentative_cost = nbr.cost + dist(nbr.position, new_position)\n                if tentative_cost < min_cost and is_free_edge(nbr.position, new_position):\n                    min_cost = tentative_cost\n                    best_parent = nbr\n\n            new_node = Node(new_position)\n            best_parent.add_child(new_node)\n            new_node.cost = min_cost\n            tree_from.append(new_node)\n            nodes.append(new_node)\n            edges.append((best_parent, new_node))\n\n            # Rewire neighbors via new_node if improvement possible\n            for nbr in neighbors:\n                if nbr == best_parent:\n                    continue\n                cost_through_new = new_node.cost + dist(new_node.position, nbr.position)\n                if cost_through_new < nbr.cost and is_free_edge(new_node.position, nbr.position):\n                    nbr.update_parent(new_node, cost_through_new)\n                    edges.append((new_node, nbr))\n            # Attempt to connect to opposite tree\n            nearest_to = nearest(tree_to, new_node.position)\n            if dist(nearest_to.position, new_node.position) <= self.step_size and is_free_edge(new_node.position, nearest_to.position):\n                # Connect nodes\n                connect_cost = new_node.cost + dist(new_node.position, nearest_to.position) + nearest_to.cost\n                nonlocal best_cost, best_nodes_pair\n                if connect_cost < best_cost:\n                    best_cost = connect_cost\n                    best_nodes_pair = (new_node, nearest_to)\n                return new_node, True\n            return new_node, False\n\n        # Main loop: alternate tree expansion\n        expand_start = True\n        for i in range(self.max_iter):\n            elapsed = time.perf_counter() - start_time\n            if elapsed > self.max_time_sec:\n                break\n\n            if expand_start:\n                new_node, connected_flag = extend_and_rewire(tree_start, tree_goal)\n            else:\n                new_node, connected_flag = extend_and_rewire(tree_goal, tree_start)\n\n            if connected_flag:\n                connected = True\n                break\n\n            expand_start = not expand_start\n\n        def extract_path(n1: Node, n2: Node) -> List[Tuple[float, ...]]:\n            path1 = n1.path_from_root()\n            path2 = n2.path_from_root()\n            full_path = path1 + path2[::-1][1:]\n            return full_path\n\n        def path_shortcut(path: List[Tuple[float, ...]], iterations: int=150) -> List[Tuple[float, ...]]:\n            if len(path) < 3:\n                return path[:]\n            path_smooth = path[:]\n            for _ in range(iterations):\n                if len(path_smooth) < 3:\n                    break\n                i = random.randint(0, len(path_smooth) - 3)\n                j = random.randint(i + 2, len(path_smooth) -1)\n                p1 = path_smooth[i]\n                p2 = path_smooth[j]\n                if is_free_edge(p1, p2):\n                    path_smooth = path_smooth[:i+1] + path_smooth[j:]\n            return path_smooth\n\n        # Extract best path if connected\n        if connected and best_nodes_pair[0] and best_nodes_pair[1]:\n            raw_path = extract_path(best_nodes_pair[0], best_nodes_pair[1])\n            # Smooth path via shortcutting\n            smoothed_path = path_shortcut(raw_path, self.smoothing_iters)\n            extracted_path = smoothed_path\n            success_state = True\n        else:\n            success_state = False\n            extracted_path = []\n\n        return PlannerResult(\n            success=success_state,\n            path=extracted_path,\n            nodes=nodes,\n            edges=edges\n        )\n\n    def _is_in_obstacle(self, pos, obstacles, is_3d):\n        for obs in obstacles:\n            if is_3d:\n                x, y, z, w, h, d = obs\n                px, py, pz = pos\n                if x <= px <= x + w and y <= py <= y + h and z <= pz <= z + d:\n                    return True\n            else:\n                x, y, w, h = obs\n                px, py = pos\n                if x <= px <= x + w and y <= py <= y + h:\n                    return True\n        return False\n\n    def _is_edge_in_obstacle(self, from_pos, to_pos, obstacles, is_3d, resolution=1.0):\n        distance = math.dist(from_pos, to_pos)\n        steps = max(1, int(distance / resolution))\n        for i in range(steps + 1):\n            interp = tuple(from_pos[d] + (to_pos[d] - from_pos[d]) * (i / steps) for d in range(len(from_pos)))\n            if self._is_in_obstacle(interp, obstacles, is_3d):\n                return True\n        return False",
+    "objective": null,
+    "time_improvement": null,
+    "length_improvement": null,
+    "smoothness_improvement": null,
+    "other_inf": {
+        "Traceback": "Traceback (most recent call last):\n  File \"c:\\workspace\\eoh_path_planning\\eoh\\src\\eoh\\problems\\optimization\\classic_benchmark_path_planning\\run.py\", line 96, in evaluate\n    exec(self.import_string+code_string, planning_module.__dict__)\n  File \"<string>\", line 236\nSyntaxError: name 'best_cost' is used prior to nonlocal declaration\n"
+    }
+}
+{
+    "operator": "m1",
+    "algorithm_description": null,
+    "planning_mechanism": null,
+    "code": null,
+    "objective": null,
+    "time_improvement": null,
+    "length_improvement": null,
+    "smoothness_improvement": null,
+    "success_rate": null,
+    "other_inf": {
+        "Traceback": "Traceback (most recent call last):\n  File \"c:\\workspace\\eoh_path_planning\\eoh\\src\\eoh\\problems\\optimization\\classic_benchmark_path_planning\\run.py\", line 102, in evaluate\n    fitness, results = self.__evaluate_path(planning_module)\n  File \"c:\\workspace\\eoh_path_planning\\eoh\\src\\eoh\\problems\\optimization\\classic_benchmark_path_planning\\run.py\", line 68, in __evaluate_path\n    planner = alg.Planner(max_iter=5000)\nAttributeError: module 'planning_module' has no attribute 'Planner'\n"
+    }
+}
+{
+    "operator": "e1",
+    "algorithm_description": null,
+    "planning_mechanism": null,
+    "code": null,
+    "objective": null,
+    "time_improvement": null,
+    "length_improvement": null,
+    "smoothness_improvement": null,
+    "success_rate": null,
+    "other_inf": {
+        "Traceback": "Traceback (most recent call last):\n  File \"c:\\workspace\\eoh_path_planning\\eoh\\src\\eoh\\problems\\optimization\\classic_benchmark_path_planning\\run.py\", line 102, in evaluate\n    fitness, results = self.__evaluate_path(planning_module)\n  File \"c:\\workspace\\eoh_path_planning\\eoh\\src\\eoh\\problems\\optimization\\classic_benchmark_path_planning\\run.py\", line 68, in __evaluate_path\n    planner = alg.Planner(max_iter=5000)\nAttributeError: module 'planning_module' has no attribute 'Planner'\n"
+    }
+}
+{
+    "operator": "e1",
+    "algorithm_description": null,
+    "planning_mechanism": null,
+    "code": null,
+    "objective": null,
+    "time_improvement": null,
+    "length_improvement": null,
+    "smoothness_improvement": null,
+    "success_rate": null,
+    "other_inf": {
+        "Traceback": "Traceback (most recent call last):\n  File \"c:\\workspace\\eoh_path_planning\\eoh\\src\\eoh\\problems\\optimization\\classic_benchmark_path_planning\\run.py\", line 102, in evaluate\n    fitness, results = self.__evaluate_path(planning_module)\n  File \"c:\\workspace\\eoh_path_planning\\eoh\\src\\eoh\\problems\\optimization\\classic_benchmark_path_planning\\run.py\", line 68, in __evaluate_path\n    planner = alg.Planner(max_iter=5000)\nAttributeError: module 'planning_module' has no attribute 'Planner'\n"
+    }
+}
+{
+    "operator": "cross_over",
+    "algorithm_description": null,
+    "planning_mechanism": null,
+    "code": null,
+    "objective": null,
+    "time_improvement": null,
+    "length_improvement": null,
+    "smoothness_improvement": null,
+    "success_rate": null,
+    "other_inf": {
+        "Traceback": "Traceback (most recent call last):\n  File \"c:\\workspace\\eoh_path_planning\\eoh\\src\\eoh\\problems\\optimization\\classic_benchmark_path_planning\\run.py\", line 102, in evaluate\n    fitness, results = self.__evaluate_path(planning_module)\n  File \"c:\\workspace\\eoh_path_planning\\eoh\\src\\eoh\\problems\\optimization\\classic_benchmark_path_planning\\run.py\", line 68, in __evaluate_path\n    planner = alg.Planner(max_iter=5000)\nAttributeError: module 'planning_module' has no attribute 'Planner'\n"
+    }
+}
+{
+    "operator": "m3",
+    "algorithm_description": null,
+    "planning_mechanism": null,
+    "code": null,
+    "objective": null,
+    "time_improvement": null,
+    "length_improvement": null,
+    "smoothness_improvement": null,
+    "success_rate": null,
+    "other_inf": {
+        "Traceback": "Traceback (most recent call last):\n  File \"c:\\workspace\\eoh_path_planning\\eoh\\src\\eoh\\problems\\optimization\\classic_benchmark_path_planning\\run.py\", line 102, in evaluate\n    fitness, results = self.__evaluate_path(planning_module)\n  File \"c:\\workspace\\eoh_path_planning\\eoh\\src\\eoh\\problems\\optimization\\classic_benchmark_path_planning\\run.py\", line 68, in __evaluate_path\n    planner = alg.Planner(max_iter=5000)\nAttributeError: module 'planning_module' has no attribute 'Planner'\n"
+    }
+}

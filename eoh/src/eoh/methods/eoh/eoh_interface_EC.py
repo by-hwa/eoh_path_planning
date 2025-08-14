@@ -47,7 +47,7 @@ class InterfaceEC():
         
         self.initial_path = self.output_path + "/results/pops/population_generation_0.json"
         self.db_paths = [self.time_db_path, self.path_db_path, self.smoothness_db_path]
-        
+        self.db_analysis_paths = [self.time_analysis_db_path, self.path_analysis_db_path, self.smoothness_analysis_db_path]
     @staticmethod
     def convert_numpy(obj):
         if isinstance(obj, np.ndarray):
@@ -66,7 +66,7 @@ class InterfaceEC():
         ti, li, si = [], [], []
         with open(path, "r") as f:
             datas = json.load(f)
-            if len(datas):return [],[],[]
+            if not len(datas):return [[],[],[]]
 
         for data in datas:
             ti.append(data["time_improvement"])
@@ -80,7 +80,7 @@ class InterfaceEC():
         return [ti, li, si]
 
 
-    def compute_thresholds_from_db(self, db_paths, q=0.66, q2=0.9, initial_path=None, q_bootstrap=0.5):
+    def compute_thresholds_from_db(self, db_paths, q=0.66, q2=0.9, initial_path=None, q_bootstrap=0.4):
         thresholds = dict()
         name_keys = {0:'time', 1:'length', 2:'smoothness'}
         for i, path in enumerate(db_paths):
@@ -93,6 +93,9 @@ class InterfaceEC():
             else:
                 initial_improvements = self._get_improv_from_json(initial_path)
                 for j, improvement in enumerate(initial_improvements):
+                    if j == 0:
+                        threshold.append(float(np.quantile(improvement, 0.55 if i==j else 0.3)))
+                        continue
                     threshold.append(float(np.quantile(improvement, q if i==j else q_bootstrap)))
 
             thresholds[name_keys[i]] = tuple(threshold)
@@ -399,13 +402,13 @@ class InterfaceEC():
             thresholds = self.compute_thresholds_from_db(db_paths=self.db_paths, initial_path=self.initial_path)
 
             for i, (metric, (tt, lt, st)) in enumerate(thresholds.items()):
-                print(f"[{i}] Metric: {metric} | Time Thres: {tt:.2f}% > {ti:.2f} | Length Thres: {lt:.2f}% > {li:.2f} | Smoothness Thres: {st:.2f}% > {si:.2f}")
+                print(f"[{i}] Metric: {metric} | Time Thres: {tt:.2f}% < {ti:.2f} | Length Thres: {lt:.2f}% < {li:.2f} | Smoothness Thres: {st:.2f}% < {si:.2f} {(si > st) if i!=2 else True}")
 
                 if (ti is not None and li is not None and si is not None and sr is not None
-                and ti > tt and li > lt and si > st and sr >= 1.0):
-                    self._save_data(self.time_db_path, offspring)
+                and ti > tt and li > lt and ((si > st) if i!=2 else True) and sr >= 1.0):
+                    self._save_data(self.db_paths[i], offspring)
                     if self.is_improvement(p, offspring, metric+'_improvement'):
-                        self.save_analysis_db(p, offspring, metric, self.db_paths[i])
+                        self.save_analysis_db(p, offspring, metric, self.db_analysis_paths[i])
 
             # if (ti is not None and li is not None and sr is not None
             #     and ti > 50 and li > 10 and sr >= 1.0):
@@ -432,6 +435,9 @@ class InterfaceEC():
 
     def get_algorithm(self, pop, operators):
         # operators = ['cross_over', 'cross_over', 'cross_over']
+        # thresholds = self.compute_thresholds_from_db(db_paths=self.db_paths, initial_path=self.initial_path)
+        # for i, (metric, (tt, lt, st)) in enumerate(thresholds.items()):
+        #     print(f"[{i}] Metric: {metric} | Time Thres: {tt:.2f}% | Length Thres: {lt:.2f}% | Smoothness Thres: {st:.2f}%")
         self.evol.load_analysis()
         results = []
         try:

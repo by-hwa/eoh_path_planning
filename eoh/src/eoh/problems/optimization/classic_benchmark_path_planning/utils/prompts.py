@@ -29,6 +29,7 @@ class GetPrompts():
 - At the top of your response, write an description of the algorithm in curly braces {}, followed by a concise explanation of the planning mechanism in angle brackets <>.
 - Both the description and the planning mechanism should be placed outside and above the code block.
 - Output the code block containing the implementation only.
+⚠️ You must enforce a maximum execution time of 30 seconds for the path planning process. If the time limit is exceeded, the algorithm must immediately stop searching and return the best-found path so far, along with a status indicating that the time limit was reached.
 ⚠️ Do not give additional explanations.
 '''
 

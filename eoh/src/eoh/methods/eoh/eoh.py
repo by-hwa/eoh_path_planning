@@ -99,6 +99,16 @@ class EOH:
             with open(filename, 'w') as f:
                 json.dump(population, f, indent=5)
             n_start = 0
+            
+        elif self.load_pop:  # load population from files
+                print("load initial population from " + self.load_pop_path)
+                with open(self.load_pop_path) as file:
+                    data = json.load(file)
+                for individual in data:
+                    population.append(individual)
+                print("initial population has been loaded!")
+                n_start = self.load_pop_id
+
         elif self.get_initial:
             with open("../../eoh/src/eoh/problems/optimization/classic_benchmark_path_planning/utils/classic_method.json", "r") as f:
                 result_data = json.load(f)
