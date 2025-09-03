@@ -1,5 +1,6 @@
 import re
 import time
+from unittest import loader
 from ...llm.interface_LLM import InterfaceLLM
 import ast
 import sys
@@ -7,6 +8,17 @@ from .function_parser import FunctionParser
 import astunparse
 import textwrap
 import os, json, random
+
+# For query transformation
+from langchain.prompts import PromptTemplate
+from langchain_openai import ChatOpenAI
+from langchain_core.output_parsers import StrOutputParser
+
+# For basic RAG implementation
+from langchain_community.document_loaders import JSONLoader
+from langchain_openai import OpenAIEmbeddings
+from langchain_community.vectorstores import FAISS
+
 class Evolution():
 
     def __init__(self, api_endpoint, api_key, model_LLM,llm_use_local,llm_local_url, debug_mode, prompts, **kwargs):
@@ -47,6 +59,54 @@ class Evolution():
                 
         if 'no_lm' not in kwargs.keys():
             self.interface_llm = InterfaceLLM(self.api_endpoint, self.api_key, self.model_LLM,llm_use_local,llm_local_url, self.debug_mode)
+
+        self.embedder = OpenAIEmbeddings(api_key=self.api_key,
+                              model="text-embedding-3-small")
+
+        self.db_dict = {'planning time': self.load_database(self.time_analysis_db_path),
+                    'path length': self.load_database(self.path_analysis_db_path),
+                    'path smoothness': self.load_database(self.smoothness_analysis_db_path),
+                    }
+
+    def gap_detector(self, indiv):
+        prompt = f'''
+Role: You are a senior reviewer for sampling-based path planning (RRT/RRT*/RRT*-Connect/PRM variants). Your job is to diagnose why the given parents code harms (1) planning time, (2) path length, (3) smoothness, and produce concrete, minimal fixes.
+below is parents code:
+{indiv['code']}
+'''+'''
+## you answer below template
+[problem of path time aspect]
+<problem of path length aspect>
+{problem of smoothness aspect}
+
+-Replace the text inside [], <>, {} with the actual problems found in the code.
+-Each placeholder must contain only the problems related to that specific metric.
+'''
+        response = self.interface_llm.get_response(prompt)
+        time_match = re.search(r"\[(.*?)\]", response, re.DOTALL)
+        length_match = re.search(r"\<(.*?)\>", response, re.DOTALL)
+        smooth_match = re.search(r"\{(.*?)\}", response, re.DOTALL)
+        print(response)
+        gap = {
+            'planning time': time_match.group(1).strip() if time_match else "",
+            'path length': length_match.group(1).strip() if length_match else "",
+            'path smoothness': smooth_match.group(1).strip() if smooth_match else ""
+        }
+        return gap
+
+    def load_database(self, file_path):
+        documents = self.load_documents(file_path)
+        vector_db = FAISS.from_documents(documents, self.embedder)
+        return vector_db
+
+    def load_documents(self, file_path):
+        loader = JSONLoader(
+            file_path=file_path,
+            jq_schema=".[].analysis",  # This extracts the content field from each array item
+            text_content=True
+        )
+        documents = loader.load()
+        return documents
 
     def load_analysis(self):
         for k, (path, analysis) in self.analysis_db_dict.items():
@@ -97,9 +157,18 @@ Please analyze and output the results in the following format:
         else: 
             prompt_indiv=f"Reference Implementation:\nAlgorithm description: {indivs[0]['algorithm_description']}\nPlanning Mechanism:\n{indivs[0]['planning_mechanism']}\nCode:\n{indivs[0]['code']}\n"
         
+        gap = self.gap_detector(indivs[0])
         analysis_info = ''
         for k, (p, a) in self.analysis_db_dict.items():
-            if len(a):
+            if gap[k]:
+                results = self.db_dict[k].similarity_search(gap[k], k=3)
+                print("IM called !!!!!!!!!!!!!!!!!! RAG!!!!!!!")
+                print(gap[k])
+                if len(results):
+                    n = random.randint(0, len(results)-1)
+                    analysis_info += f"\nThe following prompt is intended to analyze how structural differences between two path planning algorithms (parents alg → offspring alg) have contributed to the improvement of a specific performance metric: {k}.\n"+\
+                    results[n].page_content+"\n"
+            elif len(a):
                 n = random.randint(0, len(a)-1)
                 analysis_info += f"\nThe following prompt is intended to analyze how structural differences between two path planning algorithms (parents alg → offspring alg) have contributed to the improvement of a specific performance metric: {k}.\n"+\
                 a[n]['analysis']+"\n"

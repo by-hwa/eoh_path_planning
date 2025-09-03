@@ -1,0 +1,28 @@
+{
+    "operator": "path_expert",
+    "algorithm_description": null,
+    "planning_mechanism": null,
+    "code": null,
+    "objective": null,
+    "time_improvement": null,
+    "length_improvement": null,
+    "smoothness_improvement": null,
+    "success_rate": null,
+    "other_inf": {
+        "Traceback": "Traceback (most recent call last):\n  File \"c:\\workspace\\eoh_path_planning\\eoh\\src\\eoh\\problems\\optimization\\classic_benchmark_path_planning\\run.py\", line 102, in evaluate\n    fitness, results = self.__evaluate_path(planning_module)\n  File \"c:\\workspace\\eoh_path_planning\\eoh\\src\\eoh\\problems\\optimization\\classic_benchmark_path_planning\\run.py\", line 68, in __evaluate_path\n    planner = alg.Planner(max_iter=5000)\nAttributeError: module 'planning_module' has no attribute 'Planner'\n"
+    }
+}
+{
+    "operator": "cross_over",
+    "algorithm_description": null,
+    "planning_mechanism": null,
+    "code": null,
+    "objective": null,
+    "time_improvement": null,
+    "length_improvement": null,
+    "smoothness_improvement": null,
+    "success_rate": null,
+    "other_inf": {
+        "Traceback": "Traceback (most recent call last):\n  File \"c:\\workspace\\eoh_path_planning\\eoh\\src\\eoh\\problems\\optimization\\classic_benchmark_path_planning\\run.py\", line 102, in evaluate\n    fitness, results = self.__evaluate_path(planning_module)\n  File \"c:\\workspace\\eoh_path_planning\\eoh\\src\\eoh\\problems\\optimization\\classic_benchmark_path_planning\\run.py\", line 68, in __evaluate_path\n    planner = alg.Planner(max_iter=5000)\nAttributeError: module 'planning_module' has no attribute 'Planner'\n"
+    }
+}
