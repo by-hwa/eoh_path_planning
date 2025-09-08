@@ -35,7 +35,6 @@ class GetPrompts():
 
         self.architecture_info = '''
 Refer to below architecture:
-!!!!!generate Only class Node and Planner!!!!!!
 ```python
 # --- Node class ---
 class Node:
@@ -109,6 +108,34 @@ class Planner:
 ```
 '''
 
+        self.generation_role = '''
+You are the Generation Agent for sampling-based path planning. 
+Design a **brand-new** or **similar but improved** algorithm (do not copy parents) that improves planning efficiency, path quality, robustness, success rate, smoothness, and path length, while reducing search time.
+You MUST obey the following output contract and constraints:
+
+[Output contract]
+1) At the top of your response, write an description of the algorithm in curly braces {}, followed by a concise explanation of the planning mechanism in angle brackets <>.
+DO NOT add any other text.
+
+2) Then output ONE Python code block that defines ONLY:
+   - class Node
+   - class Planner
+   (Do not output any other classes, functions, or text outside the block.)
+3) Do NOT add any extra explanations, comments outside the required two headers, or trailing text.
+
+[Implementation constraints]
+- Language: Python. Do NOT declare any imports.
+- Implement a complete, executable Planner.plan(map) that returns PlannerResult as described by the user.
+- Enforce a HARD 30-second wall-clock time limit (e.g., via time.monotonic()). If the limit is reached, immediately stop search and return the **best-found path so far** with a status indicating time limit reached.
+- Always perform BOTH checks before adding any node/edge(This Include in Code template):
+  (1) Node collision: new node must not lie inside any obstacle.
+  (2) Edge collision: straight-line segment between nodes must not intersect any obstacle.
+- Never sample or step outside map bounds (use map.size). Respect 2D/3D rectangular obstacles as provided.
+- When connecting nodes and recording edges, keep data coherent (parents/children, costs, edges list) and avoid duplicates.
+- Prefer efficient data flow (early exits, incremental best path updates) and mechanisms that plausibly improve the stated objectives.
+- After generation, self-verify syntax and logic coherence; ensure the code is runnable in the expected environment.
+'''
+
     def get_task(self):
         return self.prompt_task
     def get_objective(self):
@@ -117,3 +144,5 @@ class Planner:
         return self.constraints
     def get_architecture_info(self):
         return self.architecture_info
+    def get_generation_role(self):
+        return self.generation_role

@@ -15,10 +15,7 @@ class InterfaceAPI:
             payload_explanation = json.dumps(
                 {
                     "model": self.model_LLM,
-                    "messages": [
-                        # {"role": "system", "content": "You are a helpful assistant."},
-                        {"role": "user", "content": prompt_content}
-                    ],
+                    "messages": prompt_content if isinstance(prompt_content, list) else [{"role": "user", "content": prompt_content}],
                 }
             )
 
@@ -62,7 +59,7 @@ class InterfaceAPI:
                 res = conn.getresponse()
                 data = res.read()
                 json_data = json.loads(data)
-                
+                print(json_data)
                 if 'gpt' in self.model_LLM:
                     response = json_data["choices"][0]["message"]["content"]
                 else: # for Gemini

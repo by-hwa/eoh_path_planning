@@ -20,6 +20,11 @@ import pandas as pd
 from typing import Tuple, Literal, Union, Optional, List, Dict, NamedTuple, Callable, Any, Set, TYPE_CHECKING, Type
 # sys.path.append("C:/Workspace/EoH_Path_planning/eoh/src/eoh/problems/optimization/classic_benchmark_path_planning/utils")
 
+from concurrent.futures import ProcessPoolExecutor, TimeoutError as FuturesTimeoutError
+import multiprocessing as mp
+
+import concurrent.futures
+
 class PATHPLANNING():
     def __init__(self):
         self.base_dir = os.path.dirname(os.path.abspath(__file__))
@@ -45,6 +50,8 @@ from eoh.problems.optimization.classic_benchmark_path_planning.utils.architectur
         with open(filename, "w") as f:
             json.dump(self.ref_avg_result.to_dict(orient='records'), f)
             f.write("\n")
+            
+        self.time_out = 150.0
 
     def __load_maps(self):
         maps_dir = os.path.join(self.base_dir, 'utils', 'maps')
@@ -66,8 +73,20 @@ from eoh.problems.optimization.classic_benchmark_path_planning.utils.architectur
 
     def __evaluate_path(self, alg) -> float:
         planner = alg.Planner(max_iter=5000)
-        result, avg_result = self.benchmarker.run(planner.plan)
+        
+        with concurrent.futures.ThreadPoolExecutor() as executor:
+            try:
+                future = executor.submit(self.benchmarker.run, planner.plan)
+                result, avg_result = future.result(timeout=self.time_out)
+            except:
+                executor.shutdown(wait=False, cancel_futures=True)
+                return None, None
 
+        # with ProcessPoolExecutor(max_workers=1, mp_context=mp.get_context("spawn")) as ex:
+            # result, avg_result = self.benchmarker.run(planner.plan)
+            # future = executor.submit(self.benchmarker.run, planner.plan)
+            # result, avg_result = future.result(timeout=self.time_out)
+            
         if result is None and avg_result is None:
             return None, None
 
@@ -82,7 +101,6 @@ from eoh.problems.optimization.classic_benchmark_path_planning.utils.architectur
 
         return None, avg_result
 
-        
     def evaluate(self, code_string, init = False):
         try:
             # Suppress warnings
@@ -109,6 +127,3 @@ from eoh.problems.optimization.classic_benchmark_path_planning.utils.architectur
             print("Error:", str(e))
             print("Traceback:", traceback.format_exc())
             return None, {"Traceback" : traceback.format_exc()}
-        
-
-

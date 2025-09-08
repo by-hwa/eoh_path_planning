@@ -7,6 +7,9 @@ import plotly.express as px
 from .architecture_utils import PlannerResult
 import math
 # from eoh.problems.optimization.classic_benchmark_path_planning.utils.architecture_utils import PlannerResult
+import sys
+import types
+
 class MultiMapBenchmarker:
     def __init__(
         self,
@@ -26,10 +29,16 @@ class MultiMapBenchmarker:
 
         self.time_limit = 5.0
         self.success_limit = 0.8
+        
+        self.time_limit = 5.0
+        self.success_limit = 0.0
+
+        self.outputs = []
 
     def run(self, algorithm) -> pd.DataFrame:
         results = []
         main_start_time = time.time()
+        self.outputs = []
         for i, map_ in enumerate(self.maps):
             print(f"[{time.strftime('%Y.%m.%d - %H:%M:%S')}] Map {i+1}")
             for j in range(self.iter):
@@ -39,8 +48,7 @@ class MultiMapBenchmarker:
                 except Exception as e:
                     output = {"path": [], "nodes": [], "n_nodes": 0}
                 end_time = time.time()
-
-
+                self.outputs.append(output)
                 if isinstance(output, PlannerResult):
                     path = output.path
                     nodes = output.nodes
@@ -84,6 +92,9 @@ class MultiMapBenchmarker:
 
         self.results_df = pd.DataFrame(results)
         return self.results_df, self.get_avg()
+    
+    def get_results(self) -> pd.DataFrame:
+        return self.outputs
 
     def _compute_path_length(self, path: List[Tuple[float, ...]]) -> float:
         if not path or len(path) < 2:

@@ -48,6 +48,7 @@ class InterfaceEC():
         self.initial_path = self.output_path + "/results/pops/population_generation_0.json"
         self.db_paths = [self.time_db_path, self.path_db_path, self.smoothness_db_path]
         self.db_analysis_paths = [self.time_analysis_db_path, self.path_analysis_db_path, self.smoothness_analysis_db_path]
+
     @staticmethod
     def convert_numpy(obj):
         if isinstance(obj, np.ndarray):
@@ -146,7 +147,7 @@ class InterfaceEC():
                             
     def save_analysis_db(self, p, offspring, metric, save_path):
         parents_codes = [inv['code'] for inv in p]
-        analysis = self.evol.get_analysis(parents_codes, offspring['code'], metric)
+        analysis = self.evol.get_analysis(metric, p, offspring)
         contents = {
             'parents': parents_codes,
             'offspring': offspring,
@@ -223,8 +224,10 @@ class InterfaceEC():
         for i in range(len(data)):
             with concurrent.futures.ThreadPoolExecutor() as executor:
                 try:
-                    future = executor.submit(self.interface_eval.evaluate, data[i]['code'])
-                    fitness, results = future.result(timeout=self.timeout)
+                    # future = executor.submit(self.interface_eval.evaluate, data[i]['code'])
+                    # fitness, results = future.result(timeout=self.timeout)
+
+                    fitness, results = self.interface_eval.evaluate(data[i]['code'])
 
                     print(data[i]['algorithm'])
                     print(results)
@@ -260,19 +263,8 @@ class InterfaceEC():
         print("Initiliazation finished! Get "+str(len(population))+" Initial algorithms")
 
         return population
-
-    def _get_alg(self,pop,operator):
-        offspring = {
-            'operator': operator,
-            'algorithm_description': None,
-            'planning_mechanism': None,
-            'code': None,
-            'objective': None,
-            'time_improvement': None,
-            'length_improvement': None,
-            'smoothness_improvement': None,
-            'other_inf': None,
-        }
+    
+    def _get_parents(self, pop, operator):
         if hasattr(self.evol, operator):
             if operator in ['cross_over', 'time_expert', 'path_expert']:
                 parents = []
@@ -293,15 +285,30 @@ class InterfaceEC():
 
             else:
                 parents = self.select.parent_selection(pop, self.m)
-            [offspring['code'], offspring['planning_mechanism'], offspring['algorithm_description']] = self.evol.evol(parents, operator)
-        else:
-            print(f"Evolution operator [{operator}] has not been implemented ! \n") 
+                
+        return parents
+    
+    def _get_alg(self,parents,operator):
+        offspring = {
+            'operator': operator,
+            'algorithm_description': None,
+            'planning_mechanism': None,
+            'code': None,
+            'objective': None,
+            'time_improvement': None,
+            'length_improvement': None,
+            'smoothness_improvement': None,
+            'other_inf': None,
+        }
+        
+        [offspring['code'], offspring['planning_mechanism'], offspring['algorithm_description']] = self.evol.evol(parents, operator)
 
-        return parents, offspring
+        return offspring
     
     def get_offspring_code(self, pop, operator):
         try:
-            p, offspring = self._get_alg(pop, operator)
+            p = self._get_parents(pop, operator)
+            offspring = self._get_alg(p, operator)
             if offspring is None:
                 return None, None
 
@@ -310,8 +317,9 @@ class InterfaceEC():
                 n_retry += 1
                 if self.debug:
                     print("duplicated code, wait 1 second and retrying ... ")
+                    time.sleep(1)
                     
-                p, offspring = self._get_alg(pop, operator)
+                offspring = self._get_alg(p, operator)
                     
                 if n_retry > 1:
                     break
@@ -336,6 +344,7 @@ class InterfaceEC():
 
 
     def get_offspring(self, pop, operator):
+        conversation_log = []
         p, offspring = self.get_offspring_code(pop, operator)
         if offspring is None:
             raise RuntimeError("get_offspring_code returned None")
@@ -360,11 +369,13 @@ class InterfaceEC():
             print(results)
             print("***********************************")
 
+            
+
             # Normalize outputs
             is_df = isinstance(results, pd.DataFrame)
             offspring['objective'] = np.round(fitness, 5) if (fitness is not None and not np.isnan(fitness)) else None
             offspring['other_inf'] = results.to_dict(orient='records') if is_df else results
-
+            
             # Early retry paths
             if offspring['objective'] is None or results is None:
                 if results is None or (isinstance(results, dict) and 'Traceback' in results):
@@ -375,11 +386,13 @@ class InterfaceEC():
                             json.dump(offspring, f, indent=4)
                             f.write('\n')
 
-
                 print(f"Try new code generation : {n_try}")
                 p, offspring = self.get_offspring_code(pop, operator)
                 code = offspring['code']
                 continue
+            
+            if results:
+                self.evol.logging("generation_agent", f"Generated algorithm: {offspring['algorithm_description']} Performance :\n    time_improvement: {[round(m['time_improvement'],2) for m in p['other_inf']]},\n    length_improvement: {[round(m['length_improvement'],2) for m in p['other_inf']]},\n    smoothness_improvement: {[round(m['smoothness_improvement'],2) for m in offspring['other_inf']]}")
 
 
             # === objective exists: compute aggregated metrics (guarded) ===
@@ -395,12 +408,13 @@ class InterfaceEC():
                 json.dump(offspring, f, indent=4)
                 f.write('\n')
 
-            # === gating and DB updates (unchanged logic, but with None guards) ===
+            # TODO Imtemporary test
+            # # === gating and DB updates (unchanged logic, but with None guards) ===
             ti, li, si, sr = (offspring['time_improvement'], offspring['length_improvement'],
                             offspring['smoothness_improvement'], offspring['success_rate'])
             
             thresholds = self.compute_thresholds_from_db(db_paths=self.db_paths, initial_path=self.initial_path)
-
+            flag = False
             for i, (metric, (tt, lt, st)) in enumerate(thresholds.items()):
                 print(f"[{i}] Metric: {metric} | Time Thres: {tt:.2f}% < {ti:.2f} | Length Thres: {lt:.2f}% < {li:.2f} | Smoothness Thres: {st:.2f}% < {si:.2f} {(si > st) if i!=2 else True}")
 
@@ -409,26 +423,15 @@ class InterfaceEC():
                     self._save_data(self.db_paths[i], offspring)
                     if self.is_improvement(p, offspring, metric+'_improvement'):
                         self.save_analysis_db(p, offspring, metric, self.db_analysis_paths[i])
-
-            # if (ti is not None and li is not None and sr is not None
-            #     and ti > 50 and li > 10 and sr >= 1.0):
-            #     self._save_data(self.time_db_path, offspring)
-            #     if self.is_improvement(p, offspring, 'time_improvement'):
-            #         self.save_analysis_db(p, offspring, 'time', self.time_analysis_db_path)
-
-            # if (ti is not None and li is not None and sr is not None
-            #     and ti > -800 and li > 18 and sr >= 1.0):
-            #     self._save_data(self.path_db_path, offspring)
-            #     if self.is_improvement(p, offspring, 'length_improvement'):
-            #         self.save_analysis_db(p, offspring, 'length', self.path_analysis_db_path)
-
-            # if (ti is not None and li is not None and si is not None and sr is not None
-            #     and ti > -500 and li > 20 and si > 500 and sr >= 1.0):
-            #     self._save_data(self.smoothness_db_path, offspring)
-            #     if self.is_improvement(p, offspring, 'smoothness_improvement'):
-            #         self.save_analysis_db(p, offspring, 'smoothness', self.smoothness_analysis_db_path)
-
-            break  # success path: exit retry loop
+                        
+            if flag:
+                break  # success path: exit retry loop
+            
+            else:
+                print(f"Try new code generation : {n_try}")
+                p, offspring = self.get_offspring_code(pop, operator)
+                code = offspring['code']
+                continue
 
         print(offspring['objective'])
         return p, offspring
@@ -439,6 +442,8 @@ class InterfaceEC():
         # for i, (metric, (tt, lt, st)) in enumerate(thresholds.items()):
         #     print(f"[{i}] Metric: {metric} | Time Thres: {tt:.2f}% | Length Thres: {lt:.2f}% | Smoothness Thres: {st:.2f}%")
         self.evol.load_analysis()
+        self.evol.load_database_dict()
+        self.evol.reset_log()
         results = []
         try:
             for operator in operators:

@@ -20,12 +20,12 @@ from langchain_openai import OpenAIEmbeddings
 from langchain_community.vectorstores import FAISS
 
 class Evolution():
-
     def __init__(self, api_endpoint, api_key, model_LLM,llm_use_local,llm_local_url, debug_mode, prompts, **kwargs):
         self.prompt_task         = prompts.get_task()
         self.prompt_objective    = prompts.get_objective()
         self.prompt_constraints  = prompts.get_constraints()
         self.architecture_info   = prompts.get_architecture_info()
+        self.generation_role   = prompts.get_generation_role()
 
         # set LLMs
         self.api_endpoint = api_endpoint
@@ -63,16 +63,44 @@ class Evolution():
         self.embedder = OpenAIEmbeddings(api_key=self.api_key,
                               model="text-embedding-3-small")
 
+        # TODO & Instance 확인
         self.db_dict = {'planning time': self.load_database(self.time_analysis_db_path),
                     'path length': self.load_database(self.path_analysis_db_path),
                     'path smoothness': self.load_database(self.smoothness_analysis_db_path),
                     }
+        
+        self.conversation_log = []
+        
+    def reset_log(self):
+        self.conversation_log = []
 
-    def gap_detector(self, indiv):
+    def logging(self, name, content):
+        message = {
+            "role": "assistant",
+            "name": name,
+            "content": content
+        }
+        self.conversation_log.append(message)
+
+    def transform_msg(self, role, name, content):
+        message = {
+            "role": role,
+            "name": name,
+            "content": content
+        }
+        return message
+
+    def evaluation_agent(self, indiv):
+        message = []
         prompt = f'''
-Role: You are a senior reviewer for sampling-based path planning (RRT/RRT*/RRT*-Connect/PRM variants). Your job is to diagnose why the given parents code harms (1) planning time, (2) path length, (3) smoothness, and produce concrete, minimal fixes.
 below is parents code:
 {indiv['code']}
+
+Performance :
+    time_improvement: {[round(m['time_improvement'],2) for m in indiv['other_inf']]},
+    length_improvement: {[round(m['length_improvement'],2) for m in indiv['other_inf']]},
+    smoothness_improvement: {[round(m['smoothness_improvement'],2) for m in indiv['other_inf']]}
+    
 '''+'''
 ## you answer below template
 [problem of path time aspect]
@@ -82,17 +110,26 @@ below is parents code:
 -Replace the text inside [], <>, {} with the actual problems found in the code.
 -Each placeholder must contain only the problems related to that specific metric.
 '''
-        response = self.interface_llm.get_response(prompt)
+        message.append(self.transform_msg("system", "system", "You are a senior reviewer for sampling-based path planning (RRT/RRT*/RRT*-Connect/PRM variants). Your job is to diagnose why the given parents code harms (1) planning time, (2) path length, (3) smoothness, and produce concrete, minimal fixes."))
+        message.append(self.transform_msg("user", "critic_agent", prompt))
+
+        response = self.interface_llm.get_response(message)
         time_match = re.search(r"\[(.*?)\]", response, re.DOTALL)
         length_match = re.search(r"\<(.*?)\>", response, re.DOTALL)
         smooth_match = re.search(r"\{(.*?)\}", response, re.DOTALL)
         print(response)
-        gap = {
+        critic = {
             'planning time': time_match.group(1).strip() if time_match else "",
             'path length': length_match.group(1).strip() if length_match else "",
             'path smoothness': smooth_match.group(1).strip() if smooth_match else ""
         }
-        return gap
+        return critic
+
+    def load_database_dict(self):
+        self.db_dict = {'planning time': self.load_database(self.time_analysis_db_path),
+                    'path length': self.load_database(self.path_analysis_db_path),
+                    'path smoothness': self.load_database(self.smoothness_analysis_db_path),
+                    }
 
     def load_database(self, file_path):
         documents = self.load_documents(file_path)
@@ -113,11 +150,12 @@ below is parents code:
             with open(path, "r") as f:
                 data = json.load(f)
                 self.analysis_db_dict[k] = (path, data)
-
-    def get_analysis(self, improvment_metric, parents, offspring_code):
+    # analysis agent
+    def get_analysis(self, improvment_metric, parents, offspring): # TODO 지표 같이 전달해서 어디가 어떻게 좋아졌는지 분석
+        message = []
         parent_block_lines = []
-        for i, code in enumerate(parents, start=1):
-            parent_block_lines.append(f"- Parent #{i} algorithm:\n```python\n{code}\n```")
+        for i, p in enumerate(parents, start=1):
+            parent_block_lines.append(f"- Parents #{i} algorithm:\n```python\n{p['code']}\n``` \nPerformance :\n    time_improvement: {[round(m['time_improvement'],2) for m in p['other_inf']]},\n    length_improvement: {[round(m['length_improvement'],2) for m in p['other_inf']]},\n    smoothness_improvement: {[round(m['smoothness_improvement'],2) for m in p['other_inf']]}\n")
         parent_block = "\n\n".join(parent_block_lines)
 
         prompt = f"""
@@ -128,8 +166,12 @@ The following are the structural differences between multiple or single parent p
 
 - Offspring algorithm:
 ```python
-{offspring_code}
+{offspring['code']}
 ```
+Performance :
+    time_improvement: {[round(m['time_improvement'],2) for m in offspring['other_inf']]},
+    length_improvement: {[round(m['length_improvement'],2) for m in offspring['other_inf']]},
+    smoothness_improvement: {[round(m['smoothness_improvement'],2) for m in offspring['other_inf']]}
 
 Improved performance metric: {improvment_metric}
 
@@ -144,8 +186,11 @@ Please analyze and output the results in the following format:
 3. Expected mechanism of impact:
    - ...
 """
+        message.append(self.transform_msg("system", "system", "You are the Analysis Agent. Your job is to compare parent vs offspring path planning algorithms and explain why performance improved. Always output in the required bullet-point format, nothing else."))
+        message.append(self.transform_msg("user", "analysis_agent", prompt))
         print("Waiting response")
-        analysis = self.interface_llm.get_response(prompt)
+        analysis = self.interface_llm.get_response(self.conversation_log+message)
+        self.logging("analysis_agent", analysis)
         return analysis
 
     def get_prompt(self, indivs, op=None):
@@ -157,10 +202,11 @@ Please analyze and output the results in the following format:
         else: 
             prompt_indiv=f"Reference Implementation:\nAlgorithm description: {indivs[0]['algorithm_description']}\nPlanning Mechanism:\n{indivs[0]['planning_mechanism']}\nCode:\n{indivs[0]['code']}\n"
         
-        gap = self.gap_detector(indivs[0])
-        analysis_info = ''
+        analysis_info=''
+        # TODO
+        gap = self.evaluation_agent(indivs[0])
         for k, (p, a) in self.analysis_db_dict.items():
-            if gap[k]:
+            if gap and gap[k]:
                 results = self.db_dict[k].similarity_search(gap[k], k=3)
                 print("IM called !!!!!!!!!!!!!!!!!! RAG!!!!!!!")
                 print(gap[k])
@@ -173,13 +219,12 @@ Please analyze and output the results in the following format:
                 analysis_info += f"\nThe following prompt is intended to analyze how structural differences between two path planning algorithms (parents alg → offspring alg) have contributed to the improvement of a specific performance metric: {k}.\n"+\
                 a[n]['analysis']+"\n"
 
-        prompt_content= self.prompt_task+"\n"+\
+        prompt_content= (f'Instruction : {getattr(self, op)}\n' if hasattr(self, op) else 'Generate algorithm')+\
             prompt_indiv+\
             analysis_info+\
-            (f'Instruction : {getattr(self, op)}\n' if hasattr(self, op) else 'Generate algorithm')+\
-            self.architecture_info+\
-            self.prompt_objective+\
-            self.prompt_constraints
+            self.architecture_info
+            # self.prompt_objective+
+            # self.prompt_constraints
         
         return prompt_content
     
@@ -219,9 +264,13 @@ Please analyze and output the results in the following format:
         return ""
 
     def _get_alg(self,prompt_content, algorithm_pass=False):
+        message = []
+
+        message.append(self.transform_msg("system", "system", self.generation_role))
+        message.append(self.transform_msg("user", "generation_agent", prompt_content))
 
         print("Waiting response")
-        response = self.interface_llm.get_response(prompt_content)
+        response = self.interface_llm.get_response(self.conversation_log+message)
         algorithm, mechanism, code_all = self._extract_alg(response, algorithm_pass)
 
         n_retry = 1
