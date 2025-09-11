@@ -25,6 +25,51 @@ import multiprocessing as mp
 
 import concurrent.futures
 
+from queue import Empty
+
+def _worker_dynamic(import_string, code_string, bench_kwargs, out_q):
+    try:
+        planning_module = types.ModuleType("planning_module")
+        exec(import_string + code_string, planning_module.__dict__)
+        sys.modules[planning_module.__name__] = planning_module
+
+        planner = planning_module.Planner(max_iter=5000)
+        # bench_kwargs 안에 bench_fn 넣어줬다고 가정
+        bench_fn = bench_kwargs["bench_fn"]
+        result = bench_fn(planner.plan)
+        out_q.put(result)
+    except Exception as e:
+        out_q.put(e)
+
+def evaluate_with_timeout_dynamic(import_string, code_string, bench_fn, timeout):
+    ctx = mp.get_context()  # spawn/fork 둘 다 가능
+    q = ctx.Queue()
+    bench_kwargs = {"bench_fn": bench_fn}
+
+    p = ctx.Process(
+        target=_worker_dynamic,
+        args=(import_string, code_string, bench_kwargs, q)
+    )
+    p.start()
+    p.join(timeout)
+
+    if p.is_alive():
+        p.terminate(); p.join()
+        q.close(); q.join_thread()
+        print("Timeout or error during evaluation.")
+        return None, None
+
+    try:
+        payload = q.get_nowait()
+    except Empty:
+        q.close(); q.join_thread()
+        return None, None
+
+    q.close(); q.join_thread()
+    if isinstance(payload, Exception):
+        raise payload
+    return payload
+
 class PATHPLANNING():
     def __init__(self):
         self.base_dir = os.path.dirname(os.path.abspath(__file__))
@@ -51,7 +96,7 @@ from eoh.problems.optimization.classic_benchmark_path_planning.utils.architectur
             json.dump(self.ref_avg_result.to_dict(orient='records'), f)
             f.write("\n")
             
-        self.time_out = 150.0
+        self.time_out = 40.0
 
     def __load_maps(self):
         maps_dir = os.path.join(self.base_dir, 'utils', 'maps')
@@ -71,21 +116,25 @@ from eoh.problems.optimization.classic_benchmark_path_planning.utils.architectur
                 return ref_alg['code']
 
 
-    def __evaluate_path(self, alg) -> float:
-        planner = alg.Planner(max_iter=5000)
+    def __evaluate_path(self, code_string) -> float:
+        # planner = alg.Planner(max_iter=5000)
         
-        with concurrent.futures.ThreadPoolExecutor() as executor:
-            try:
-                future = executor.submit(self.benchmarker.run, planner.plan)
-                result, avg_result = future.result(timeout=self.time_out)
-            except:
-                executor.shutdown(wait=False, cancel_futures=True)
-                return None, None
+        # with concurrent.futures.ThreadPoolExecutor() as executor:
+        #     try:
+        #         future = executor.submit(self.benchmarker.run, planner.plan)
+        #         result, avg_result = future.result(timeout=self.time_out)
+        #     except:
+        #         executor.shutdown(wait=False, cancel_futures=True)
+        #         print("Timeout or error during evaluation.")
+        #         return None, None
+        
+        result, avg_result = evaluate_with_timeout_dynamic(
+            self.import_string,
+            code_string,
+            self.benchmarker.run,
+            timeout=self.time_out
+        )
 
-        # with ProcessPoolExecutor(max_workers=1, mp_context=mp.get_context("spawn")) as ex:
-            # result, avg_result = self.benchmarker.run(planner.plan)
-            # future = executor.submit(self.benchmarker.run, planner.plan)
-            # result, avg_result = future.result(timeout=self.time_out)
             
         if result is None and avg_result is None:
             return None, None
@@ -104,24 +153,25 @@ from eoh.problems.optimization.classic_benchmark_path_planning.utils.architectur
     def evaluate(self, code_string, init = False):
         try:
             # Suppress warnings
-            with warnings.catch_warnings():
-                warnings.simplefilter("ignore")
+            if init:
+                with warnings.catch_warnings():
+                    warnings.simplefilter("ignore")
 
-                # Create a new module object
-                planning_module = types.ModuleType("planning_module")
-                
-                # Execute the code string in the new module's namespace
-                exec(self.import_string+code_string, planning_module.__dict__)
+                    # Create a new module object
+                    planning_module = types.ModuleType("planning_module")
+                    
+                    # Execute the code string in the new module's namespace
+                    exec(self.import_string+code_string, planning_module.__dict__)
 
-                # Add the module to sys.modules so it can be imported
-                sys.modules[planning_module.__name__] = planning_module
+                    # Add the module to sys.modules so it can be imported
+                    sys.modules[planning_module.__name__] = planning_module
 
-                if not init:
-                    fitness, results = self.__evaluate_path(planning_module)
-                else:
                     fitness, results = self.__evaluate_initial(planning_module)
 
-                return fitness, results
+            else:
+                fitness, results = self.__evaluate_path(code_string=code_string)
+
+            return fitness, results
         
         except Exception as e:
             print("Error:", str(e))

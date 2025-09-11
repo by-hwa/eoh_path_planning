@@ -9,6 +9,7 @@ import math
 # from eoh.problems.optimization.classic_benchmark_path_planning.utils.architecture_utils import PlannerResult
 import sys
 import types
+import time
 
 class MultiMapBenchmarker:
     def __init__(
@@ -30,15 +31,17 @@ class MultiMapBenchmarker:
         self.time_limit = 5.0
         self.success_limit = 0.8
         
-        self.time_limit = 5.0
-        self.success_limit = 0.0
+        # self.time_limit = 5.0
+        # self.success_limit = 0.0
 
         self.outputs = []
 
     def run(self, algorithm) -> pd.DataFrame:
         results = []
         main_start_time = time.time()
-        self.outputs = []
+        # self.outputs = []
+        # print("timeout_test")
+        # time.sleep(15)
         for i, map_ in enumerate(self.maps):
             print(f"[{time.strftime('%Y.%m.%d - %H:%M:%S')}] Map {i+1}")
             for j in range(self.iter):
@@ -48,7 +51,7 @@ class MultiMapBenchmarker:
                 except Exception as e:
                     output = {"path": [], "nodes": [], "n_nodes": 0}
                 end_time = time.time()
-                self.outputs.append(output)
+                # self.outputs.append(output)
                 if isinstance(output, PlannerResult):
                     path = output.path
                     nodes = output.nodes
@@ -219,10 +222,17 @@ class MultiMapBenchmarker:
         improvement_df['length_improvement'] = (results['path_length_avg'] - reference_result['path_length_avg']) / reference_result['path_length_avg'] * -100
         improvement_df['smoothness_improvement'] = (results['smoothness_avg'] - reference_result['smoothness_avg']) / reference_result['smoothness_avg'] * 100
 
+        # improvement_df['objective_score'] = (
+        #     5 * improvement_df['success_improvement'] +
+        #     0.3 * improvement_df['time_improvement'] +
+        #     0.2 * improvement_df['length_improvement'] +
+        #     0.005 * improvement_df['smoothness_improvement']
+        #     )
+        
         improvement_df['objective_score'] = (
             5 * improvement_df['success_improvement'] +
             0.3 * improvement_df['time_improvement'] +
-            0.2 * improvement_df['length_improvement'] +
+            0.6 * improvement_df['length_improvement'] +
             0.005 * improvement_df['smoothness_improvement']
             )
 

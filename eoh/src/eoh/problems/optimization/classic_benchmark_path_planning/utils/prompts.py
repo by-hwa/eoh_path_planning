@@ -1,8 +1,8 @@
-from eoh.methods.eoh.classic_planning_method import GetPlanningCode
+# from eoh.methods.eoh.classic_planning_method import GetPlanningCode
 
 class GetPrompts():
     def __init__(self):
-        self.planning_code = GetPlanningCode()
+        # self.planning_code = GetPlanningCode()
         
         self.prompt_task = "Your task is to design and implement Path planning algorithm. Main objective is to improve the path planning performance below."
 
@@ -57,9 +57,10 @@ class PlannerResult(NamedTuple):
 # --- Main Planner ---
 class Planner:
     def __init__(self, max_iter: int = 5000, step_size: float=5.0):
-        self.max_iter = max_iter
-        self.step_size = step_size
-
+        self.max_iter = max_iter # Do not Edit
+        self.step_size = step_size # if you need, you can change the step size for performance
+        #### Place holder: add additional attributes if needed ####
+        
     def plan(self, map: Map) -> PlannerResult:
         bounds = map.size                  # Tuple[int, ...]: (W,H) or (W,H,D)
         start_position = map.start         # Tuple[float, ...] (W,H) or (W,H,D)

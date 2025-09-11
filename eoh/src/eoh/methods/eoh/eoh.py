@@ -86,7 +86,7 @@ class EOH:
         # interface for ec operators
         interface_ec = InterfaceEC(self.pop_size, self.m, self.api_endpoint, self.api_key, self.llm_model, self.use_local_llm, self.llm_local_url,
                                    self.debug_mode, interface_prob, select=self.select,n_p=self.exp_n_proc,
-                                   timeout = self.timeout, use_numba=self.use_numba, output_path=self.output_path, n_op=len(self.operators)
+                                   timeout = self.timeout, use_numba=self.use_numba, output_path=self.output_path, n_op=len(self.operators), database_mode=self.database_mode, interactive_mode=self.interactive_mode
                                    )
 
         # initialization
@@ -110,7 +110,7 @@ class EOH:
                 n_start = self.load_pop_id
 
         elif self.get_initial:
-            with open("../../eoh/src/eoh/problems/optimization/classic_benchmark_path_planning/utils/classic_method.json", "r") as f:
+            with open("../../eoh/src/eoh/problems/optimization/classic_benchmark_path_planning/utils/classic_method__.json", "r") as f:
                 result_data = json.load(f)
 
             population = interface_ec.population_generation_initial(result_data)

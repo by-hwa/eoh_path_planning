@@ -15,17 +15,19 @@ import pandas as pd
 import os
 
 class InterfaceEC():
-    def __init__(self, pop_size, m, api_endpoint, api_key, llm_model,llm_use_local,llm_local_url, debug_mode, interface_prob, select,n_p,timeout,use_numba, output_path, n_op, **kwargs):
+    def __init__(self, pop_size, m, api_endpoint, api_key, llm_model,llm_use_local,llm_local_url, debug_mode, interface_prob, select,n_p,timeout,use_numba, output_path, n_op, database_mode=True, interactive_mode=True, **kwargs):
 
         # LLM settings
         self.pop_size = pop_size
         self.interface_eval = interface_prob
         prompts = interface_prob.prompts
-        self.evol = Evolution(api_endpoint, api_key, llm_model,llm_use_local,llm_local_url, debug_mode,prompts, **kwargs)
+        self.evol = Evolution(api_endpoint, api_key, llm_model,llm_use_local,llm_local_url, debug_mode,prompts, database_mode=database_mode,  interactive_mode=interactive_mode, **kwargs)
         self.m = m
         self.debug = debug_mode
         self.output_path = output_path
         self.n_op = n_op
+        self.database_mode = database_mode
+        self.interactive_mode = interactive_mode
 
         if not self.debug:
             warnings.filterwarnings("ignore")
@@ -48,6 +50,8 @@ class InterfaceEC():
         self.initial_path = self.output_path + "/results/pops/population_generation_0.json"
         self.db_paths = [self.time_db_path, self.path_db_path, self.smoothness_db_path]
         self.db_analysis_paths = [self.time_analysis_db_path, self.path_analysis_db_path, self.smoothness_analysis_db_path]
+        
+        self.results = []
 
     @staticmethod
     def convert_numpy(obj):
@@ -146,10 +150,11 @@ class InterfaceEC():
         return True
                             
     def save_analysis_db(self, p, offspring, metric, save_path):
-        parents_codes = [inv['code'] for inv in p]
+        # parents_codes = [inv['code'] for inv in p]
+        
         analysis = self.evol.get_analysis(metric, p, offspring)
         contents = {
-            'parents': parents_codes,
+            'parents': p,
             'offspring': offspring,
             'objective': self._compute_adjust_score(p, offspring, metric),
             'analysis': analysis
@@ -222,13 +227,14 @@ class InterfaceEC():
         population = []
 
         for i in range(len(data)):
-            with concurrent.futures.ThreadPoolExecutor() as executor:
+            # with concurrent.futures.ThreadPoolExecutor() as executor:
                 try:
+                    # if 'Inform' in data[i]['algorithm'] or 'Improv' in data[i]['algorithm']:
+                    #     continue
                     # future = executor.submit(self.interface_eval.evaluate, data[i]['code'])
                     # fitness, results = future.result(timeout=self.timeout)
-
                     fitness, results = self.interface_eval.evaluate(data[i]['code'])
-
+                    
                     print(data[i]['algorithm'])
                     print(results)
                     
@@ -258,7 +264,7 @@ class InterfaceEC():
                     }
                     continue
 
-            population.append(seed_alg)
+                population.append(seed_alg)
 
         print("Initiliazation finished! Get "+str(len(population))+" Initial algorithms")
 
@@ -268,21 +274,19 @@ class InterfaceEC():
         if hasattr(self.evol, operator):
             if operator in ['cross_over', 'time_expert', 'path_expert']:
                 parents = []
-
                 if not operator == 'path_expert':
                     with open(file=self.time_db_path, mode='r') as f:
                         data = json.load(f)
                         if not len(data):
-                            return None, None
+                            return None
                         parents.append(self.select.parent_selection(data, 1)[0])
                         
                 if not operator == 'time_expert':
                     with open(file=self.path_db_path, mode='r') as f:
                         data = json.load(f)
                         if not len(data):
-                            return None, None
+                            return None
                         parents.append(self.select.parent_selection(data, 1)[0])
-
             else:
                 parents = self.select.parent_selection(pop, self.m)
                 
@@ -305,10 +309,15 @@ class InterfaceEC():
 
         return offspring
     
-    def get_offspring_code(self, pop, operator):
+    def get_offspring_code(self, pop, operator, is_conversation=False):
         try:
-            p = self._get_parents(pop, operator)
-            offspring = self._get_alg(p, operator)
+            if is_conversation:
+                p, offspring = pop, self._get_alg(pop, operator)
+            else:
+                p = self._get_parents(pop, operator)
+                if p is None:
+                    raise Exception("No parents available for the operator.")
+                offspring = self._get_alg(p, operator)
             if offspring is None:
                 return None, None
 
@@ -344,32 +353,21 @@ class InterfaceEC():
 
 
     def get_offspring(self, pop, operator):
-        conversation_log = []
         p, offspring = self.get_offspring_code(pop, operator)
-        if offspring is None:
-            raise RuntimeError("get_offspring_code returned None")
+        if p is None:
+            return False
 
         code = offspring.get('code', '')  # temporary
         n_try = 0
-        while n_try <= 3:
+        n_iter = 3
+        while n_try < n_iter:
             n_try += 1
-            # === run evaluate with HARD timeout ===
-            with concurrent.futures.ThreadPoolExecutor() as executor:
-                try:
-                    if code is None:code =''
-                    future = executor.submit(self.interface_eval.evaluate, code)
-                    fitness, results = future.result(timeout=self.timeout)
-                except:
-                    fitness, results = None, None
-
-                future.cancel()
-
+            
+            fitness, results = self.interface_eval.evaluate(code)
             print('-----------------------------------')
             print(fitness)
             print(results)
             print("***********************************")
-
-            
 
             # Normalize outputs
             is_df = isinstance(results, pd.DataFrame)
@@ -387,13 +385,14 @@ class InterfaceEC():
                             f.write('\n')
 
                 print(f"Try new code generation : {n_try}")
+                self.evol.logging("generation_agent", f"Offspring is not working or poor performance, retrying to generate new algorithm")
+                if n_try > n_iter:
+                    break
                 p, offspring = self.get_offspring_code(pop, operator)
                 code = offspring['code']
                 continue
             
-            if results:
-                self.evol.logging("generation_agent", f"Generated algorithm: {offspring['algorithm_description']} Performance :\n    time_improvement: {[round(m['time_improvement'],2) for m in p['other_inf']]},\n    length_improvement: {[round(m['length_improvement'],2) for m in p['other_inf']]},\n    smoothness_improvement: {[round(m['smoothness_improvement'],2) for m in offspring['other_inf']]}")
-
+            self.evol.logging("generation_agent", f"Generated algorithm: {offspring['algorithm_description']} Performance :\n    time_improvement: {[round(m['time_improvement'],2) for m in offspring['other_inf']]},\n    length_improvement: {[round(m['length_improvement'],2) for m in offspring['other_inf']]},\n    smoothness_improvement: {[round(m['smoothness_improvement'],2) for m in offspring['other_inf']]}")
 
             # === objective exists: compute aggregated metrics (guarded) ===
             filename = self.output_path + "/results/pops/evaluated_entire_population_generation.json"
@@ -408,62 +407,75 @@ class InterfaceEC():
                 json.dump(offspring, f, indent=4)
                 f.write('\n')
 
-            # TODO Imtemporary test
-            # # === gating and DB updates (unchanged logic, but with None guards) ===
-            ti, li, si, sr = (offspring['time_improvement'], offspring['length_improvement'],
-                            offspring['smoothness_improvement'], offspring['success_rate'])
             
-            thresholds = self.compute_thresholds_from_db(db_paths=self.db_paths, initial_path=self.initial_path)
-            flag = False
-            for i, (metric, (tt, lt, st)) in enumerate(thresholds.items()):
-                print(f"[{i}] Metric: {metric} | Time Thres: {tt:.2f}% < {ti:.2f} | Length Thres: {lt:.2f}% < {li:.2f} | Smoothness Thres: {st:.2f}% < {si:.2f} {(si > st) if i!=2 else True}")
+            if self.database_mode:
+                # === gating and DB updates (unchanged logic, but with None guards) ===
+                ti, li, si, sr = (offspring['time_improvement'], offspring['length_improvement'],
+                                offspring['smoothness_improvement'], offspring['success_rate'])
+                
+                thresholds = self.compute_thresholds_from_db(db_paths=self.db_paths, initial_path=self.initial_path)
+                flag = False
+                for i, (metric, (tt, lt, st)) in enumerate(thresholds.items()):
+                    print(f"[{i}] Metric: {metric} | Time Thres: {tt:.2f}% < {ti:.2f} | Length Thres: {lt:.2f}% < {li:.2f} | Smoothness Thres: {st:.2f}% < {si:.2f} {(si > st) if i!=2 else True}")
 
-                if (ti is not None and li is not None and si is not None and sr is not None
-                and ti > tt and li > lt and ((si > st) if i!=2 else True) and sr >= 1.0):
-                    self._save_data(self.db_paths[i], offspring)
-                    if self.is_improvement(p, offspring, metric+'_improvement'):
-                        self.save_analysis_db(p, offspring, metric, self.db_analysis_paths[i])
+                    if (ti is not None and li is not None and si is not None and sr is not None
+                    and ti > tt and li > lt and ((si > st) if i!=2 else True) and sr >= 1.0):
+                        self._save_data(self.db_paths[i], offspring)
+                        if self.is_improvement(p, offspring, metric+'_improvement'):
+                            self.save_analysis_db(p, offspring, metric, self.db_analysis_paths[i])
+                            flag = True
                         
+            self.results.append((p, offspring))            
+            
             if flag:
                 break  # success path: exit retry loop
             
             else:
                 print(f"Try new code generation : {n_try}")
-                p, offspring = self.get_offspring_code(pop, operator)
+                if n_try > n_iter:
+                    break
+                p, offspring = self.get_offspring_code([offspring], operator, is_conversation=True)
                 code = offspring['code']
                 continue
 
-        print(offspring['objective'])
-        return p, offspring
+        return True
+
+    def _reset_results(self):
+        self.results = []
 
     def get_algorithm(self, pop, operators):
         # operators = ['cross_over', 'cross_over', 'cross_over']
         # thresholds = self.compute_thresholds_from_db(db_paths=self.db_paths, initial_path=self.initial_path)
         # for i, (metric, (tt, lt, st)) in enumerate(thresholds.items()):
         #     print(f"[{i}] Metric: {metric} | Time Thres: {tt:.2f}% | Length Thres: {lt:.2f}% | Smoothness Thres: {st:.2f}%")
-        self.evol.load_analysis()
-        self.evol.load_database_dict()
-        self.evol.reset_log()
-        results = []
-        try:
-            for operator in operators:
-                p, off = self.get_offspring(pop, operator)
-                if off['objective'] is not None:
-                    results.append((p, off))
-                    print("!!!!!!!!!!!!!!!!!!!!!!!")
+
+        self._reset_results()
+        for operator in operators:
+            try:
+                if self.database_mode:
+                    self.evol.load_analysis()
+                    self.evol.load_database_dict()
+                if self.interactive_mode:
+                    self.evol.reset_log()
+                
+        
+                if self.get_offspring(pop, operator) is not None:
+                    print(f"Generate operator {operator} success!")
                 else:
                     print(f"Offspring with operator {operator} has no valid objective, skipping...")
-
-        except Exception as e:
-            if self.debug:
-                print(f"Error in get_algorithm: {traceback.format_exc()}")
-            
+                    
+                for conv in self.evol.conversation_log:
+                    print(conv)
+            except Exception as e:
+                if self.debug:
+                    print(f"Error in get_algorithm: {traceback.format_exc()}")
+                
         time.sleep(2)
-        print(len(results))
+        print(len(self.results))
         out_p = []
         out_off = []
 
-        for p, off in results:
+        for p, off in self.results:
             out_p.append(p)
             out_off.append(off)
             if self.debug:

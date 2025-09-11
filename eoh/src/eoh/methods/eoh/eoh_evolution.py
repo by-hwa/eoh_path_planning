@@ -62,8 +62,7 @@ class Evolution():
 
         self.embedder = OpenAIEmbeddings(api_key=self.api_key,
                               model="text-embedding-3-small")
-
-        # TODO & Instance 확인
+        
         self.db_dict = {'planning time': self.load_database(self.time_analysis_db_path),
                     'path length': self.load_database(self.path_analysis_db_path),
                     'path smoothness': self.load_database(self.smoothness_analysis_db_path),
@@ -110,7 +109,7 @@ Performance :
 -Replace the text inside [], <>, {} with the actual problems found in the code.
 -Each placeholder must contain only the problems related to that specific metric.
 '''
-        message.append(self.transform_msg("system", "system", "You are a senior reviewer for sampling-based path planning (RRT/RRT*/RRT*-Connect/PRM variants). Your job is to diagnose why the given parents code harms (1) planning time, (2) path length, (3) smoothness, and produce concrete, minimal fixes."))
+        message.append(self.transform_msg("system", "system", "You are a senior reviewer for sampling-based path planning (RRT/RRT*/RRT*-Connect/PRM variants). Your job is to diagnose why the given parents code harms (1) planning time, (2) path length, (3) smoothness."))
         message.append(self.transform_msg("user", "critic_agent", prompt))
 
         response = self.interface_llm.get_response(message)
@@ -123,6 +122,19 @@ Performance :
             'path length': length_match.group(1).strip() if length_match else "",
             'path smoothness': smooth_match.group(1).strip() if smooth_match else ""
         }
+        contents = f'''
+        problem from parents code:
+        - Planning time: {critic['planning time']}
+        - Path length: {critic['path length']}
+        - Path smoothness: {critic['path smoothness']}
+        
+        and it's Performance :
+            time_improvement: {[round(m['time_improvement'],2) for m in indiv['other_inf']]},
+            length_improvement: {[round(m['length_improvement'],2) for m in indiv['other_inf']]},
+            smoothness_improvement: {[round(m['smoothness_improvement'],2) for m in indiv['other_inf']]}
+        '''
+        self.logging("critic_agent", contents)
+        
         return critic
 
     def load_database_dict(self):
@@ -133,8 +145,10 @@ Performance :
 
     def load_database(self, file_path):
         documents = self.load_documents(file_path)
-        vector_db = FAISS.from_documents(documents, self.embedder)
-        return vector_db
+        if documents:
+            vector_db = FAISS.from_documents(documents, self.embedder)
+            return vector_db
+        return None
 
     def load_documents(self, file_path):
         loader = JSONLoader(
@@ -207,13 +221,13 @@ Please analyze and output the results in the following format:
         gap = self.evaluation_agent(indivs[0])
         for k, (p, a) in self.analysis_db_dict.items():
             if gap and gap[k]:
-                results = self.db_dict[k].similarity_search(gap[k], k=3)
-                print("IM called !!!!!!!!!!!!!!!!!! RAG!!!!!!!")
-                print(gap[k])
-                if len(results):
-                    n = random.randint(0, len(results)-1)
-                    analysis_info += f"\nThe following prompt is intended to analyze how structural differences between two path planning algorithms (parents alg → offspring alg) have contributed to the improvement of a specific performance metric: {k}.\n"+\
-                    results[n].page_content+"\n"
+                if isinstance(self.db_dict[k], FAISS):
+                    results = self.db_dict[k].similarity_search(gap[k], k=3)
+                    print(gap[k])
+                    if len(results):
+                        n = random.randint(0, len(results)-1)
+                        analysis_info += f"\nThe following prompt is intended to analyze how structural differences between two path planning algorithms (parents alg → offspring alg) have contributed to the improvement of a specific performance metric: {k}.\n"+\
+                        results[n].page_content+"\n"
             elif len(a):
                 n = random.randint(0, len(a)-1)
                 analysis_info += f"\nThe following prompt is intended to analyze how structural differences between two path planning algorithms (parents alg → offspring alg) have contributed to the improvement of a specific performance metric: {k}.\n"+\
@@ -285,6 +299,12 @@ Please analyze and output the results in the following format:
                 break
             n_retry +=1
 
+        contents = f'''
+        designed algorithm: {algorithm}
+        planning mechanism: {mechanism}
+        '''
+
+        self.logging("generation_agent", contents)
         return [code_all, mechanism, algorithm]
     
     def strip_outer_code_block(self, text: str) -> str:
@@ -329,9 +349,9 @@ Please analyze and output the results in the following format:
         print("\n >>> check designed code: \n", code_all)
 
     def evol(self,parents, op):
-        prompt_content = self.get_prompt(parents, op)
+        prompt_content = self.get_prompt(parents, op) # critic agent
 
-        [code_all, mechanism, algorithm] = self._get_alg(prompt_content)
+        [code_all, mechanism, algorithm] = self._get_alg(prompt_content) # generation agent
 
         code_all = f"{code_all}"
 

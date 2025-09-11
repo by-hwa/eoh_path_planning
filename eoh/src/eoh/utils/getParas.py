@@ -53,6 +53,8 @@ class Paras():
         #################
         self.get_initial = True
         self.hier_gen = False  # if use hierarchical generation
+        self.interactive_mode = True,
+        self.database_mode = True,
 
     def set_parallel(self):
         import multiprocessing
@@ -86,7 +88,10 @@ class Paras():
                 self.ec_operators  = ['m1']
             elif self.method == 'path_eoh':
                 self.ec_operators  = ['e1','e2','m1','m2', 'm3']
-                self.ec_operators = ['e1','e2','m1','m2', 'm3', 'cross_over', 'time_expert', 'path_expert']
+                self.ec_operators = ['time_expert', 'path_expert', 'cross_over', 'e1','e2','m1','m2', 'm3']
+                self.ec_operators = ['e1','e2','m1','m2', 'm3','time_expert', 'path_expert', 'cross_over']
+                if not self.database_mode:
+                    self.ec_operators  = ['e1','e2','m1','m2', 'm3']
 
                 # self.ec_operators = ['time', 'distance', 'smoothness', 'clearance', 'memory']
                 if self.get_initial:
