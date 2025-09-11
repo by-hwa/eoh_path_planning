@@ -20,7 +20,7 @@ from langchain_openai import OpenAIEmbeddings
 from langchain_community.vectorstores import FAISS
 
 class Evolution():
-    def __init__(self, api_endpoint, api_key, model_LLM,llm_use_local,llm_local_url, debug_mode, prompts, **kwargs):
+    def __init__(self, api_endpoint, api_key, model_LLM,llm_use_local,llm_local_url, debug_mode, prompts, database_mode=True, interactive_mode=True,**kwargs):
         self.prompt_task         = prompts.get_task()
         self.prompt_objective    = prompts.get_objective()
         self.prompt_constraints  = prompts.get_constraints()
@@ -32,7 +32,9 @@ class Evolution():
         self.api_key = api_key
         self.model_LLM = model_LLM
         self.debug_mode = debug_mode # close prompt checking
-
+        self.database_mode = database_mode
+        self.interactive_mode = interactive_mode
+        
         self.base_dir = os.path.dirname(os.path.abspath(__file__))
         self.time_analysis_db_path = os.path.join(self.base_dir, "..", "..", "problems", "optimization", "classic_benchmark_path_planning", "utils", "database", "time_analysis_db.json")
         self.path_analysis_db_path = os.path.join(self.base_dir, "..", "..", "problems", "optimization", "classic_benchmark_path_planning", "utils", "database", "path_analysis_db.json")
@@ -133,7 +135,8 @@ Performance :
             length_improvement: {[round(m['length_improvement'],2) for m in indiv['other_inf']]},
             smoothness_improvement: {[round(m['smoothness_improvement'],2) for m in indiv['other_inf']]}
         '''
-        self.logging("critic_agent", contents)
+        if self.interactive_mode:
+            self.logging("critic_agent", contents)
         
         return critic
 
@@ -165,7 +168,7 @@ Performance :
                 data = json.load(f)
                 self.analysis_db_dict[k] = (path, data)
     # analysis agent
-    def get_analysis(self, improvment_metric, parents, offspring): # TODO 지표 같이 전달해서 어디가 어떻게 좋아졌는지 분석
+    def get_analysis(self, improvment_metric, parents, offspring):
         message = []
         parent_block_lines = []
         for i, p in enumerate(parents, start=1):
@@ -192,7 +195,7 @@ Improved performance metric: {improvment_metric}
 DO NOT GIVE ANY EXPLANATION JUST BELOW INFORMATION
 Please analyze and output the results in the following format:
 
-1. Summary of key changes:
+1. Problem of the parents algorithm:
    - ...
    - ...
 2. Primary contributors to the performance improvement:
@@ -204,7 +207,8 @@ Please analyze and output the results in the following format:
         message.append(self.transform_msg("user", "analysis_agent", prompt))
         print("Waiting response")
         analysis = self.interface_llm.get_response(self.conversation_log+message)
-        self.logging("analysis_agent", analysis)
+        if self.interactive_mode:
+            self.logging("analysis_agent", analysis)
         return analysis
 
     def get_prompt(self, indivs, op=None):
@@ -218,20 +222,23 @@ Please analyze and output the results in the following format:
         
         analysis_info=''
         # TODO
+
         gap = self.evaluation_agent(indivs[0])
-        for k, (p, a) in self.analysis_db_dict.items():
-            if gap and gap[k]:
-                if isinstance(self.db_dict[k], FAISS):
-                    results = self.db_dict[k].similarity_search(gap[k], k=3)
-                    print(gap[k])
-                    if len(results):
-                        n = random.randint(0, len(results)-1)
-                        analysis_info += f"\nThe following prompt is intended to analyze how structural differences between two path planning algorithms (parents alg → offspring alg) have contributed to the improvement of a specific performance metric: {k}.\n"+\
-                        results[n].page_content+"\n"
-            elif len(a):
-                n = random.randint(0, len(a)-1)
-                analysis_info += f"\nThe following prompt is intended to analyze how structural differences between two path planning algorithms (parents alg → offspring alg) have contributed to the improvement of a specific performance metric: {k}.\n"+\
-                a[n]['analysis']+"\n"
+        
+        if self.database_mode:
+            for k, (p, a) in self.analysis_db_dict.items():
+                if gap and gap[k]:
+                    if isinstance(self.db_dict[k], FAISS):
+                        results = self.db_dict[k].similarity_search(gap[k], k=3)
+                        print(gap[k])
+                        if len(results):
+                            n = random.randint(0, len(results)-1)
+                            analysis_info += f"\nThe following prompt is intended to analyze how structural differences between two path planning algorithms (parents alg → offspring alg) have contributed to the improvement of a specific performance metric: {k}.\n"+\
+                            results[n].page_content+"\n"
+                elif len(a):
+                    n = random.randint(0, len(a)-1)
+                    analysis_info += f"\nThe following prompt is intended to analyze how structural differences between two path planning algorithms (parents alg → offspring alg) have contributed to the improvement of a specific performance metric: {k}.\n"+\
+                    a[n]['analysis']+"\n"
 
         prompt_content= (f'Instruction : {getattr(self, op)}\n' if hasattr(self, op) else 'Generate algorithm')+\
             prompt_indiv+\
@@ -304,7 +311,8 @@ Please analyze and output the results in the following format:
         planning mechanism: {mechanism}
         '''
 
-        self.logging("generation_agent", contents)
+        if self.interactive_mode:
+            self.logging("generation_agent", contents)
         return [code_all, mechanism, algorithm]
     
     def strip_outer_code_block(self, text: str) -> str:

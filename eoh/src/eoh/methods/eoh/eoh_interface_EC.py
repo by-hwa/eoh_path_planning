@@ -385,14 +385,16 @@ class InterfaceEC():
                             f.write('\n')
 
                 print(f"Try new code generation : {n_try}")
-                self.evol.logging("generation_agent", f"Offspring is not working or poor performance, retrying to generate new algorithm")
+                if self.interactive_mode:
+                    self.evol.logging("generation_agent", f"Offspring is not working or poor performance, retrying to generate new algorithm")
                 if n_try > n_iter:
                     break
                 p, offspring = self.get_offspring_code(pop, operator)
                 code = offspring['code']
                 continue
             
-            self.evol.logging("generation_agent", f"Generated algorithm: {offspring['algorithm_description']} Performance :\n    time_improvement: {[round(m['time_improvement'],2) for m in offspring['other_inf']]},\n    length_improvement: {[round(m['length_improvement'],2) for m in offspring['other_inf']]},\n    smoothness_improvement: {[round(m['smoothness_improvement'],2) for m in offspring['other_inf']]}")
+            if self.interactive_mode:
+                self.evol.logging("generation_agent", f"Generated algorithm: {offspring['algorithm_description']} Performance :\n    time_improvement: {[round(m['time_improvement'],2) for m in offspring['other_inf']]},\n    length_improvement: {[round(m['length_improvement'],2) for m in offspring['other_inf']]},\n    smoothness_improvement: {[round(m['smoothness_improvement'],2) for m in offspring['other_inf']]}")
 
             # === objective exists: compute aggregated metrics (guarded) ===
             filename = self.output_path + "/results/pops/evaluated_entire_population_generation.json"
@@ -407,14 +409,14 @@ class InterfaceEC():
                 json.dump(offspring, f, indent=4)
                 f.write('\n')
 
-            
+            flag = False
             if self.database_mode:
                 # === gating and DB updates (unchanged logic, but with None guards) ===
                 ti, li, si, sr = (offspring['time_improvement'], offspring['length_improvement'],
                                 offspring['smoothness_improvement'], offspring['success_rate'])
                 
                 thresholds = self.compute_thresholds_from_db(db_paths=self.db_paths, initial_path=self.initial_path)
-                flag = False
+                
                 for i, (metric, (tt, lt, st)) in enumerate(thresholds.items()):
                     print(f"[{i}] Metric: {metric} | Time Thres: {tt:.2f}% < {ti:.2f} | Length Thres: {lt:.2f}% < {li:.2f} | Smoothness Thres: {st:.2f}% < {si:.2f} {(si > st) if i!=2 else True}")
 
