@@ -58,6 +58,9 @@ class EOH:
         self.get_initial = paras.get_initial
         self.ref_algorithm = paras.ref_algorithm if self.get_initial else None
         self.hier_gen = paras.hier_gen
+        
+        self.database_mode = paras.database_mode
+        self.interactive_mode = paras.interactive_mode
 
         print("- EoH parameters loaded -")
 
