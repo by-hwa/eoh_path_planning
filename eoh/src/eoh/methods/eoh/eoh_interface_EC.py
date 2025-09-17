@@ -269,7 +269,7 @@ class InterfaceEC():
                 population.append(seed_alg)
 
         print("Initiliazation finished! Get "+str(len(population))+" Initial algorithms")
-
+        self.evol.init_max_impv()
         return population
     
     def _get_parents(self, pop, operator):
@@ -457,6 +457,7 @@ class InterfaceEC():
         #     print(f"[{i}] Metric: {metric} | Time Thres: {tt:.2f}% | Length Thres: {lt:.2f}% | Smoothness Thres: {st:.2f}%")
 
         self._reset_results()
+        self.evol.update_max_impv()
         for operator in operators:
             try:
                 if self.database_mode:

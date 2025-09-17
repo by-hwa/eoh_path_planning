@@ -41,6 +41,9 @@ class Evolution():
         self.time_analysis_db_path = os.path.join(self.base_dir, "..", "..", "problems", "optimization", "classic_benchmark_path_planning", "utils", "database", "time_analysis_db.json")
         self.path_analysis_db_path = os.path.join(self.base_dir, "..", "..", "problems", "optimization", "classic_benchmark_path_planning", "utils", "database", "path_analysis_db.json")
         self.smoothness_analysis_db_path = os.path.join(self.base_dir, "..", "..", "problems", "optimization", "classic_benchmark_path_planning", "utils", "database", "smoothness_analysis_db.json")
+        
+        self.entire_pop_path = os.path.join(self.base_dir, "results", "pops", "evaluated_entire_population_generation.json")
+        self.init_pop_path = os.path.join(self.base_dir, "results", "pops", "population_generation_0.json")
 
         # set operator instruction
         self.e1 = '''Design a brand new algorithm from scratch.'''
@@ -75,6 +78,8 @@ class Evolution():
         self.conversation_log = []
         self.critic_conversation_log = []
         
+        self.time, self.path, self.smooth = 0, 0, 0
+        
     def reset_log(self):
         self.conversation_log = []
         
@@ -104,12 +109,46 @@ class Evolution():
             "content": content
         }
         return message
+    
+    def _get_improv_from_json(self, path):
+        ti, li, si = [], [], []
+        with open(path, "r") as f:
+            datas = json.load(f)
+            if not len(datas):return [[],[],[]]
+
+        for data in datas:
+            ti.append(data["time_improvement"])
+            li.append(data["length_improvement"])
+            si.append(data["smoothness_improvement"])
+
+        return [ti, li, si]
+    
+    def init_max_impv(self):
+        t,l,s = self._get_improv_from_json(self.init_pop_path)
+        
+        self.time = max(t)
+        self.path = max(l)
+        self.smooth = max(s)
+    
+    def update_max_impv(self):
+        
+        t,l,s = self._get_improv_from_json(self.entire_pop_path)
+        
+        self.time = max(self.time, max(t)) if t else self.time
+        self.path = max(self.time, max(l)) if l else self.path
+        self.smooth = max(self.time, max(s)) if s else self.smooth
+        
 
     def critic_agent(self, indiv):
         message = []
         prompt = f'''
 below is parents code:
 {indiv['code']}
+
+Peak performance of the population:
+    time_improvement: avg - {self.time},
+    length_improvement: avg - {self.path},
+    smoothness_improvement: avg - {self.smooth}
 
 Performance :
     time_improvement: {[round(m['time_improvement'],2) for m in indiv['other_inf']]}  avg - {indiv['time_improvement']},
@@ -140,6 +179,11 @@ Performance :
             'path smoothness': smooth_match.group(1).strip() if smooth_match else ""
         }
         contents = f'''
+        Peak performance of the population:
+            time_improvement: avg - {self.time},
+            length_improvement: avg - {self.path},
+            smoothness_improvement: avg - {self.smooth}
+        
         problem from parents code:
         - Planning time: {critic['planning time']}
         - Path length: {critic['path length']}
@@ -209,10 +253,15 @@ The following are the structural differences between multiple or single parent p
 ```python
 {offspring['code']}
 ```
-Performance :
-    time_improvement: {[round(m['time_improvement'],2) for m in offspring['other_inf']]} avg - {offspring['time_improvement']},
-    length_improvement: {[round(m['length_improvement'],2) for m in offspring['other_inf']]} avg - {offspring['length_improvement']},
-    smoothness_improvement: {[round(m['smoothness_improvement'],2) for m in offspring['other_inf']]} avg - {offspring['smoothness_improvement']}
+Peak performance of the population:
+    time_improvement: avg - {self.time},
+    length_improvement: avg - {self.path},
+    smoothness_improvement: avg - {self.smooth}
+
+Offspring Performance :
+    time_improvement:avg - {offspring['time_improvement']},
+    length_improvement: avg - {offspring['length_improvement']},
+    smoothness_improvement: avg - {offspring['smoothness_improvement']}
 
 Improved performance metric: {improvment_metric}
 
@@ -273,6 +322,12 @@ Please analyze and output the results in the following format:
    - The most appropriate {improvement method} generated during the debate (must be wrapped in curly braces {}).
 5. Ignore minor or repetitive issues. Focus on the strongest consensus.
 
+[Reference]
+Peak performance of the population:
+    time_improvement: avg - {self.time},
+    length_improvement: avg - {self.path},
+    smoothness_improvement: avg - {self.smooth}
+
 [Output format]
 [planning time|path length|path smoothness]
 <problem (1–5 sentences)>
@@ -305,14 +360,31 @@ Please analyze and output the results in the following format:
 
     def get_prompt(self, indivs, op=None):
         op='None' # TODO for test
+        
+# Peak performance of the population:
+#     time_improvement: avg - {self.time},
+#     length_improvement: avg - {self.path},
+#     smoothness_improvement: avg - {self.smooth}
         prompt_indiv = ""
         if len(indivs)>1:
             prompt_indiv="I have "+str(len(indivs))+" existing algorithms with their codes as follows: \n"
             for i in range(len(indivs)):    
-                prompt_indiv=prompt_indiv+f"No.{str(i+1)} algorithm and the corresponding code are: \nAlgorithm description: {indivs[i]['algorithm_description']}\nPlanning Mechanism:\n{indivs[i]['planning_mechanism']}\nCode:\n{indivs[i]['code']}\n"
+                prompt_indiv=prompt_indiv+f'''No.{str(i+1)} algorithm and the corresponding code are: 
+                Algorithm description: {indivs[i]['algorithm_description']}
+                Planning Mechanism:\n{indivs[i]['planning_mechanism']}
+                Code:\n{indivs[i]['code']}
+                
+'''
         else: 
             prompt_indiv=f"Reference Implementation:\nAlgorithm description: {indivs[0]['algorithm_description']}\nPlanning Mechanism:\n{indivs[0]['planning_mechanism']}\nCode:\n{indivs[0]['code']}\n"
         
+        prompt_indiv =f'''
+Reference
+Peak performance of the population:
+    time_improvement: avg - {self.time},
+    length_improvement: avg - {self.path},
+    smoothness_improvement: avg - {self.smooth}
+'''
         analysis_info=''
 
         self.reset_critic_log()
@@ -321,16 +393,13 @@ Please analyze and output the results in the following format:
             gap = self.critic_agent(indiv)
             for k, v in gap.items():
                 if v and len(v):
-                    self.critic_logging(f"{k.replace(' ', '_')}_critic_agent_{i+1}", v)
-                    
-                perform = f'''
+                    perform = f'''
 Performance :
     time_improvement: {[round(m['time_improvement'],2) for m in indiv['other_inf']]} avg - {indiv['time_improvement']},
     length_improvement: {[round(m['length_improvement'],2) for m in indiv['other_inf']]} avg - {indiv['length_improvement']},
     smoothness_improvement: {[round(m['smoothness_improvement'],2) for m in indiv['other_inf']]} avg - {indiv['smoothness_improvement']}
                 '''
-
-                self.critic_logging(f"Parents_{i+1}_performance", perform)
+                    self.critic_logging(f"{k.replace(' ', '_')}_critic_agent_{i+1}", v+perform)
 
         # gap = self.critic_agent(indivs[0]) # TODO: multiple parents
         
