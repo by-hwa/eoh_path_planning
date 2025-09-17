@@ -99,9 +99,9 @@ class InterfaceEC():
                 initial_improvements = self._get_improv_from_json(initial_path)
                 for j, improvement in enumerate(initial_improvements):
                     if j == 0:
-                        threshold.append(float(np.quantile(improvement, 0.55 if i==j else 0.3)))
-                        continue
-                    threshold.append(float(np.quantile(improvement, q if i==j else q_bootstrap)))
+                        threshold.append(float(np.quantile(improvement, 0.55 if i==j else 0.2)))
+                    else:
+                        threshold.append(float(np.quantile(improvement, q if i==j else q_bootstrap)))
 
             thresholds[name_keys[i]] = tuple(threshold)
 
@@ -153,13 +153,15 @@ class InterfaceEC():
         # parents_codes = [inv['code'] for inv in p]
         
         analysis = self.evol.get_analysis(metric, p, offspring)
-        contents = {
-            'parents': p,
-            'offspring': offspring,
-            'objective': self._compute_adjust_score(p, offspring, metric),
-            'analysis': analysis
-            }
-        self._save_data(save_path, contents)
+        
+        if analysis:
+            contents = {
+                'parents': p,
+                'offspring': offspring,
+                'objective': self._compute_adjust_score(p, offspring, metric),
+                'analysis': analysis
+                }
+            self._save_data(save_path, contents)
 
         
     def code2file(self,code):
@@ -229,8 +231,8 @@ class InterfaceEC():
         for i in range(len(data)):
             # with concurrent.futures.ThreadPoolExecutor() as executor:
                 try:
-                    # if 'Inform' in data[i]['algorithm'] or 'Improv' in data[i]['algorithm']:
-                    #     continue
+                    if 'Inform' in data[i]['algorithm'] or 'Improv' in data[i]['algorithm']:
+                        continue
                     # future = executor.submit(self.interface_eval.evaluate, data[i]['code'])
                     # fitness, results = future.result(timeout=self.timeout)
                     fitness, results = self.interface_eval.evaluate(data[i]['code'])
@@ -386,9 +388,12 @@ class InterfaceEC():
 
                 print(f"Try new code generation : {n_try}")
                 if self.interactive_mode:
-                    self.evol.logging("generation_agent", f"Offspring is not working or poor performance, retrying to generate new algorithm")
+                    self.evol.logging("generation_agent", f"Offspring is not working or poor performance(e.g. time limit exceeded or success rate < 1.0), retrying to generate new algorithm")
+                    self.evol.reset_log()
                 if n_try > n_iter:
                     break
+                
+                                
                 p, offspring = self.get_offspring_code(pop, operator)
                 code = offspring['code']
                 continue
@@ -427,15 +432,15 @@ class InterfaceEC():
                             self.save_analysis_db(p, offspring, metric, self.db_analysis_paths[i])
                             flag = True
                         
-            self.results.append((p, offspring))            
+            self.results.append((p, offspring))
             
             if flag:
                 break  # success path: exit retry loop
             
             else:
-                print(f"Try new code generation : {n_try}")
                 if n_try > n_iter:
                     break
+                print(f"Try new code generation : {n_try}")
                 p, offspring = self.get_offspring_code([offspring], operator, is_conversation=True)
                 code = offspring['code']
                 continue

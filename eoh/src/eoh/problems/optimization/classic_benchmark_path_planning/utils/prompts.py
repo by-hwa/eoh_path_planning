@@ -8,6 +8,7 @@ class GetPrompts():
 
         self.objective = '''
 ### Objective:
+- ⚠️The system shall produce a path within 1.5 seconds. The generated path must be as short as possible, with both search time and path length minimized, and the search success rate shall be guaranteed.⚠️
 - Improve path planning performance in terms of:
   - Planning efficiency
   - Path quality
@@ -29,7 +30,6 @@ class GetPrompts():
 - At the top of your response, write an description of the algorithm in curly braces {}, followed by a concise explanation of the planning mechanism in angle brackets <>.
 - Both the description and the planning mechanism should be placed outside and above the code block.
 - Output the code block containing the implementation only.
-⚠️ You must enforce a maximum execution time of 30 seconds for the path planning process. If the time limit is exceeded, the algorithm must immediately stop searching and return the best-found path so far, along with a status indicating that the time limit was reached.
 ⚠️ Do not give additional explanations.
 '''
 
@@ -127,7 +127,6 @@ DO NOT add any other text.
 [Implementation constraints]
 - Language: Python. Do NOT declare any imports.
 - Implement a complete, executable Planner.plan(map) that returns PlannerResult as described by the user.
-- Enforce a HARD 30-second wall-clock time limit (e.g., via time.monotonic()). If the limit is reached, immediately stop search and return the **best-found path so far** with a status indicating time limit reached.
 - Always perform BOTH checks before adding any node/edge(This Include in Code template):
   (1) Node collision: new node must not lie inside any obstacle.
   (2) Edge collision: straight-line segment between nodes must not intersect any obstacle.

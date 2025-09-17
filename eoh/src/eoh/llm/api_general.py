@@ -59,6 +59,7 @@ class InterfaceAPI:
                 res = conn.getresponse()
                 data = res.read()
                 json_data = json.loads(data)
+                # print(json_data)
                 if 'gpt' in self.model_LLM:
                     response = json_data["choices"][0]["message"]["content"]
                 else: # for Gemini

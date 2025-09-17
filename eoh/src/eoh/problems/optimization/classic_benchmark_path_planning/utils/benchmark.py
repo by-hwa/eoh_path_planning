@@ -219,6 +219,7 @@ class MultiMapBenchmarker:
         
         improvement_df['success_improvement'] = (results['success_rate'] - reference_result['success_rate']) * 100 # percent point
         improvement_df['time_improvement'] = (results['time_avg'] - reference_result['time_avg']) / reference_result['time_avg'] * -100
+        improvement_df['node_improvement'] = (results['num_nodes_avg'] - reference_result['num_nodes_avg']) / reference_result['num_nodes_avg'] * -100
         improvement_df['length_improvement'] = (results['path_length_avg'] - reference_result['path_length_avg']) / reference_result['path_length_avg'] * -100
         improvement_df['smoothness_improvement'] = (results['smoothness_avg'] - reference_result['smoothness_avg']) / reference_result['smoothness_avg'] * 100
 
