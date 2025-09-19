@@ -42,8 +42,8 @@ class Evolution():
         self.path_analysis_db_path = os.path.join(self.base_dir, "..", "..", "problems", "optimization", "classic_benchmark_path_planning", "utils", "database", "path_analysis_db.json")
         self.smoothness_analysis_db_path = os.path.join(self.base_dir, "..", "..", "problems", "optimization", "classic_benchmark_path_planning", "utils", "database", "smoothness_analysis_db.json")
         
-        self.entire_pop_path = os.path.join(self.base_dir, "results", "pops", "evaluated_entire_population_generation.json")
-        self.init_pop_path = os.path.join(self.base_dir, "results", "pops", "population_generation_0.json")
+        self.entire_pop_path = os.path.join(os.getcwd(), "results", "pops", "evaluated_entire_population_generation.json")
+        self.init_pop_path = os.path.join(os.getcwd(), "results", "pops", "population_generation_0.json")
 
         # set operator instruction
         self.e1 = '''Design a brand new algorithm from scratch.'''
@@ -112,14 +112,17 @@ class Evolution():
     
     def _get_improv_from_json(self, path):
         ti, li, si = [], [], []
+        if not os.path.exists(path):
+            print(f"None file {path}")
+            return [[],[],[]]
         with open(path, "r") as f:
             datas = json.load(f)
             if not len(datas):return [[],[],[]]
 
-        for data in datas:
-            ti.append(data["time_improvement"])
-            li.append(data["length_improvement"])
-            si.append(data["smoothness_improvement"])
+            for data in datas:
+                ti.append(data["time_improvement"])
+                li.append(data["length_improvement"])
+                si.append(data["smoothness_improvement"])
 
         return [ti, li, si]
     
@@ -135,8 +138,8 @@ class Evolution():
         t,l,s = self._get_improv_from_json(self.entire_pop_path)
         
         self.time = max(self.time, max(t)) if t else self.time
-        self.path = max(self.time, max(l)) if l else self.path
-        self.smooth = max(self.time, max(s)) if s else self.smooth
+        self.path = max(self.path, max(l)) if l else self.path
+        self.smooth = max(self.smooth, max(s)) if s else self.smooth
         
 
     def critic_agent(self, indiv):
@@ -146,14 +149,14 @@ below is parents code:
 {indiv['code']}
 
 Peak performance of the population:
-    time_improvement: avg - {self.time},
-    length_improvement: avg - {self.path},
-    smoothness_improvement: avg - {self.smooth}
+    time_improvement: {self.time},
+    length_improvement: {self.path},
+    smoothness_improvement: {self.smooth}
 
 Performance :
-    time_improvement: {[round(m['time_improvement'],2) for m in indiv['other_inf']]}  avg - {indiv['time_improvement']},
-    length_improvement: {[round(m['length_improvement'],2) for m in indiv['other_inf']]} avg - {indiv['length_improvement']},
-    smoothness_improvement: {[round(m['smoothness_improvement'],2) for m in indiv['other_inf']]} avg - {indiv['smoothness_improvement']}
+    time_improvement: {indiv['time_improvement']},
+    length_improvement: {indiv['length_improvement']},
+    smoothness_improvement: {indiv['smoothness_improvement']}
     
 '''+'''
 ## you answer below template
@@ -180,9 +183,9 @@ Performance :
         }
         contents = f'''
         Peak performance of the population:
-            time_improvement: avg - {self.time},
-            length_improvement: avg - {self.path},
-            smoothness_improvement: avg - {self.smooth}
+            time_improvement: {self.time},
+            length_improvement: {self.path},
+            smoothness_improvement: {self.smooth}
         
         problem from parents code:
         - Planning time: {critic['planning time']}
@@ -190,9 +193,9 @@ Performance :
         - Path smoothness: {critic['path smoothness']}
         
         and it's Performance :
-            time_improvement: {[round(m['time_improvement'],2) for m in indiv['other_inf']]} avg - {indiv['time_improvement']},
-            length_improvement: {[round(m['length_improvement'],2) for m in indiv['other_inf']]} avg - {indiv['length_improvement']},
-            smoothness_improvement: {[round(m['smoothness_improvement'],2) for m in indiv['other_inf']]} avg - {indiv['smoothness_improvement']}
+            time_improvement: {indiv['time_improvement']},
+            length_improvement: {indiv['length_improvement']},
+            smoothness_improvement: {indiv['smoothness_improvement']}
         '''
         if self.interactive_mode:
             self.logging("critic_agent", contents)
@@ -254,14 +257,14 @@ The following are the structural differences between multiple or single parent p
 {offspring['code']}
 ```
 Peak performance of the population:
-    time_improvement: avg - {self.time},
-    length_improvement: avg - {self.path},
-    smoothness_improvement: avg - {self.smooth}
+    time_improvement: {self.time},
+    length_improvement: {self.path},
+    smoothness_improvement: {self.smooth}
 
 Offspring Performance :
-    time_improvement:avg - {offspring['time_improvement']},
-    length_improvement: avg - {offspring['length_improvement']},
-    smoothness_improvement: avg - {offspring['smoothness_improvement']}
+    time_improvement: {offspring['time_improvement']},
+    length_improvement: {offspring['length_improvement']},
+    smoothness_improvement: {offspring['smoothness_improvement']}
 
 Improved performance metric: {improvment_metric}
 
@@ -321,13 +324,12 @@ Please analyze and output the results in the following format:
    - The main <problem> for this metric (must be wrapped in angle brackets <>).
    - The most appropriate {improvement method} generated during the debate (must be wrapped in curly braces {}).
 5. Ignore minor or repetitive issues. Focus on the strongest consensus.
-
+'''+f'''
 [Reference]
 Peak performance of the population:
-    time_improvement: avg - {self.time},
-    length_improvement: avg - {self.path},
-    smoothness_improvement: avg - {self.smooth}
-
+    time_improvement: {self.time},
+    length_improvement: {self.path},
+    smoothness_improvement: {self.smooth}'''+'''
 [Output format]
 [planning time|path length|path smoothness]
 <problem (1–5 sentences)>
@@ -359,31 +361,31 @@ Peak performance of the population:
         return metric, prob, sol
 
     def get_prompt(self, indivs, op=None):
-        op='None' # TODO for test
+        # op='None' # TODO for test
         
-# Peak performance of the population:
-#     time_improvement: avg - {self.time},
-#     length_improvement: avg - {self.path},
-#     smoothness_improvement: avg - {self.smooth}
         prompt_indiv = ""
         if len(indivs)>1:
             prompt_indiv="I have "+str(len(indivs))+" existing algorithms with their codes as follows: \n"
             for i in range(len(indivs)):    
                 prompt_indiv=prompt_indiv+f'''No.{str(i+1)} algorithm and the corresponding code are: 
-                Algorithm description: {indivs[i]['algorithm_description']}
-                Planning Mechanism:\n{indivs[i]['planning_mechanism']}
-                Code:\n{indivs[i]['code']}
-                
+Algorithm description: {indivs[i]['algorithm_description']}
+Planning Mechanism:\n{indivs[i]['planning_mechanism']}
+Code:\n{indivs[i]['code']}
+
+and it's Performance :
+    time_improvement: {indivs[i]['time_improvement']},
+    length_improvement: {indivs[i]['length_improvement']},
+    smoothness_improvement: {indivs[i]['smoothness_improvement']}
 '''
         else: 
             prompt_indiv=f"Reference Implementation:\nAlgorithm description: {indivs[0]['algorithm_description']}\nPlanning Mechanism:\n{indivs[0]['planning_mechanism']}\nCode:\n{indivs[0]['code']}\n"
         
-        prompt_indiv =f'''
+        prompt_indiv =prompt_indiv+f'''
 Reference
 Peak performance of the population:
-    time_improvement: avg - {self.time},
-    length_improvement: avg - {self.path},
-    smoothness_improvement: avg - {self.smooth}
+    time_improvement: {self.time},
+    length_improvement: {self.path},
+    smoothness_improvement: {self.smooth}
 '''
         analysis_info=''
 
@@ -395,9 +397,9 @@ Peak performance of the population:
                 if v and len(v):
                     perform = f'''
 Performance :
-    time_improvement: {[round(m['time_improvement'],2) for m in indiv['other_inf']]} avg - {indiv['time_improvement']},
-    length_improvement: {[round(m['length_improvement'],2) for m in indiv['other_inf']]} avg - {indiv['length_improvement']},
-    smoothness_improvement: {[round(m['smoothness_improvement'],2) for m in indiv['other_inf']]} avg - {indiv['smoothness_improvement']}
+    time_improvement: {indiv['time_improvement']},
+    length_improvement: {indiv['length_improvement']},
+    smoothness_improvement: {indiv['smoothness_improvement']}
                 '''
                     self.critic_logging(f"{k.replace(' ', '_')}_critic_agent_{i+1}", v+perform)
 
@@ -435,7 +437,7 @@ Performance :
 
         prompt_content= ''+\
             prompt_indiv+\
-            analysis_info+(f'Instruction : {getattr(self, op)}\n' if hasattr(self, op) else 'Generate algorithm')
+            analysis_info+(f'Instruction : {getattr(self, op)}\n' if hasattr(self, op) else 'Instruction : Generate algorithm')
             # self.architecture_info
             # self.prompt_objective+
             # self.prompt_constraints

@@ -144,6 +144,8 @@ class EOH:
                 json.dump(population, f, indent=5)
             n_start = 0
         
+        interface_ec.evol.init_max_impv()
+
 
         # main loop
         n_op = len(self.operators)

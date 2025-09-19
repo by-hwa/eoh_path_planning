@@ -21,7 +21,7 @@ class InterfaceEC():
         self.pop_size = pop_size
         self.interface_eval = interface_prob
         prompts = interface_prob.prompts
-        self.evol = Evolution(api_endpoint, api_key, llm_model,llm_use_local,llm_local_url, debug_mode,prompts, database_mode=database_mode,  interactive_mode=interactive_mode, **kwargs)
+        self.evol = Evolution(api_endpoint, api_key, llm_model,llm_use_local,llm_local_url, debug_mode, prompts, database_mode=database_mode,  interactive_mode=interactive_mode, **kwargs)
         self.m = m
         self.debug = debug_mode
         self.output_path = output_path
@@ -73,10 +73,10 @@ class InterfaceEC():
             datas = json.load(f)
             if not len(datas):return [[],[],[]]
 
-        for data in datas:
-            ti.append(data["time_improvement"])
-            li.append(data["length_improvement"])
-            si.append(data["smoothness_improvement"])
+            for data in datas:
+                ti.append(data["time_improvement"])
+                li.append(data["length_improvement"])
+                si.append(data["smoothness_improvement"])
 
         ti = sorted(ti, reverse=True)
         li = sorted(li, reverse=True)
@@ -131,6 +131,10 @@ class InterfaceEC():
         return improvement * 0.4 + final_perform * 0.6
     
     def _save_data(self, file_path, contents):
+        if not os.path.exists(file_path):
+            with open(file_path, "w") as f:
+                f.write([])
+        
         with open(file=file_path, mode='r+') as f:
             data = json.load(f)
             data.append(contents)
@@ -231,8 +235,8 @@ class InterfaceEC():
         for i in range(len(data)):
             # with concurrent.futures.ThreadPoolExecutor() as executor:
                 try:
-                    if 'Inform' in data[i]['algorithm'] or 'Improv' in data[i]['algorithm']:
-                        continue
+                    # if 'Inform' in data[i]['algorithm'] or 'Improv' in data[i]['algorithm']:
+                    #     continue
                     # future = executor.submit(self.interface_eval.evaluate, data[i]['code'])
                     # fitness, results = future.result(timeout=self.timeout)
                     fitness, results = self.interface_eval.evaluate(data[i]['code'])
@@ -269,7 +273,6 @@ class InterfaceEC():
                 population.append(seed_alg)
 
         print("Initiliazation finished! Get "+str(len(population))+" Initial algorithms")
-        self.evol.init_max_impv()
         return population
     
     def _get_parents(self, pop, operator):
@@ -304,6 +307,7 @@ class InterfaceEC():
             'time_improvement': None,
             'length_improvement': None,
             'smoothness_improvement': None,
+            'node_improvement': None,
             'other_inf': None,
         }
         
@@ -346,6 +350,7 @@ class InterfaceEC():
             'time_improvement': None,
             'length_improvement': None,
             'smoothness_improvement': None,
+            'node_improvement': None,
             'success_rate': None,
             'other_inf': None
             }
@@ -382,9 +387,7 @@ class InterfaceEC():
                     if isinstance(results, dict) and 'Traceback' in results:
                         print(f"Error/Timeout: {results['Traceback']}")
                         filename = self.output_path + "/results/pops/error_occured_entire_population_generation.json"
-                        with open(file=filename, mode='a') as f:
-                            json.dump(offspring, f, indent=4)
-                            f.write('\n')
+                        self._save_data(filename, offspring)
 
                 print(f"Try new code generation : {n_try}")
                 if self.interactive_mode:
@@ -407,12 +410,11 @@ class InterfaceEC():
             offspring['time_improvement'] = np.round(results['time_improvement'].mean())
             offspring['length_improvement'] = np.round(results['length_improvement'].mean())
             offspring['smoothness_improvement'] = np.round(results['smoothness_improvement'].mean())
+            offspring['node_improvement'] = np.round(results['node_improvement'].mean())
             offspring['success_rate'] = results['success_rate'].mean()
 
             # Persist evaluation snapshot
-            with open(file=filename, mode='a') as f:
-                json.dump(offspring, f, indent=4)
-                f.write('\n')
+            self._save_data(filename, offspring)
 
             flag = False
             if self.database_mode:
