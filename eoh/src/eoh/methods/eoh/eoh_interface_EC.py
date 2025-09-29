@@ -40,12 +40,20 @@ class InterfaceEC():
 
         self.base_dir = os.path.dirname(os.path.abspath(__file__))
 
-        self.time_db_path = os.path.join(self.base_dir, "..", "..", "problems", "optimization", "classic_benchmark_path_planning", "utils", "database", "time_db.json")
-        self.path_db_path = os.path.join(self.base_dir, "..", "..", "problems", "optimization", "classic_benchmark_path_planning", "utils", "database", "path_db.json")
-        self.smoothness_db_path = os.path.join(self.base_dir, "..", "..", "problems", "optimization", "classic_benchmark_path_planning", "utils", "database", "smoothness_db.json")
-        self.time_analysis_db_path = os.path.join(self.base_dir, "..", "..", "problems", "optimization", "classic_benchmark_path_planning", "utils", "database", "time_analysis_db.json")
-        self.path_analysis_db_path = os.path.join(self.base_dir, "..", "..", "problems", "optimization", "classic_benchmark_path_planning", "utils", "database", "path_analysis_db.json")
-        self.smoothness_analysis_db_path = os.path.join(self.base_dir, "..", "..", "problems", "optimization", "classic_benchmark_path_planning", "utils", "database", "smoothness_analysis_db.json")
+        # self.time_db_path = os.path.join(self.base_dir, "..", "..", "problems", "optimization", "classic_benchmark_path_planning", "utils", "database", "time_db.json")
+        # self.path_db_path = os.path.join(self.base_dir, "..", "..", "problems", "optimization", "classic_benchmark_path_planning", "utils", "database", "path_db.json")
+        # self.smoothness_db_path = os.path.join(self.base_dir, "..", "..", "problems", "optimization", "classic_benchmark_path_planning", "utils", "database", "smoothness_db.json")
+        # self.time_analysis_db_path = os.path.join(self.base_dir, "..", "..", "problems", "optimization", "classic_benchmark_path_planning", "utils", "database", "time_analysis_db.json")
+        # self.path_analysis_db_path = os.path.join(self.base_dir, "..", "..", "problems", "optimization", "classic_benchmark_path_planning", "utils", "database", "path_analysis_db.json")
+        # self.smoothness_analysis_db_path = os.path.join(self.base_dir, "..", "..", "problems", "optimization", "classic_benchmark_path_planning", "utils", "database", "smoothness_analysis_db.json")
+        
+        # self.time_db_path = os.path.join(self.base_dir, "..", "..", "problems", "optimization", "classic_benchmark_path_planning", "utils", "database", "time_db.json")
+        # self.path_db_path = os.path.join(self.base_dir, "..", "..", "problems", "optimization", "classic_benchmark_path_planning", "utils", "database", "path_db.json")
+        # self.smoothness_db_path = os.path.join(self.base_dir, "..", "..", "problems", "optimization", "classic_benchmark_path_planning", "utils", "database", "smoothness_db.json")
+        # self.time_analysis_db_path = os.path.join(self.base_dir, "..", "..", "problems", "optimization", "classic_benchmark_path_planning", "utils", "database", "time_analysis_db.json")
+        # self.path_analysis_db_path = os.path.join(self.base_dir, "..", "..", "problems", "optimization", "classic_benchmark_path_planning", "utils", "database", "path_analysis_db.json")
+        # self.smoothness_analysis_db_path = os.path.join(self.base_dir, "..", "..", "problems", "optimization", "classic_benchmark_path_planning", "utils", "database", "smoothness_analysis_db.json")
+        
         
         self.initial_path = self.output_path + "/results/pops/population_generation_0.json"
         self.db_paths = [self.time_db_path, self.path_db_path, self.smoothness_db_path]
@@ -85,7 +93,7 @@ class InterfaceEC():
         return [ti, li, si]
 
 
-    def compute_thresholds_from_db(self, db_paths, q=0.66, q2=0.9, initial_path=None, q_bootstrap=0.4):
+    def compute_thresholds_from_db(self, db_paths, q=0.66, q2=0.8, initial_path=None, q_bootstrap=0.4):
         thresholds = dict()
         name_keys = {0:'time', 1:'length', 2:'smoothness'}
         for i, path in enumerate(db_paths):
@@ -94,14 +102,17 @@ class InterfaceEC():
 
             if len(improvements[0]) > 10:
                 for j, improvement in enumerate(improvements):
-                    threshold.append(float(np.quantile(improvement, q if i==j else q2)))
+                    if i == 0:
+                        threshold.append(float(np.quantile(improvement, q if i==j else 0.05)))
+                    else:
+                        threshold.append(float(np.quantile(improvement, q if i==j else q_bootstrap)))
             else:
                 initial_improvements = self._get_improv_from_json(initial_path)
                 for j, improvement in enumerate(initial_improvements):
-                    if j == 0:
+                    if i == 0:
                         threshold.append(float(np.quantile(improvement, 0.55 if i==j else 0.2)))
                     else:
-                        threshold.append(float(np.quantile(improvement, q if i==j else q_bootstrap)))
+                        threshold.append(float(np.quantile(improvement, q_bootstrap if i==j else 0.3)))
 
             thresholds[name_keys[i]] = tuple(threshold)
 
@@ -133,12 +144,18 @@ class InterfaceEC():
     def _save_data(self, file_path, contents):
         if not os.path.exists(file_path):
             with open(file_path, "w") as f:
-                f.write([])
+                f.write("[]")
         
         with open(file=file_path, mode='r+') as f:
             data = json.load(f)
             data.append(contents)
-            
+            if 'length' in file_path:
+                data = sorted(data, key=lambda x: x.get('length_improvement', float('inf')), reverse=True)
+            elif 'time' in file_path:
+                data = sorted(data, key=lambda x: x.get('time_improvement', float('inf')), reverse=True)
+            elif 'smoothness' in file_path:
+                data = sorted(data, key=lambda x: x.get('smoothness_improvement', float('inf')), reverse=True)
+                
             f.seek(0)
             json.dump(data, f, indent=4)
             f.truncate()
@@ -282,6 +299,7 @@ class InterfaceEC():
                 if not operator == 'path_expert':
                     with open(file=self.time_db_path, mode='r') as f:
                         data = json.load(f)
+                        # data = sorted(data, key=lambda x: x.get('length_improvement', float('inf')), reverse=True)
                         if not len(data):
                             return None
                         parents.append(self.select.parent_selection(data, 1)[0])
@@ -289,6 +307,7 @@ class InterfaceEC():
                 if not operator == 'time_expert':
                     with open(file=self.path_db_path, mode='r') as f:
                         data = json.load(f)
+                        # data = sorted(data, key=lambda x: x.get('time_improvement', float('inf')), reverse=True)
                         if not len(data):
                             return None
                         parents.append(self.select.parent_selection(data, 1)[0])
@@ -402,7 +421,7 @@ class InterfaceEC():
                 continue
             
             if self.interactive_mode:
-                self.evol.logging("generation_agent", f"Generated algorithm: {offspring['algorithm_description']} Performance :\n    time_improvement: {[round(m['time_improvement'],2) for m in offspring['other_inf']]},\n    length_improvement: {[round(m['length_improvement'],2) for m in offspring['other_inf']]},\n    smoothness_improvement: {[round(m['smoothness_improvement'],2) for m in offspring['other_inf']]}")
+                self.evol.logging("generation_agent", f"Generated algorithm's Performance :\n    time_improvement: {[round(m['time_improvement'],2) for m in offspring['other_inf']]},\n    length_improvement: {[round(m['length_improvement'],2) for m in offspring['other_inf']]},\n    smoothness_improvement: {[round(m['smoothness_improvement'],2) for m in offspring['other_inf']]}")
 
             # === objective exists: compute aggregated metrics (guarded) ===
             filename = self.output_path + "/results/pops/evaluated_entire_population_generation.json"
@@ -425,14 +444,15 @@ class InterfaceEC():
                 thresholds = self.compute_thresholds_from_db(db_paths=self.db_paths, initial_path=self.initial_path)
                 
                 for i, (metric, (tt, lt, st)) in enumerate(thresholds.items()):
-                    print(f"[{i}] Metric: {metric} | Time Thres: {tt:.2f}% < {ti:.2f} | Length Thres: {lt:.2f}% < {li:.2f} | Smoothness Thres: {st:.2f}% < {si:.2f} {(si > st) if i!=2 else True}")
+                    print(f"[{i}] Metric: {metric} | Time Thres: {tt:.2f}% < {ti:.2f} | Length Thres: {lt:.2f}% < {li:.2f} | Smoothness Thres: {st:.2f}% < {si:.2f} {(si > st) if i==2 else True}")
 
                     if (ti is not None and li is not None and si is not None and sr is not None
-                    and ti > tt and li > lt and ((si > st) if i!=2 else True) and sr >= 1.0):
+                    and ti > tt and li > lt and ((si > st) if i==2 else True) and sr >= 1.0):
                         self._save_data(self.db_paths[i], offspring)
                         if self.is_improvement(p, offspring, metric+'_improvement'):
-                            self.save_analysis_db(p, offspring, metric, self.db_analysis_paths[i])
-                            flag = True
+                            if metric != 'smoothness': ## except smoothness analysis
+                                self.save_analysis_db(p, offspring, metric, self.db_analysis_paths[i])
+                                flag = True
                         
             self.results.append((p, offspring))
             
@@ -454,9 +474,9 @@ class InterfaceEC():
 
     def get_algorithm(self, pop, operators):
         # operators = ['cross_over', 'cross_over', 'cross_over']
-        # thresholds = self.compute_thresholds_from_db(db_paths=self.db_paths, initial_path=self.initial_path)
-        # for i, (metric, (tt, lt, st)) in enumerate(thresholds.items()):
-        #     print(f"[{i}] Metric: {metric} | Time Thres: {tt:.2f}% | Length Thres: {lt:.2f}% | Smoothness Thres: {st:.2f}%")
+        thresholds = self.compute_thresholds_from_db(db_paths=self.db_paths, initial_path=self.initial_path)
+        for i, (metric, (tt, lt, st)) in enumerate(thresholds.items()):
+            print(f"[{i}] Metric: {metric} | Time Thres: {tt:.2f}% | Length Thres: {lt:.2f}% | Smoothness Thres: {st:.2f}%")
 
         self._reset_results()
         self.evol.update_max_impv()
@@ -488,8 +508,8 @@ class InterfaceEC():
         for p, off in self.results:
             out_p.append(p)
             out_off.append(off)
-            if self.debug:
-                print(f">>> check population: \n {p}")
-                print(f">>> check offsprings: \n {off}")
+            # if self.debug:
+            #     print(f">>> check population: \n {p}")
+            #     print(f">>> check offsprings: \n {off}")
         return out_p, out_off
 

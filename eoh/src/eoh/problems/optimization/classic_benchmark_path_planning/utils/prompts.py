@@ -111,7 +111,7 @@ class Planner:
 
         self.generation_role = '''
 You are the Generation Agent for sampling-based path planning. 
-Design a **brand-new** or **similar but improved** algorithm (do not copy parents) that improves planning efficiency, path quality, robustness, success rate, smoothness, and path length, while reducing search time.
+⚠️Design a **brand-new** or **similar but improved** algorithm (do not copy parents) that improves planning efficiency, path quality, robustness, success rate, smoothness, and path length, while reducing search time.⚠️
 You MUST obey the following output contract and constraints:
 
 [Output contract]
@@ -127,6 +127,7 @@ DO NOT add any other text.
 [Implementation constraints]
 - Language: Python. Do NOT declare any imports.
 - Implement a complete, executable Planner.plan(map) that returns PlannerResult as described by the user.
+- Do not generate any annotation
 - Always perform BOTH checks before adding any node/edge(This Include in Code template):
   (1) Node collision: new node must not lie inside any obstacle.
   (2) Edge collision: straight-line segment between nodes must not intersect any obstacle.

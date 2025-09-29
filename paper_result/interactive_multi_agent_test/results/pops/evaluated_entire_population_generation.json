@@ -1,4 +1,4 @@
-{
+[{
     "operator": "e1",
     "algorithm_description": "A new sampling-based planner combining bidirectional RRT* with informed sampling and efficient rewiring, incorporating KD-tree-based nearest neighbor queries for faster expansion and rewiring. It alternates growth between start and goal trees, uses adaptive neighborhood radius, informed ellipse sampling after first solution, and prunes unnecessary nodes. This design enhances planning speed, improves path quality (length and smoothness), and achieves high success rate with a clear termination strategy.",
     "planning_mechanism": "The planner grows two trees (start and goal) using RRT* with KD-tree acceleration for nearest and neighbor searches. It samples uniformly before first solution and inside informed ellipsoid after. After connecting the trees, it continues rewiring within the informed set for limited iterations or until stagnation. Node and edge collision checks ensure validity. The final path is extracted by merging the connecting nodes' ancestral paths.",
@@ -49,7 +49,7 @@
         }
     ],
     "success_rate": 1.0
-}
+},
 {
     "operator": "m2",
     "algorithm_description": "A hybrid RRT*-informed-planning algorithm using adaptive informed sampling and incremental rewiring with batch node expansions for better efficiency and smoother path convergence. The planner grows a single tree from start, biasing sampling towards the goal and the informed ellipsoid after the first solution, performing progressive rewiring in local neighborhoods dynamically scaled by iteration count. It includes edge collision checks with adaptive resolution, path shortcutting post-processing, and early stopping based on improvements to reduce planning time and enhance path quality and smoothness.",
@@ -101,7 +101,7 @@
         }
     ],
     "success_rate": 1.0
-}
+},
 {
     "operator": "m2",
     "algorithm_description": "An enhanced RRT* planner combining batch sampling with dynamic rewiring radius adaptation and KD-tree inspired nearest neighbor search simulation for faster neighbor queries. It introduces progressive path smoothing via iterative shortcutting and adaptive collision checking resolution based on edge length, ensuring improved planning speed, path length reduction, and enhanced smoothness. The planner also integrates heuristic sampling bias towards the goal and learned cost-aware parent selection to boost solution quality and success rates.",
@@ -153,7 +153,7 @@
         }
     ],
     "success_rate": 1.0
-}
+},
 {
     "operator": "m3",
     "algorithm_description": "A rewiring-enabled Rapidly-exploring Random Tree (RRT*) algorithm that incrementally builds a tree rooted at the start and optimizes node parents for cost during expansion, combined with path shortcutting smoothing after the initial path is found. This improves path length, smoothness, and planning efficiency by connecting new samples to the lowest-cost neighbor within a radius and pruning unnecessary nodes, while aggressively shortcutting the resulting path after completion.",
@@ -205,7 +205,7 @@
         }
     ],
     "success_rate": 0.9666666666666667
-}
+},
 {
     "operator": "m3",
     "algorithm_description": "A single-tree RRT* with adaptive sampling and dynamic radius rewiring combined with path shortcutting to enhance planning speed, path length, and smoothness. The planner uses informed sampling biased towards the ellipsoidal region between start and goal after an initial solution is found, and dynamically adjusts rewiring radius based on node count to better optimize paths. Post-processing shortcutting is applied to the final path to reduce unnecessary detours.",
@@ -258,3 +258,4 @@
     ],
     "success_rate": 1.0
 }
+]

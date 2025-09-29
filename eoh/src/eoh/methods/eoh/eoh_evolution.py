@@ -51,9 +51,9 @@ class Evolution():
         self.m1 = '''Modify the structure of an existing algorithm.'''
         self.m2 = '''Tune and reconfigure the parameters of a given algorithm.'''
         self.m3 = '''Simplify to enhance generalization for given algorithm.'''
-        self.cross_over = 'Improve the algorithm by minimizing the path length and reducing planning time, while using insights from previously successful heuristics.'
-        self.time_expert = 'Improve the algorithm by minimizing reducing planning time, while using insights from previously successful heuristic.'
-        self.path_expert = 'Improve the algorithm by minimizing the path length, while using insights from previously successful heuristic.'
+        self.cross_over = 'Improve the algorithm by minimizing the path length and reducing planning time'
+        self.time_expert = 'Improve the algorithm by minimizing reducing planning time'
+        self.path_expert = 'Improve the algorithm by minimizing the path length'
 
         self.time_analysis = []
         self.path_analysis = []
@@ -144,8 +144,7 @@ class Evolution():
 
     def critic_agent(self, indiv):
         message = []
-        prompt = f'''
-below is parents code:
+        prompt = f'''below is parents code:
 {indiv['code']}
 
 Peak performance of the population:
@@ -157,7 +156,7 @@ Performance :
     time_improvement: {indiv['time_improvement']},
     length_improvement: {indiv['length_improvement']},
     smoothness_improvement: {indiv['smoothness_improvement']}
-    
+
 '''+'''
 ## you answer below template
 [problem of path time aspect]
@@ -168,9 +167,15 @@ Performance :
 -Each placeholder must contain only the problems related to that specific metric.
 -Please keep the content brief
 '''
+    # smoothness_improvement: {self.smooth}
+    # smoothness_improvement: {indiv['smoothness_improvement']}
+
+# {problem of smoothness aspect}
+# {}
         message.append(self.transform_msg("system", "system", "You are a senior reviewer for sampling-based path planning (RRT/RRT*/RRT*-Connect/PRM variants). Your job is to diagnose why the given parents code harms (1) planning time, (2) path length, (3) smoothness."))
         message.append(self.transform_msg("user", "critic_agent", prompt))
 
+        print("Waiting Critic response")
         response = self.interface_llm.get_response(message)
         time_match = re.search(r"\[(.*?)\]", response, re.DOTALL)
         length_match = re.search(r"\<(.*?)\>", response, re.DOTALL)
@@ -182,21 +187,19 @@ Performance :
             'path smoothness': smooth_match.group(1).strip() if smooth_match else ""
         }
         contents = f'''
-        Peak performance of the population:
-            time_improvement: {self.time},
-            length_improvement: {self.path},
-            smoothness_improvement: {self.smooth}
-        
-        problem from parents code:
+        problem from parents code(It is just reference, up to you whether to use it or not):
         - Planning time: {critic['planning time']}
         - Path length: {critic['path length']}
         - Path smoothness: {critic['path smoothness']}
-        
         and it's Performance :
             time_improvement: {indiv['time_improvement']},
             length_improvement: {indiv['length_improvement']},
             smoothness_improvement: {indiv['smoothness_improvement']}
-        '''
+'''
+
+        # - Path smoothness: {critic['path smoothness']}
+            # smoothness_improvement: {indiv['smoothness_improvement']}
+
         if self.interactive_mode:
             self.logging("critic_agent", contents)
         
@@ -246,8 +249,7 @@ Performance :
             parent_block_lines.append(f"- Parents #{i} algorithm:\n```python\n{p['code']}\n``` \nPerformance :\n    time_improvement: {[round(m['time_improvement'],2) for m in p['other_inf']]},\n    length_improvement: {[round(m['length_improvement'],2) for m in p['other_inf']]},\n    smoothness_improvement: {[round(m['smoothness_improvement'],2) for m in p['other_inf']]}\n")
         parent_block = "\n\n".join(parent_block_lines)
 
-        prompt = f"""
-The following are the structural differences between multiple or single parent path planning algorithms and one offspring algorithm:
+        prompt = f"""The following are the structural differences between multiple or single parent path planning algorithms and one offspring algorithm:
 
 - Parents algorithms:
 {parent_block}
@@ -290,7 +292,7 @@ Please analyze and output the results in the following format:
         message.append(self.transform_msg("user", "analysis_agent", prompt))
         print("Waiting analysis response")
         analysis = self.interface_llm.get_response(self.conversation_log+message)
-        
+        print(analysis)
         prob_match = re.search(r"\<(.*?)\>", analysis, re.DOTALL)
         sol_match = re.search(r"\[(.*?)\]", analysis, re.DOTALL)
         
@@ -298,20 +300,18 @@ Please analyze and output the results in the following format:
         sol = sol_match.group(1).strip() if sol_match else ""
         
         if prob and sol:
-            if self.interactive_mode:
-                self.logging("analysis_agent", f"Problem: {prob} \n Solution: {sol}")
+            # if self.interactive_mode:
+                # self.logging("analysis_agent", f"Problem: {prob} \n Solution: {sol}")
             return {'problem': prob, 'solution': sol}
         
         else: return None
     
     def get_discussion(self):        
-        instruction = '''
-[Input]
-- Critic chat logs for each metric ("planning time", "path length", "path smoothness"). 
+        instruction = '''[Input]
+- Critic chat logs for each metric ("planning time", "path length"). 
   Each critic log contains only <problems> about the parent algorithm, without improvement suggestions.
 - Performance summary:
   * Parent algorithm performance for each metric
-  * Best performance achieved so far by any generated algorithm
 
 [Task]
 1. Read the critic chat logs and performance summary carefully.
@@ -328,7 +328,7 @@ Please analyze and output the results in the following format:
 [Reference]
 Peak performance of the population:
     time_improvement: {self.time},
-    length_improvement: {self.path},
+    length_improvement: {self.path}
     smoothness_improvement: {self.smooth}'''+'''
 [Output format]
 [planning time|path length|path smoothness]
@@ -341,14 +341,25 @@ Peak performance of the population:
 - Do not add explanations, notes, or extra text outside the required format.
 '''
 
+# , "path smoothness"
+#    - Consider the path smoothness metric when other metrics outperform.
+# ,
+#     smoothness_improvement: {self.smooth}
+# {improvement method (1–5 sentences)}
+# |path smoothness
+
         message1 = []
         message1.append(self.transform_msg("system", "system", "You are a debate summarizer agent. You must read critic logs and performance summaries, simulate a discussion, and output exactly 3 lines in the required format."))
 
         message2 = []
         message2.append(self.transform_msg("user", "discussion_agent", instruction))
         
+        print("Waiting Discussion response")
         response = self.interface_llm.get_response(message1+self.critic_conversation_log+message2)
         print("Discussion response: ", response)
+
+        if self.interactive_mode:
+            self.logging("Discussion_agent", response)
 
         metric_match = re.search(r"\[(.*?)\]", response, re.DOTALL)
         prob_match = re.search(r"\<(.*?)\>", response, re.DOTALL)
@@ -378,7 +389,7 @@ and it's Performance :
     smoothness_improvement: {indivs[i]['smoothness_improvement']}
 '''
         else: 
-            prompt_indiv=f"Reference Implementation:\nAlgorithm description: {indivs[0]['algorithm_description']}\nPlanning Mechanism:\n{indivs[0]['planning_mechanism']}\nCode:\n{indivs[0]['code']}\n"
+            prompt_indiv=f"Reference(parents alg) Implementation:\nAlgorithm description: {indivs[0]['algorithm_description']}\nPlanning Mechanism:\n{indivs[0]['planning_mechanism']}\nCode:\n{indivs[0]['code']}\n"
         
         prompt_indiv =prompt_indiv+f'''
 Reference
@@ -387,21 +398,26 @@ Peak performance of the population:
     length_improvement: {self.path},
     smoothness_improvement: {self.smooth}
 '''
+
         analysis_info=''
 
         self.reset_critic_log()
         
         for i, indiv in enumerate(indivs):
-            gap = self.critic_agent(indiv)
-            for k, v in gap.items():
-                if v and len(v):
-                    perform = f'''
-Performance :
+            critic = self.critic_agent(indiv)
+            critic_contents =f'''problem from parents code():
+- Planning time: {critic['planning time'] if not critic['planning time'] else 'None'}
+- Path length: {critic['path length'] if not critic['path length'] else 'None'}
+- Path smoothness: {critic['path length'] if not critic['path length'] else 'None'}
+and it's Performance :
     time_improvement: {indiv['time_improvement']},
     length_improvement: {indiv['length_improvement']},
     smoothness_improvement: {indiv['smoothness_improvement']}
-                '''
-                    self.critic_logging(f"{k.replace(' ', '_')}_critic_agent_{i+1}", v+perform)
+'''
+# - Path smoothness: {critic['path length'] if not critic['path length'] else 'None'}
+    # smoothness_improvement: {indiv['smoothness_improvement']}
+
+            self.critic_logging(f"critic_agent_{i+1}", critic_contents)
 
         # gap = self.critic_agent(indivs[0]) # TODO: multiple parents
         
@@ -413,13 +429,13 @@ Performance :
                     n = random.randint(0, len(results)-1)
                     analysis_info += f"The problem of the parents algorithm in terms of {metric} is: {prob}.\n"
                     if (1/(1 + results[n][1])) > 0.5: # TODO: threshold tuning
-                        analysis_info += f"The following is a relevant analysis from our database that may help improve {metric}:\n"+\
+                        analysis_info += f"The following is a relevant analysis from our database that may help improve {metric}(It is just reference, up to you whether to use it or not):\n"+\
                                          results[n][0].page_content+results[n][0].metadata.get("solution", "")+"\n"
                     else:
                         if sol:
-                            analysis_info += f"The following is a guide for improving {metric}:\n"+sol+"\n"
+                            analysis_info += f"The following is a guide for improving {metric}(It is just reference, up to you whether to use it or not):\n"+sol+"\n"
                     
-                    analysis_info += "above knowledge is just for your reference."
+                    # analysis_info += "above knowledge is just for your reference."
                         
         #     for k, (p, a) in self.analysis_db_dict.items():
         #         if gap and gap[k]:
@@ -437,7 +453,7 @@ Performance :
 
         prompt_content= ''+\
             prompt_indiv+\
-            analysis_info+(f'Instruction : {getattr(self, op)}\n' if hasattr(self, op) else 'Instruction : Generate algorithm')
+            analysis_info+(f'\nInstruction : {getattr(self, op)}\n' if hasattr(self, op) else 'Instruction : Generate algorithm')
             # self.architecture_info
             # self.prompt_objective+
             # self.prompt_constraints
@@ -502,8 +518,8 @@ Performance :
             n_retry +=1
 
         contents = f'''
-        designed algorithm: {algorithm}
-        planning mechanism: {mechanism}
+        Designed algorithm: {algorithm}
+        Planning mechanism: {mechanism}
         '''
 
         if self.interactive_mode:

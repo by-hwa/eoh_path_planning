@@ -151,11 +151,10 @@ class EOH:
         n_op = len(self.operators)
 
         for pop in range(n_start, self.n_pop):  
-            for i in range(self.pop_size//n_op+1):
+            for i in range(self.pop_size//n_op):
                 # self.operators = ["e1", "e2", "m1", "m2", "m3"] # for debug #TODO
                 parents, offsprings = interface_ec.get_algorithm(population, self.operators)
                 self.add2pop(population, offsprings)  # Check duplication, and add the new offspring
-
 
             for off in offsprings:
                 print(" Obj: ", off['objective'], end="|")

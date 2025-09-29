@@ -116,18 +116,7 @@ from eoh.problems.optimization.classic_benchmark_path_planning.utils.architectur
                 return ref_alg['code']
 
 
-    def __evaluate_path(self, code_string) -> float:
-        # planner = alg.Planner(max_iter=5000)
-        
-        # with concurrent.futures.ThreadPoolExecutor() as executor:
-        #     try:
-        #         future = executor.submit(self.benchmarker.run, planner.plan)
-        #         result, avg_result = future.result(timeout=self.time_out)
-        #     except:
-        #         executor.shutdown(wait=False, cancel_futures=True)
-        #         print("Timeout or error during evaluation.")
-        #         return None, None
-        
+    def __evaluate_path(self, code_string) -> float:        
         result, avg_result = evaluate_with_timeout_dynamic(
             self.import_string,
             code_string,
